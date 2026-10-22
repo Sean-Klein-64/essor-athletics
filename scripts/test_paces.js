@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -138,6 +138,13 @@ check("session builder round-trips blocs ↔ steps", () => {
   const pyr = m.sessions.find((s) => s.kind === "pyramid").levels.level3;
   assert.strictEqual(m.stepsToBlocs(pyr).length, 4);
   assert.strictEqual(m.stepsToBlocs([{ test: "6:00" }]), null);
+});
+
+check("group goal: 10 km target at VMA 15 is 44:27, days count down", () => {
+  assert.strictEqual(m.targetTime(m.goal.distances[0], 15), "44:27");
+  assert.strictEqual(m.targetTime(m.goal.distances[0], undefined), null);
+  assert.strictEqual(m.daysToGo("2026-12-19"), 1);
+  assert.strictEqual(m.daysToGo("2026-12-21"), -1);
 });
 
 const pyramid = m.sessions.find((s) => s.kind === "pyramid");

@@ -9,10 +9,14 @@ import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
 import { splitSessions, formatDay, totalLabel, todayKey } from "../lib/plan";
+import { formatClock } from "../lib/paces";
 import { levelById } from "../lib/levels";
 import useAttendance from "../lib/attendance";
 import useSessions from "../lib/store";
 import { isBeginner, programmeSessions, sessionLabel, currentIndex, runMinutes, PROGRAMMES } from "../lib/beginner";
+import goal, { daysToGo, targetTime } from "../lib/goal";
+import { formatShortDate } from "../lib/plan";
+import { best } from "../lib/records";
 
 /*
   Home — the next session up front (big card, with "Je viens" right on it),
@@ -106,6 +110,49 @@ const RowCard = ({ session, done, onPress }) => {
         <Glyph name="right" size={16} color={colors.text} />
       </View>
     </Pressable>
+  );
+};
+
+/* The race the whole club is building towards (js/lib/goal.js) — Levels 1–3 only */
+const GoalCard = ({ onAddVma }) => {
+  const { theme, preferences } = useContext(UserContext);
+  const { colors, typography } = theme;
+  const days = daysToGo();
+  if (days < 0) return null;
+  return (
+    <View style={[styles.goal, { backgroundColor: colors.accent }]}>
+      <View style={styles.goalHead}>
+        <View style={{ flex: 1 }}>
+          <Text style={[typography.finePrint, styles.goalKicker]}>OBJECTIF DU GROUPE</Text>
+          <Text style={styles.goalTitle}>{goal.name}</Text>
+          <Text style={[typography.finePrint, styles.goalSub]}>
+            {goal.place} · {formatShortDate(goal.date)}
+            {goal.confirmed ? "" : " (date à confirmer)"}
+          </Text>
+        </View>
+        <View style={styles.goalDays}>
+          <Text style={styles.goalDaysNumber}>{days}</Text>
+          <Text style={[typography.finePrint, styles.goalDaysLabel]}>{days === 1 ? "jour" : "jours"}</Text>
+        </View>
+      </View>
+      <Text style={[typography.finePrint, styles.goalBlurb]}>{goal.blurb}</Text>
+      <View style={styles.goalRow}>
+        {goal.distances.map((d) => {
+          const pb = best(preferences.records, d.id);
+          const target = targetTime(d, preferences.vma);
+          return (
+            <View key={d.id} style={styles.goalDistance}>
+              <Text style={[typography.finePrint, styles.goalDistanceName]}>{d.name}</Text>
+              <Text style={[typography.title, typography.mono, styles.goalTarget]}>{target || "—"}</Text>
+              <Text style={[typography.finePrint, styles.goalDistanceSub]}>
+                {target ? `à viser · ${d.vma} % VMA` : "ajoute ta VMA"}
+                {pb ? `\nrecord ${formatClock(pb.seconds)}` : ""}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
   );
 };
 
@@ -224,6 +271,8 @@ const HomeScreen = ({ navigation }) => {
           </Text>
         ) : null}
 
+        {!beginner && <GoalCard />}
+
         {!!upcoming.length && (
           <View style={styles.section}>
             <SectionLabel>À venir</SectionLabel>
@@ -310,6 +359,20 @@ const styles = StyleSheet.create({
   },
   doneDot: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   hint: { textAlign: "center", fontSize: 14, paddingHorizontal: 20 },
+  goal: { borderRadius: 24, padding: 18, gap: 10 },
+  goalHead: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  goalKicker: { color: "white", opacity: 0.75, fontSize: 11, letterSpacing: 0.8 },
+  goalTitle: { fontFamily: "Archivo-BlackItalic", fontSize: 28, lineHeight: 32, letterSpacing: -0.6, color: "white", marginTop: 2 },
+  goalSub: { color: "white", opacity: 0.8, fontSize: 14 },
+  goalDays: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8, minWidth: 68 },
+  goalDaysNumber: { fontFamily: "Archivo-BlackItalic", fontSize: 30, lineHeight: 34, color: "white" },
+  goalDaysLabel: { color: "white", opacity: 0.8, fontSize: 12 },
+  goalBlurb: { color: "white", opacity: 0.85, fontSize: 14, lineHeight: 18 },
+  goalRow: { flexDirection: "row", gap: 10 },
+  goalDistance: { flex: 1, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 16, padding: 12, gap: 2 },
+  goalDistanceName: { color: "white", opacity: 0.8, fontSize: 13 },
+  goalTarget: { color: "white", fontSize: 24, lineHeight: 28 },
+  goalDistanceSub: { color: "white", opacity: 0.75, fontSize: 12, lineHeight: 15 },
   empty: { textAlign: "center", opacity: 0.5, marginTop: 40 },
 });
 
