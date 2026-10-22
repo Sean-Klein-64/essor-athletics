@@ -13,6 +13,7 @@ import { levelById } from "./levels";
     "text"    — a typed answer (`optional: true` lets it be skipped)
     "choice"  — one option from `options` ({ id, name, description? })
     "vma"     — VMA in km/h; can be skipped (measured at the first session)
+    "records" — best times over 5 km / 10 km / semi / marathon, each optional
     "bpm"     — a heart rate
 
   `showIf(answers)` shows a question only after a certain answer.
@@ -119,6 +120,15 @@ const onboarding = [
     cta: "Continuer",
   },
   {
+    field: "records",
+    type: "records",
+    title: "Tes records",
+    prompt: "Tes meilleurs temps, si tu les connais",
+    tip: "Laisse vide ce que tu n'as jamais couru. Tu pourras les ajouter ou les améliorer plus tard.",
+    cta: "Continuer",
+    skip: "Je ne les connais pas",
+  },
+  {
     field: "level",
     type: "choice",
     title: "Niveau",
@@ -129,6 +139,19 @@ const onboarding = [
     suggestTip: (id) =>
       `D'après tes réponses : ${levelById(id).name}. Le test VMA du premier vendredi le confirme.`,
     cta: "Continuer",
+  },
+  {
+    field: "beginnerSessions",
+    type: "choice",
+    title: "Rythme",
+    prompt: "Combien de séances par semaine ?",
+    options: [
+      { id: 3, name: "3 par semaine", description: "Le vendredi au club + 2 seul·e — le programme tel qu'il est écrit" },
+      { id: 2, name: "2 par semaine", description: "Le vendredi + 1 seul·e — même chemin, un peu plus long" },
+    ],
+    tip: "Au moins un jour entre deux séances. Tu pourras changer dans ton profil.",
+    cta: "Continuer",
+    showIf: (a) => String(a.level || "").startsWith("beginner"),
   },
   {
     field: "vma",

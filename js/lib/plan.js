@@ -150,6 +150,7 @@ export const formatDay = (key) => {
 
 /* "2026-10-30" → "30/10/2026" */
 export const formatShortDate = (key) => {
+  if (!key) return "date inconnue";
   const [y, m, d] = key.split("-");
   return `${d}/${m}/${y}`;
 };

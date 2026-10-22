@@ -3,7 +3,7 @@
   so the profile can show the best one and how it has come down.
 
   Saved on the phone as preferences.records:
-    { "10k": [{ seconds: 2483, date: "2026-11-15" }, …], … }
+    { "10k": [{ seconds: 2483, date: "2026-11-15" }, …], … }   (date null = typed at sign-up)
 */
 
 export const DISTANCES = [
@@ -22,6 +22,6 @@ export const best = (records = {}, id) =>
     undefined,
   );
 
-/* Newest first, for the history list */
+/* Newest first, for the history list; entries without a date (typed at sign-up) last */
 export const history = (records = {}, id) =>
-  [...(records[id] || [])].sort((a, b) => (a.date < b.date ? 1 : -1));
+  [...(records[id] || [])].sort((a, b) => ((a.date || "") < (b.date || "") ? 1 : -1));

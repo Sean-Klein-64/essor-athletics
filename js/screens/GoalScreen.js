@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Linking } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 
 import SlideScreenContainer from "../components/SlideScreenContainer";
@@ -101,6 +101,11 @@ const GoalScreen = ({ navigation, route }) => {
         <Button disabled={!isValid} onPress={save}>
           Enregistrer mon objectif
         </Button>
+        {!!goal.register && (
+          <Pressable onPress={() => Linking.openURL(goal.register)} small>
+            <Text style={[typography.finePrint, { textAlign: "center", color: colors.accentText, opacity: 1, paddingVertical: 10 }]}>Site de la course · inscriptions pas encore ouvertes</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </SlideScreenContainer>
   );

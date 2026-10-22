@@ -58,11 +58,22 @@ export const isBeginner = (levelId) => !!PROGRAMMES[levelId];
 
 const SESSION_NAMES = ["Vendredi", "Séance 2", "Séance 3"];
 
-/* All 18 sessions of a programme, flattened, each with its place */
-export const programmeSessions = (levelId) =>
+/*
+  All sessions of a programme, flattened, each with its place (`index`
+  0–17 is its position in the full programme). With 2 sessions a week the
+  third of each week is skipped, except the test: it then takes the second
+  slot of week 6. Slower, but the same path.
+*/
+export const programmeSessions = (levelId, perWeek = 3) =>
   (PROGRAMMES[levelId]?.weeks || []).flatMap((week, w) =>
-    week.map((s, i) => ({ ...s, week: w + 1, slot: i, slotName: SESSION_NAMES[i], index: w * 3 + i })),
+    week
+      .map((s, i) => ({ ...s, week: w + 1, slot: i, slotName: SESSION_NAMES[i], index: w * 3 + i }))
+      .filter((s) => perWeek >= 3 || s.slot < 2 || s.test)
+      .filter((s) => perWeek >= 3 || !(s.slot === 1 && week[2]?.test)),
   );
+
+export const PER_WEEK_OPTIONS = [2, 3];
+export const perWeekOf = (preferences) => (preferences.beginnerSessions === 2 ? 2 : 3);
 
 const mins = (m) => (m < 1 ? `${Math.round(m * 60)}"` : `${m}'`);
 
@@ -86,9 +97,13 @@ export const sessionPlan = (s) => {
   };
 };
 
-/* Where a runner is in their programme (0–17); saved per level */
-export const currentIndex = (preferences, levelId) =>
-  Math.min(preferences.programme?.[levelId] ?? 0, 17);
+/* The runner's next session: the first one not yet done (progress is saved per level as the full-programme index) */
+export const currentIndex = (preferences, levelId) => Math.min(preferences.programme?.[levelId] ?? 0, 17);
+export const nextSession = (preferences, levelId) => {
+  const at = currentIndex(preferences, levelId);
+  const list = programmeSessions(levelId, perWeekOf(preferences));
+  return list.find((s) => s.index >= at) || list[list.length - 1];
+};
 
 /* The rules from the Level System page, shown before marking a session */
 export const READY_RULES = [

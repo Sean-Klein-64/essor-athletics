@@ -9,7 +9,8 @@ import Pressable from "../components/Pressable";
 import ChoiceList from "../components/ChoiceList";
 
 import onboarding, { findQuestion, nextIndex } from "../lib/onboarding";
-import { parseDecimal } from "../lib/paces";
+import { parseDecimal, parseClock } from "../lib/paces";
+import { DISTANCES } from "../lib/records";
 import UserContext from "../variables/context";
 
 /*
@@ -26,6 +27,7 @@ const QuestionScreen = ({ navigation, route }) => {
     preferences,
     setPreference,
     saveVma,
+    saveRecord,
   } = useContext(UserContext);
 
   const isEdit = !!route.params?.field;
@@ -33,16 +35,20 @@ const QuestionScreen = ({ navigation, route }) => {
   const question = isEdit ? findQuestion(route.params.field) : onboarding[index];
   const stored = preferences[question.field];
   const suggested = question.suggest && stored === undefined ? question.suggest(preferences) : undefined;
+  const [times, setTimes] = useState({});
   const [answer, setAnswer] = useState(
-    stored === undefined
+    question.type === "records" ? "" : stored === undefined
       ? (suggested ?? "")
       : question.type === "vma"
         ? String(stored).replace(".", ",")
         : stored,
   );
 
+  const validTimes = Object.entries(times).filter(([, t]) => parseClock(t));
   const isValid =
-    question.type === "vma"
+    question.type === "records"
+      ? validTimes.length > 0 && Object.values(times).every((t) => !t.trim() || parseClock(t))
+      : question.type === "vma"
       ? !!parseDecimal(answer) && parseDecimal(answer) < 30
       : question.type === "bpm"
         ? Number(answer) >= 120 && Number(answer) <= 230
@@ -61,7 +67,9 @@ const QuestionScreen = ({ navigation, route }) => {
 
   const handleContinue = async () => {
     let value = answer;
-    if (question.type === "vma") {
+    if (question.type === "records") {
+      for (const [id, t] of validTimes) await saveRecord(id, parseClock(t), null);
+    } else if (question.type === "vma") {
       value = parseDecimal(answer);
       await saveVma(value, "typed");
     } else {
@@ -85,7 +93,7 @@ const QuestionScreen = ({ navigation, route }) => {
       type={index > 0 || isEdit ? "back" : undefined}
       navigation={navigation}
       route={route}
-      ignoreKeyboard={question.type === "choice"}
+      ignoreKeyboard={question.type === "choice" || question.type === "records"}
     >
       <View style={styles.body}>
         <Text style={[typography.copy, styles.prompt]}>{question.prompt}</Text>
@@ -117,6 +125,25 @@ const QuestionScreen = ({ navigation, route }) => {
           />
         )}
 
+        {question.type === "records" && (
+          <View style={styles.records}>
+            {DISTANCES.map((d) => (
+              <View key={d.id} style={styles.recordRow}>
+                <Text style={[typography.heading, { width: 150 }]}>{d.name}</Text>
+                <View style={{ flex: 1 }}>
+                  <Input
+                    compact
+                    placeholder={d.placeholder}
+                    onChangeText={(t) => setTimes((x) => ({ ...x, [d.id]: t }))}
+                    value={times[d.id] || ""}
+                    keyboardType="numbers-and-punctuation"
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         {question.type === "choice" && (
           <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
             <ChoiceList options={question.options} value={answer} onChange={setAnswer} />
@@ -145,6 +172,8 @@ const styles = StyleSheet.create({
   list: { width: "100%", marginVertical: 20 },
   tip: { textAlign: "center", paddingHorizontal: "8%", marginBottom: 10 },
   skip: { textAlign: "center", paddingVertical: 14 },
+  records: { width: "100%", gap: 4 },
+  recordRow: { flexDirection: "row", alignItems: "center" },
 });
 
 export default QuestionScreen;

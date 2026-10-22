@@ -17,3 +17,11 @@ export const SUPABASE_ANON_KEY = "";
   launch, and again if it gets around.
 */
 export const COACH_CODE = "floride";
+
+/*
+  Booking goes through Wodify (the run club class). The button on each
+  session opens this link. Leave JE_VIENS false unless you want the in-app
+  "Je viens" list as well.
+*/
+export const WODIFY_BOOKING_URL = "https://app.wodify.com/Schedule/CalendarListViewEntry.aspx";
+export const JE_VIENS = false;

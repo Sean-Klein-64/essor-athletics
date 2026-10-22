@@ -11,6 +11,7 @@ import UserContext from "../variables/context";
 import useSessions from "../lib/store";
 import { splitSessions, formatDay, todayKey } from "../lib/plan";
 import { fetchAttendees, isShared } from "../lib/attendance";
+import { JE_VIENS } from "../lib/config";
 import myWeek from "../lib/myWeek";
 
 /*
@@ -51,7 +52,7 @@ const CoachHomeScreen = ({ navigation }) => {
   const local = preferences.coachSessions || {};
 
   useEffect(() => {
-    if (!isShared() || !next) return;
+    if (!JE_VIENS || !isShared() || !next) return;
     Promise.all([next, ...upcoming].map((s) => fetchAttendees(s.id).then((a) => [s.id, a.length]).catch(() => [s.id, undefined])))
       .then((pairs) => setCounts(Object.fromEntries(pairs)))
       .catch(() => {});

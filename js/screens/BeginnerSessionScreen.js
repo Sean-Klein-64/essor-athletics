@@ -10,7 +10,7 @@ import StepRow from "../components/StepRow";
 import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
-import { PROGRAMMES, programmeSessions, sessionLabel, sessionPlan, currentIndex, runMinutes, READY_RULES } from "../lib/beginner";
+import { PROGRAMMES, programmeSessions, sessionLabel, sessionPlan, currentIndex, runMinutes, READY_RULES, perWeekOf } from "../lib/beginner";
 import { describeStep } from "../lib/plan";
 import { levelById } from "../lib/levels";
 
@@ -24,14 +24,15 @@ const BeginnerSessionScreen = ({ navigation, route }) => {
   const { theme, preferences, setPreference } = useContext(UserContext);
   const { colors, typography } = theme;
   const levelId = route.params?.level || preferences.level;
-  const sessions = programmeSessions(levelId);
-  const session = sessions[route.params?.index ?? currentIndex(preferences, levelId)];
+  const sessions = programmeSessions(levelId, perWeekOf(preferences));
+  const wanted = route.params?.index ?? currentIndex(preferences, levelId);
+  const session = sessions.find((s) => s.index === wanted) || sessions.find((s) => s.index >= wanted);
   const [checks, setChecks] = useState([]);
   if (!session) return null;
 
   const mine = levelId === preferences.level;
   const at = currentIndex(preferences, levelId);
-  const isCurrent = mine && session.index === at;
+  const isCurrent = mine && session.index >= at && !sessions.some((s) => s.index >= at && s.index < session.index);
   const isDone = mine && session.index < at;
   const plan = sessionPlan(session);
   const allChecked = checks.length === READY_RULES.length;

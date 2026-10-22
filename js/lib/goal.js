@@ -12,12 +12,14 @@ const goal = {
   name: "Course du Bout de l'An",
   place: "Bayonne",
   date: "2026-12-20",
-  confirmed: false,
+  confirmed: true, // Dimanche 20 décembre 2026 — "date confirmée" on Miles Republic (22/10/2026); registration dates not yet announced
   distances: [
     { id: "10k", name: "10 km", metres: 10000, vma: 90 },
     { id: "5k", name: "5 km", metres: 5000, vma: 95 },
   ],
   blurb: "L'objectif de tout le groupe pour finir l'année. Chacun à son allure, tous sur la même ligne.",
+  register: "http://www.courseduboutdelan.com/fr/", // inscriptions pas encore ouvertes au 22/10/2026
+  photo: null, // require("../../assets/goal/bayonne.jpg") once a photo of Bayonne is in
 };
 
 /* Whole days from today to the race (negative once it's gone) */

@@ -24,6 +24,7 @@ const Input = forwardRef(
       autoCorrect,
       enablesReturnKeyAutomatically,
       autoFocus,
+      compact,
     },
     ref,
   ) => {
@@ -37,6 +38,7 @@ const Input = forwardRef(
         ref={ref}
         style={[
           styles.inputContainer,
+          compact && { marginHorizontal: 0, marginTop: 6, paddingVertical: 8, fontSize: 20 },
           {
             color: colors.text,
             backgroundColor: colors.card,

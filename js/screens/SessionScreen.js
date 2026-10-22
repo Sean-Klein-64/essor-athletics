@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Linking } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import SlideScreenContainer from "../components/SlideScreenContainer";
@@ -14,6 +14,7 @@ import { planFor, describeStep, formatDay, totalLabel, todayKey } from "../lib/p
 import useSessions from "../lib/store";
 import levels, { levelById } from "../lib/levels";
 import useAttendance from "../lib/attendance";
+import { WODIFY_BOOKING_URL, JE_VIENS } from "../lib/config";
 
 /*
   One session in full, for the runner's level: warm-up, main set and
@@ -120,8 +121,12 @@ const SessionScreen = ({ navigation, route }) => {
           </Pressable>
         )}
 
+        {!isPast && !JE_VIENS && (
+          <Button onPress={() => Linking.openURL(WODIFY_BOOKING_URL)}>Réserver sur Wodify</Button>
+        )}
+
         {/* Who's coming */}
-        {!isPast && (
+        {!isPast && JE_VIENS && (
           <View style={styles.section}>
             <SectionLabel>{shared ? `Qui vient · ${attendees.length}` : "Qui vient"}</SectionLabel>
             <View style={[styles.card, styles.whoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>

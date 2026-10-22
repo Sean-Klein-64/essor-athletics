@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { StyleSheet, View, Text, ScrollView } from "react-native";
+import { StyleSheet, View, Text, ScrollView, Linking, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Pressable from "../components/Pressable";
@@ -13,8 +13,9 @@ import { formatClock, formatPace, racePace } from "../lib/paces";
 import { levelById } from "../lib/levels";
 import useAttendance from "../lib/attendance";
 import useSessions from "../lib/store";
-import { isBeginner, programmeSessions, sessionLabel, currentIndex, runMinutes, PROGRAMMES } from "../lib/beginner";
+import { isBeginner, nextSession, sessionLabel, runMinutes, PROGRAMMES } from "../lib/beginner";
 import goal, { daysToGo, targetTime } from "../lib/goal";
+import { WODIFY_BOOKING_URL, JE_VIENS } from "../lib/config";
 import { formatShortDate } from "../lib/plan";
 import { best } from "../lib/records";
 
@@ -55,9 +56,16 @@ const NextCard = ({ session, onPress, override }) => {
         <View style={styles.goingCount}>
           <Glyph name="people" size={16} color={colors.text} />
           <Text style={[typography.finePrint, { fontSize: 14 }]}>
-            {shared ? (count ? `${count} ${count === 1 ? "inscrit" : "inscrits"}` : "Personne encore") : "Vendredi, piste de Floride"}
+            {JE_VIENS && shared ? (count ? `${count} ${count === 1 ? "inscrit" : "inscrits"}` : "Personne encore") : "Vendredi 16h30, piste de Floride"}
           </Text>
         </View>
+        {!JE_VIENS ? (
+          <Pressable onPress={() => Linking.openURL(WODIFY_BOOKING_URL)} small hitSlop={6}>
+            <View style={[styles.goingButton, { backgroundColor: colors.accent, borderColor: colors.accent }]}>
+              <Text style={[typography.heading, typography.bold, { fontSize: 15, color: "white" }]}>Réserver sur Wodify</Text>
+            </View>
+          </Pressable>
+        ) : (
         <Pressable onPress={toggle} small hitSlop={6}>
           <View
             accessibilityRole="button"
@@ -81,6 +89,7 @@ const NextCard = ({ session, onPress, override }) => {
             </Text>
           </View>
         </Pressable>
+        )}
       </View>
     </View>
   );
@@ -123,6 +132,7 @@ const GoalCard = ({ onPress }) => {
   return (
     <Pressable onPress={onPress} animation={false}>
     <View style={[styles.goal, { backgroundColor: colors.accent }]}>
+      {!!goal.photo && <Image source={goal.photo} style={[StyleSheet.absoluteFill, { width: "100%", height: "100%", opacity: 0.35 }]} resizeMode="cover" />}
       <View style={styles.goalHead}>
         <View style={{ flex: 1 }}>
           <Text style={[typography.finePrint, styles.goalKicker]}>OBJECTIF DU GROUPE</Text>
@@ -172,7 +182,7 @@ const HomeScreen = ({ navigation }) => {
 
   // Débuter: the Friday session is the next one in their own programme
   const beginner = isBeginner(preferences.level);
-  const mySession = beginner ? programmeSessions(preferences.level)[currentIndex(preferences, preferences.level)] : null;
+  const mySession = beginner ? nextSession(preferences, preferences.level) : null;
   const openMine = () => navigation.navigate("BeginnerSession", { level: preferences.level, index: mySession.index });
 
   return (
@@ -214,6 +224,13 @@ const HomeScreen = ({ navigation }) => {
             <Pressable onPress={() => navigation.navigate("Programme")} small>
               <View style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Text style={[typography.finePrint, typography.bold, styles.chipText]}>Mon programme</Text>
+              </View>
+            </Pressable>
+          )}
+          {!beginner && (
+            <Pressable onPress={() => navigation.navigate("Week")} small>
+              <View style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[typography.finePrint, typography.bold, styles.chipText]}>Ma semaine</Text>
               </View>
             </Pressable>
           )}
@@ -364,7 +381,7 @@ const styles = StyleSheet.create({
   },
   doneDot: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   hint: { textAlign: "center", fontSize: 14, paddingHorizontal: 20 },
-  goal: { borderRadius: 24, padding: 18, gap: 10 },
+  goal: { borderRadius: 24, padding: 18, gap: 10, overflow: "hidden" },
   goalHead: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   goalKicker: { color: "white", opacity: 0.75, fontSize: 11, letterSpacing: 0.8 },
   goalTitle: { fontFamily: "Archivo-BlackItalic", fontSize: 28, lineHeight: 32, letterSpacing: -0.6, color: "white", marginTop: 2 },
