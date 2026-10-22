@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import LaunchAnimation from "./components/LaunchAnimation";
 import OnboardingStack from "./navigation/stacks/OnboardingStack";
 import AppStack from "./navigation/stacks/AppStack";
 import UserContext from "./variables/context";
@@ -106,6 +107,7 @@ const newDeviceId = () =>
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
+  const [launching, setLaunching] = useState(true); // the opening clip on top
   const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
   const [selectedTheme, setSelectedTheme] = useState();
   const systemTheme = useColorScheme();
@@ -201,6 +203,7 @@ function App() {
             </RootNavigator.Navigator>
           </UserContext.Provider>
         </NavigationContainer>
+        {launching && <LaunchAnimation onDone={() => setLaunching(false)} />}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
