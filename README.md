@@ -61,6 +61,16 @@ npx expo run:ios --device
 
 Android phone: install Android Studio once, turn on USB debugging on the phone, then `npx expo run:android --device`.
 
+## Without a cable: cloud build → TestFlight
+
+```
+npx eas-cli@latest login
+npx eas-cli@latest build --platform ios --profile production
+npx eas-cli@latest submit --platform ios --latest
+```
+
+Then App Store Connect → the app → TestFlight → add yourself as an internal tester; the TestFlight app on the phone installs it. Internal testers need no Apple review. Android: `--platform android --profile preview` gives an .apk to install directly.
+
 ## Getting it to members
 
 - Build both in the cloud with EAS (`npx eas-cli@latest build --platform all`) — no Xcode needed for that.
