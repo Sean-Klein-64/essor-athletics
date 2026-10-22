@@ -72,22 +72,47 @@ export const toSeconds = (value) =>
 
 /*
   The paces every runner gets from their VMA, shown on the profile.
-  Ranges are min–max % of VMA.
+
+  Sean's zones, from the Training Zones table in his Running Progression
+  Plan (Notion): Pfitzinger's categories with % HRmax. The paces there were
+  written for his VMA (~18.3 km/h), so they're stored here as % VMA and
+  scale to anyone's VMA; HR shows once the runner adds their max HR.
+
+    vma: [low, high] % VMA  — null at one end = open ("slower than", "faster than")
+    vma: null               — HR only, no pace
+    hr:  [low, high] % HRmax — null at one end = open
 */
 export const ZONES = [
-  { id: "ef", name: "Footing (EF)", range: [65, 75], note: "Tu peux parler en courant" },
-  { id: "seuil", name: "Seuil", range: [85, 85], note: "Dur mais tenable 20 à 30'" },
-  { id: "10k", name: "Allure 10 km", range: [90, 90], note: "Ce que tu tiens sur 10 km" },
-  { id: "vma", name: "VMA", range: [100, 100], note: "Tenable 4 à 6' — fractionné court" },
+  { id: "recovery", name: "Recovery", vma: [null, 62], hr: [null, 76], note: "Juste faire circuler le sang — le lendemain d'une séance dure" },
+  { id: "zone2", name: "Zone 2", vma: null, hr: [60, 70], note: "Base aérobie facile, à la FC uniquement" },
+  { id: "ga", name: "General Aerobic", vma: [63, 68], hr: [70, 81], note: "Le gros de la semaine : footing, base aérobie" },
+  { id: "endurance", name: "Endurance", vma: [66, 72], hr: [74, 84], note: "Sorties longues et moyennes-longues" },
+  { id: "mp", name: "Marathon Pace", vma: [77, 80], hr: [79, 88], note: "Allure marathon — rythme de course" },
+  { id: "lt", name: "Lactate Threshold", vma: [87, 89], hr: [80, 91], note: "Seuil — tenable 30 à 60'" },
+  { id: "vo2", name: "VO2max", vma: [93, 97], hr: [94, 98], note: "Répétitions de 2 à 6'" },
+  { id: "speed", name: "Speed / Strides", vma: [98, null], hr: null, note: "Au ressenti, relâché, jamais crispé" },
 ];
 
-/* "4:10 – 4:49 /km" for a range, "3:50 /km" for a single % */
-export const zonePace = (vma, [low, high]) => {
-  const slow = paceFromSpeed(speedAt(vma, low));
-  const fast = paceFromSpeed(speedAt(vma, high));
-  return low === high
-    ? formatPace(fast)
-    : `${formatClock(fast)} – ${formatPace(slow)}`;
+export const zoneById = (id) => ZONES.find((z) => z.id === id);
+
+/* Pace for a % VMA range: "4:49 – 5:12 /km", "> 5:15 /km", "< 3:21 /km", or "FC uniquement" */
+export const zonePace = (vma, range) => {
+  if (!range) return "FC uniquement";
+  const [low, high] = range;
+  const at = (pct) => paceFromSpeed(speedAt(vma, pct));
+  if (low == null) return `> ${formatPace(at(high))}`;
+  if (high == null) return `< ${formatPace(at(low))}`;
+  return low === high ? formatPace(at(high)) : `${formatClock(at(high))} – ${formatPace(at(low))}`;
+};
+
+/* Heart rate for a % HRmax range: "141 – 164 bpm", "< 154 bpm"; null if no HR target */
+export const zoneHeartRate = (hrMax, range) => {
+  if (!range || !hrMax) return null;
+  const [low, high] = range;
+  const bpm = (pct) => Math.round((hrMax * pct) / 100);
+  if (low == null) return `< ${bpm(high)} bpm`;
+  if (high == null) return `> ${bpm(low)} bpm`;
+  return `${bpm(low)} – ${bpm(high)} bpm`;
 };
 
 /* Average pace of a race: distance in metres, time in seconds */

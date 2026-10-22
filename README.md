@@ -2,11 +2,14 @@
 
 The run club app for CrossFit Essor (Bayonne). iPhone and Android from one codebase.
 
-- **Sessions** — every Friday session, written once by the coaches, shown to each runner for their level (Beginner A/B/C, Level 3/2/1) with every rep turned into a time or distance from their VMA.
-- **VMA** — typed in, or from the 6-minute test (metres ÷ 100). Gives each runner their paces (EF, seuil, 10 km, VMA).
+- **Sign-up questionnaire** — the run club questionnaire is the first-run flow; the answers suggest a level, the runner confirms it.
+- **Sessions** — every Friday session, shown to each runner for their level (Level 3/2/1) with every rep turned into a time or distance from their VMA.
+- **Débuter A/B/C** — the three walk-run programmes from the Level System page, built in. The app keeps each beginner's place, checks the "ready?" rules before moving on, and the end-of-level test moves them up.
+- **VMA and zones** — VMA typed in or from the 6-minute test (metres ÷ 100); the Pfitzinger zones from Sean's Running Progression Plan as % VMA (and bpm once a max HR is added).
 - **Records** — 5 km, 10 km, semi, marathon: every time logged, best one marked.
 - **Je viens** — say you're coming to a session and see who else is.
-- No account yet: everything is saved on the phone. The "Je viens" list is shared through a small Supabase database once it's switched on (below).
+- **Coach view** — unlocked with the coach code (`js/lib/config.js`): write and edit sessions in the app, see who's coming, Sean's own week. "Vue membre" switches to what members see.
+- No account yet: everything is saved on the phone. "Je viens" and coach-written sessions are shared through a small Supabase database once it's switched on (below). Until then they live on the phone that made them.
 
 ## How it's built
 
@@ -15,14 +18,18 @@ Expo (React Native), same base as Daily Move: Programme's components, transition
 | Where | What's in it |
 | --- | --- |
 | `js/App.js` | Theme, what's saved on the phone, which stack to show |
-| `js/lib/sessions.js` | **The sessions** — edit this to write the programme (format explained at the top of the file) |
-| `js/lib/levels.js` | The six levels |
+| `js/lib/sessions.js` | **The built-in sessions** — the seed; coaches add more in the app (format explained at the top of the file) |
+| `js/lib/store.js` | Where sessions come from: built-in + Supabase + this phone's drafts |
+| `js/lib/editor.js` | The session builder's blocs ↔ steps |
+| `js/lib/levels.js`, `js/lib/placement.js` | The six levels, and questionnaire → level |
+| `js/lib/beginner.js` | The Débuter A/B/C programmes |
+| `js/lib/myWeek.js` | Sean's own week (coach view) |
 | `js/lib/plan.js` | Turns a session into one runner's version (their level, their VMA) |
 | `js/lib/paces.js` | VMA → speed → pace → target time |
 | `js/lib/records.js` | Record distances |
 | `js/lib/attendance.js`, `js/lib/config.js` | "Je viens" and the shared list |
-| `js/screens/` | Welcome, Question (first-run questions), Home, Session, Profile, Vma, Record |
-| `supabase/schema.sql` | The table behind "Je viens" |
+| `js/screens/` | Welcome, Question (questionnaire), Home, Session, Profile, Vma, Record, Programme, BeginnerSession, CoachCode, CoachHome, SessionEditor, MyWeek |
+| `supabase/schema.sql` | The tables behind "Je viens" and coach-written sessions |
 | `scripts/test_paces.js` | Checks the maths and that every session is written correctly |
 
 ## Writing sessions
@@ -35,7 +42,7 @@ node scripts/test_paces.js
 
 It fails with the session and step if something's mistyped.
 
-## Switching on the "Je viens" list
+## Switching on the shared database
 
 1. Create a free project at https://supabase.com/dashboard (region: Paris / eu-west-3).
 2. SQL Editor → New query → paste `supabase/schema.sql` → Run.
@@ -62,7 +69,7 @@ Android phone: install Android Studio once, turn on USB debugging on the phone, 
 
 ## Later
 
-- **Garmin**: the Garmin Connect Training API pushes workouts to a runner's Garmin calendar and watch. Free, but Essor has to be approved as a business developer first. The session format here is already step-by-step (distance or time + % VMA target), so it converts directly.
+- **Garmin**: the Garmin Connect Training API pushes workouts to a runner's Garmin calendar and watch. Free, but Essor has to be approved as a business developer first — and as of autumn 2026 Garmin has paused new applications. Fallbacks: an aggregator such as Terra, or exporting .FIT workout files. The session format here is already step-by-step (distance or time + % VMA target), so it converts directly when the door opens.
 - Accounts (so data follows a runner to a new phone, and coaches see everyone's VMA).
 
 ## Checking the JavaScript without a phone

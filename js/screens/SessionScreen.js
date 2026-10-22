@@ -10,7 +10,8 @@ import StepRow from "../components/StepRow";
 import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
-import { sessionById, planFor, describeStep, formatDay, totalLabel, todayKey } from "../lib/plan";
+import { planFor, describeStep, formatDay, totalLabel, todayKey } from "../lib/plan";
+import useSessions from "../lib/store";
 import levels, { levelById } from "../lib/levels";
 import useAttendance from "../lib/attendance";
 
@@ -26,7 +27,7 @@ const SessionScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { theme, preferences, setPreference } = useContext(UserContext);
   const { colors, typography } = theme;
-  const session = sessionById(route.params?.id);
+  const session = useSessions().byId(route.params?.id);
   const [levelId, setLevelId] = useState(preferences.level);
   const { going, toggle, attendees, shared } = useAttendance(session?.id);
 
@@ -64,7 +65,7 @@ const SessionScreen = ({ navigation, route }) => {
         </View>
 
         <View style={styles.levels}>
-          {levels.map((l) => {
+          {levels.filter((l) => l.group === "club").map((l) => {
             const selected = l.id === levelId;
             return (
               <Pressable key={l.id} onPress={() => setLevelId(l.id)} small>

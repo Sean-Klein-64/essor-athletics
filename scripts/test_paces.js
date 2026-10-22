@@ -13,6 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -49,7 +50,28 @@ check("durations read the French way", () => {
   assert.strictEqual(m.formatDuration(90), "1'30");
   assert.strictEqual(m.formatDuration(30), '30"');
 });
-check("EF zone for VMA 15 is 5:20 – 6:09 /km", () => assert.strictEqual(m.zonePace(15, [65, 75]), "5:20 – 6:09 /km"));
+check("Notion zones at VMA 18.3 match the Progression Plan paces", () => {
+  const z = (id) => m.zonePace(18.3, m.zoneById(id).vma);
+  assert.strictEqual(z("ga"), "4:49 – 5:12 /km"); // Notion: 4:48–5:13
+  assert.strictEqual(z("endurance"), "4:33 – 4:58 /km"); // Notion: 4:35–5:00
+  assert.strictEqual(z("mp"), "4:06 – 4:15 /km"); // Notion: 4:05–4:15
+  assert.strictEqual(z("lt"), "3:41 – 3:46 /km"); // Notion: 3:40–3:47
+  assert.strictEqual(z("vo2"), "3:23 – 3:32 /km"); // Notion: 3:22–3:31
+  assert.strictEqual(z("recovery"), "> 5:17 /km"); // Notion: slower than 5:15
+  assert.strictEqual(z("zone2"), "FC uniquement");
+});
+check("Notion HR zones at HRmax 202 match the bpm column", () => {
+  const h = (id) => m.zoneHeartRate(202, m.zoneById(id).hr);
+  assert.strictEqual(h("recovery"), "< 154 bpm");
+  assert.strictEqual(h("zone2"), "121 – 141 bpm");
+  assert.strictEqual(h("ga"), "141 – 164 bpm");
+  assert.strictEqual(h("endurance"), "149 – 170 bpm");
+  assert.strictEqual(h("mp"), "160 – 178 bpm");
+  assert.strictEqual(h("lt"), "162 – 184 bpm");
+  assert.strictEqual(h("vo2"), "190 – 198 bpm");
+  assert.strictEqual(h("speed"), null);
+  assert.strictEqual(m.zoneHeartRate(undefined, [60, 70]), null);
+});
 
 console.log("Records");
 check("best picks the fastest", () => {
@@ -59,7 +81,7 @@ check("best picks the fastest", () => {
 });
 
 console.log("Sessions");
-const levelIds = m.levels.map((l) => l.id);
+const levelIds = m.levels.filter((l) => l.group === "club").map((l) => l.id);
 const KNOWN = ["run", "vma", "easy", "jog", "walk", "test", "drills", "repeat", "steps", "rest", "note"];
 const walk = (steps, where) =>
   steps.forEach((s, i) => {
@@ -85,6 +107,37 @@ m.sessions.forEach((s) => {
       walk([...plan.warmup, ...plan.main, ...plan.cooldown], `${s.id}.${id}`);
     });
   });
+});
+
+console.log("Débuter");
+check("three programmes, 6 weeks × 3 sessions, tests move up A → B → C → Level 3", () => {
+  const ids = ["beginnerA", "beginnerB", "beginnerC"];
+  ids.forEach((id, i) => {
+    const sessions = m.programmeSessions(id);
+    assert.strictEqual(sessions.length, 18);
+    const test = sessions[17];
+    assert.ok(test.test, `${id} ends with a test`);
+    assert.strictEqual(test.next, ["beginnerB", "beginnerC", "level3"][i]);
+    sessions.forEach((s) => assert.ok(m.sessionPlan(s).main.length, `${id} #${s.index} has steps`));
+  });
+  assert.strictEqual(m.sessionLabel(m.programmeSessions("beginnerA")[0]), "5×(1'/1')");
+  assert.strictEqual(m.sessionLabel(m.programmeSessions("beginnerC")[17]), "30' continu");
+});
+check("questionnaire placement", () => {
+  assert.strictEqual(m.suggestLevel({ runContinuous: "under5" }), "beginnerA");
+  assert.strictEqual(m.suggestLevel({ runContinuous: "15to30" }), "beginnerC");
+  assert.strictEqual(m.suggestLevel({ runContinuous: "over30", runsPerWeek: "once", fiveK: "none" }), "level3");
+  assert.strictEqual(m.suggestLevel({ runContinuous: "over30", runsPerWeek: "twice", fiveK: "over30" }), "level2");
+  assert.strictEqual(m.suggestLevel({ runContinuous: "over30", runsPerWeek: "once", fiveK: "under25" }), "level1");
+});
+check("session builder round-trips blocs ↔ steps", () => {
+  const blocs = [{ repeat: 6, run: 400, unit: "m", vma: 100, rest: 60 }, { repeat: 1, run: 30, unit: "s", vma: 105, rest: 0 }];
+  const steps = m.blocsToSteps(blocs);
+  assert.deepStrictEqual(steps, [{ repeat: 6, steps: [{ run: 400, vma: 100 }, { jog: "1:00" }] }, { run: "0:30", vma: 105 }]);
+  assert.deepStrictEqual(m.stepsToBlocs(steps), blocs);
+  const pyr = m.sessions.find((s) => s.kind === "pyramid").levels.level3;
+  assert.strictEqual(m.stepsToBlocs(pyr).length, 4);
+  assert.strictEqual(m.stepsToBlocs([{ test: "6:00" }]), null);
 });
 
 const pyramid = m.sessions.find((s) => s.kind === "pyramid");

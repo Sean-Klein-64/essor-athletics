@@ -11,7 +11,7 @@ import UserContext from "../variables/context";
 
 import { levelById } from "../lib/levels";
 import { DISTANCES, best } from "../lib/records";
-import { ZONES, zonePace, formatClock, formatPace, racePace } from "../lib/paces";
+import { ZONES, zonePace, zoneHeartRate, formatClock, formatPace, racePace } from "../lib/paces";
 import { formatShortDate } from "../lib/plan";
 
 /*
@@ -47,6 +47,7 @@ const ProfileScreen = ({ navigation, route }) => {
   const {
     theme: { colors, typography },
     preferences: p,
+    setPreference,
     selectedTheme,
     setTheme,
   } = useContext(UserContext);
@@ -83,25 +84,41 @@ const ProfileScreen = ({ navigation, route }) => {
           </Pressable>
         </View>
 
-        {!!p.vma && (
+        {!!(p.vma || p.hrMax) && (
           <View style={styles.section}>
-            <SectionLabel>Tes allures</SectionLabel>
+            <SectionLabel>Tes zones</SectionLabel>
             <Card colors={colors}>
-              {ZONES.map((zone, i) => (
-                <View
-                  key={zone.id}
-                  style={[styles.row, i < ZONES.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={typography.heading}>{zone.name}</Text>
-                    <Text style={[typography.finePrint, { fontSize: 13 }]}>{zone.note}</Text>
+              {ZONES.map((zone, i) => {
+                const pace = p.vma ? zonePace(p.vma, zone.vma) : null;
+                const hr = zoneHeartRate(p.hrMax, zone.hr);
+                return (
+                  <View
+                    key={zone.id}
+                    style={[styles.row, i < ZONES.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={typography.heading}>{zone.name}</Text>
+                      <Text style={[typography.finePrint, { fontSize: 13 }]}>{zone.note}</Text>
+                    </View>
+                    <View style={{ alignItems: "flex-end", gap: 2 }}>
+                      {!!pace && (zone.vma || !hr) && (
+                        <Text style={[typography.heading, typography.mono, styles.zoneValue]}>{pace}</Text>
+                      )}
+                      {!!hr && (
+                        <Text style={[typography.finePrint, typography.mono, styles.zoneHr]}>{hr}</Text>
+                      )}
+                    </View>
                   </View>
-                  <Text style={[typography.heading, typography.mono, styles.value]}>
-                    {zonePace(p.vma, zone.range)}
-                  </Text>
-                </View>
-              ))}
+                );
+              })}
             </Card>
+            {!p.hrMax && (
+              <Pressable onPress={() => navigation.navigate("Question", { field: "hrMax" })} small>
+                <Text style={[typography.finePrint, styles.hint, { color: colors.accentText, opacity: 1 }]}>
+                  Ajoute ta FC max pour voir la fréquence cardiaque de chaque zone
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
 
@@ -137,6 +154,18 @@ const ProfileScreen = ({ navigation, route }) => {
               {...rowProps}
             />
             <Row
+              title="FC max"
+              value={p.hrMax ? `${p.hrMax} bpm` : "Ajouter"}
+              onPress={() => navigation.navigate("Question", { field: "hrMax" })}
+              {...rowProps}
+            />
+            <Row
+              title="Mode coach"
+              value={p.coach ? "Activé" : "Code"}
+              onPress={() => (p.coach ? setPreference("view", "coach") : navigation.navigate("CoachCode"))}
+              {...rowProps}
+            />
+            <Row
               title="Thème"
               value={themeLabel[selectedTheme] || "Système"}
               onPress={() => setTheme(cycle(THEMES, selectedTheme || null))}
@@ -163,6 +192,8 @@ const styles = StyleSheet.create({
   update: { height: 34, paddingHorizontal: 14, borderRadius: 17, justifyContent: "center" },
   row: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 56, paddingVertical: 10 },
   value: { fontSize: 16, opacity: 0.8 },
+  zoneValue: { fontSize: 15, opacity: 0.85 },
+  zoneHr: { fontSize: 13 },
   hint: { textAlign: "center", marginTop: 4, fontSize: 13 },
 });
 

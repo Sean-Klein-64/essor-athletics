@@ -83,7 +83,12 @@ const RootNavigator = createStackNavigator();
 /*
   Everything lives on the phone (AsyncStorage) — no account yet.
   Shape:
-    name, level                 from onboarding (see js/lib/onboarding.js)
+    name, level, runContinuous, runsPerWeek, fiveK, races, injury,
+    injuryDetail, goal          the sign-up questionnaire (js/lib/onboarding.js)
+    hrMax                       max heart rate, optional (zones show bpm)
+    programme: { [levelId]: index }   where a Débuter runner is in their programme
+    coach, view                 coach unlocked; "coach" | "member" view
+    coachSessions: { [id]: session }  sessions a coach wrote on this phone
     vma                         current VMA in km/h (or undefined)
     vmaHistory: [{ value, date, source: "typed" | "test" }]
     records: { "10k": [{ seconds, date }] }   see js/lib/records.js
@@ -93,7 +98,7 @@ const RootNavigator = createStackNavigator();
     onboarded
 */
 const PREFERENCES_KEY = "preferences";
-const DEFAULT_PREFERENCES = { level: "level3", records: {}, vmaHistory: [], done: {}, going: {} };
+const DEFAULT_PREFERENCES = { records: {}, vmaHistory: [], done: {}, going: {} };
 
 const newDeviceId = () =>
   `d-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;

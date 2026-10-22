@@ -11,15 +11,17 @@
       title: "Pyramide",
       kind: "pyramid",               test | pyramid | vo2 | threshold | easy
       summary: "One line on what the session is for",
-      warmup:   [steps],             for Levels 1–3 (and beginners unless they have their own)
+      warmup:   [steps],             shared by Levels 1–3
       cooldown: [steps],
       levels: {
         level1: [steps],             the main set for that level
         level2: [steps],
         level3: [steps],
-        beginnerA: { warmup: [steps], main: [steps], cooldown: [steps] },
-        …                            ← an object replaces the shared warm-up/cool-down
+        level1: { warmup, main, cooldown } ← an object replaces the shared warm-up/cool-down
       },
+
+  Débuter A/B/C don't appear here: beginners follow their walk-run
+  programme (js/lib/beginner.js), and their Friday session is the next one in it.
     }
 
   ── Steps ────────────────────────────────────────────────────────────────
@@ -50,13 +52,6 @@ const sharedWarmup = [
 
 const sharedCooldown = [{ easy: "10:00", note: "Très facile, puis étirements" }];
 
-const beginnerWarmup = [
-  { walk: "5:00", note: "Marche active" },
-  { drills: "Montées de genoux, talons-fesses — doucement" },
-];
-
-const beginnerCooldown = [{ walk: "5:00", note: "Puis étirements" }];
-
 const sessions = [
   {
     id: "2026-10-30-test-vma",
@@ -71,17 +66,6 @@ const sessions = [
       level1: [{ test: "6:00" }],
       level2: [{ test: "6:00" }],
       level3: [{ test: "6:00" }],
-      beginnerA: {
-        warmup: beginnerWarmup,
-        main: [{ repeat: 8, steps: [{ easy: "1:00" }, { walk: "1:00" }] }],
-        cooldown: beginnerCooldown,
-      },
-      beginnerB: {
-        warmup: beginnerWarmup,
-        main: [{ repeat: 4, steps: [{ easy: "3:00" }, { walk: "1:00" }] }],
-        cooldown: beginnerCooldown,
-      },
-      beginnerC: [{ test: "6:00", note: "Régulier du début à la fin, pas de départ trop rapide" }],
     },
   },
   {
@@ -116,21 +100,6 @@ const sessions = [
         { run: 400, vma: 100 }, { jog: "1:00" },
         { run: 200, vma: 105 },
       ],
-      beginnerA: {
-        warmup: beginnerWarmup,
-        main: [{ repeat: 6, steps: [{ easy: "1:30" }, { walk: "1:30" }] }],
-        cooldown: beginnerCooldown,
-      },
-      beginnerB: {
-        warmup: beginnerWarmup,
-        main: [{ repeat: 5, steps: [{ easy: "3:00" }, { walk: "1:00" }] }],
-        cooldown: beginnerCooldown,
-      },
-      beginnerC: {
-        warmup: beginnerWarmup,
-        main: [{ repeat: 3, steps: [{ easy: "6:00" }, { walk: "1:00" }] }],
-        cooldown: beginnerCooldown,
-      },
     },
   },
   {
@@ -152,21 +121,6 @@ const sessions = [
       level3: [
         { repeat: 2, steps: [{ repeat: 6, steps: [{ run: "0:30", vma: 100 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
       ],
-      beginnerA: {
-        warmup: beginnerWarmup,
-        main: [{ repeat: 7, steps: [{ easy: "2:00" }, { walk: "1:30" }] }],
-        cooldown: beginnerCooldown,
-      },
-      beginnerB: {
-        warmup: beginnerWarmup,
-        main: [{ repeat: 4, steps: [{ easy: "4:00" }, { walk: "1:00" }] }],
-        cooldown: beginnerCooldown,
-      },
-      beginnerC: {
-        warmup: beginnerWarmup,
-        main: [{ repeat: 2, steps: [{ easy: "10:00" }, { walk: "2:00" }] }],
-        cooldown: beginnerCooldown,
-      },
     },
   },
 ];

@@ -10,6 +10,7 @@ import {
   paceFromSpeed,
   speedAt,
   zonePace,
+  zoneById,
 } from "./paces";
 
 /*
@@ -107,7 +108,7 @@ export const describeStep = (step, vma) => {
     return {
       kind: "easy",
       title: `${formatDuration(toSeconds(step.easy))} footing`,
-      sub: vma ? zonePace(vma, [65, 75]) : "Allure facile, tu peux parler",
+      sub: vma ? `General Aerobic · ${zonePace(vma, zoneById("ga").vma)}` : "Allure facile, tu peux parler",
       note,
     };
   }
@@ -164,4 +165,5 @@ export const splitSessions = (today = todayKey(), list = sessions) => {
   };
 };
 
+/* Built-in sessions only — the app uses useSessions().byId (js/lib/store.js) */
 export const sessionById = (id) => sessions.find((s) => s.id === id);

@@ -12,11 +12,13 @@ import Animated, {
 
 import Wordmark from "../components/Wordmark";
 import Button from "../components/Button";
+import Pressable from "../components/Pressable";
 import UserContext from "../variables/context";
 
 /*
   First screen: the track lanes draw in behind the wordmark, then the
-  line and the button fade up.
+  line and the buttons fade up. Members start the questionnaire;
+  coaches go to the coach code.
 */
 
 const ease = Easing.bezier(0.25, 0.1, 0.25, 1);
@@ -83,13 +85,16 @@ const WelcomeScreen = ({ navigation }) => {
         <Text style={styles.tagline}>Ta VMA, tes records,{"\n"}tes séances.</Text>
       </Animated.View>
 
-      <Animated.View style={[styles.buttonContainer, { bottom: insets.bottom + 30 }, buttonStyle]}>
+      <Animated.View style={[styles.buttonContainer, { bottom: insets.bottom + 24 }, buttonStyle]}>
         <Button
           onPress={() => navigation.navigate("Question", { index: 0 })}
           style={{ backgroundColor: theme.colors.accent }}
         >
-          Commencer
+          Je cours avec Essor
         </Button>
+        <Pressable onPress={() => navigation.navigate("CoachCode")} small>
+          <Text style={styles.coach}>Je suis coach</Text>
+        </Pressable>
       </Animated.View>
     </View>
   );
@@ -98,7 +103,7 @@ const WelcomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "black", justifyContent: "center", alignItems: "center" },
   track: { position: "absolute", alignItems: "center", justifyContent: "center" },
-  center: { alignItems: "center", gap: 22, paddingBottom: 40 },
+  center: { alignItems: "center", gap: 22, paddingBottom: 60 },
   tagline: {
     textAlign: "center",
     fontFamily: "DiatypePre-Regular",
@@ -108,7 +113,15 @@ const styles = StyleSheet.create({
     color: "white",
     opacity: 0.85,
   },
-  buttonContainer: { position: "absolute", left: 40, right: 40 },
+  buttonContainer: { position: "absolute", left: 40, right: 40, gap: 6 },
+  coach: {
+    textAlign: "center",
+    fontFamily: "DiatypePre-Regular",
+    fontSize: 17,
+    color: "white",
+    opacity: 0.6,
+    paddingVertical: 12,
+  },
 });
 
 export default WelcomeScreen;

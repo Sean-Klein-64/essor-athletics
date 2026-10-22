@@ -8,9 +8,11 @@ import Wordmark from "../components/Wordmark";
 import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
-import { splitSessions, formatDay, totalLabel } from "../lib/plan";
+import { splitSessions, formatDay, totalLabel, todayKey } from "../lib/plan";
 import { levelById } from "../lib/levels";
 import useAttendance from "../lib/attendance";
+import useSessions from "../lib/store";
+import { isBeginner, programmeSessions, sessionLabel, currentIndex, runMinutes, PROGRAMMES } from "../lib/beginner";
 
 /*
   Home — the next session up front (big card, with "Je viens" right on it),
@@ -20,22 +22,23 @@ import useAttendance from "../lib/attendance";
 
 const formatVma = (vma) => `${String(vma).replace(".", ",")} km/h`;
 
-const NextCard = ({ session, onPress }) => {
+const NextCard = ({ session, onPress, override }) => {
   const { theme, preferences } = useContext(UserContext);
   const { colors, typography } = theme;
   const { going, toggle, attendees, shared } = useAttendance(session.id);
   const count = attendees.length;
+  const kicker = override?.kicker ?? `${formatDay(session.date)} · ${totalLabel(session, preferences.level, preferences.vma)}`;
+  const title = override?.title ?? session.title;
+  const summary = override?.summary ?? session.summary;
 
   return (
     <View style={[styles.next, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <Pressable onPress={onPress} animation={false}>
         <View style={styles.nextBody}>
-          <Text style={[typography.finePrint, styles.kicker]}>
-            {formatDay(session.date)} · {totalLabel(session, preferences.level, preferences.vma)}
-          </Text>
-          <Text style={[styles.nextTitle, { color: colors.text }]}>{session.title}</Text>
+          <Text style={[typography.finePrint, styles.kicker]}>{kicker}</Text>
+          <Text style={[styles.nextTitle, { color: colors.text }]}>{title}</Text>
           <Text style={[typography.finePrint, styles.summary]} numberOfLines={3}>
-            {session.summary}
+            {summary}
           </Text>
           <View style={styles.openRow}>
             <Text style={[typography.heading, { color: colors.accentText }]}>Voir ma séance</Text>
@@ -95,7 +98,7 @@ const RowCard = ({ session, done, onPress }) => {
           <View style={[styles.doneDot, { backgroundColor: colors.accent }]}>
             <Glyph name="check" size={14} color="white" strokeWidth={2.6} />
           </View>
-        ) : (
+        ) : isBeginner(preferences.level) ? null : (
           <Text style={[typography.finePrint, { fontSize: 14 }]}>
             {totalLabel(session, preferences.level, preferences.vma)}
           </Text>
@@ -108,11 +111,17 @@ const RowCard = ({ session, done, onPress }) => {
 
 const HomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { theme, preferences } = useContext(UserContext);
+  const { theme, preferences, setPreference } = useContext(UserContext);
   const { colors, typography } = theme;
-  const { next, upcoming, past } = splitSessions();
+  const { sessions } = useSessions();
+  const { next, upcoming, past } = splitSessions(todayKey(), sessions);
   const level = levelById(preferences.level);
   const open = (session) => navigation.navigate("Session", { id: session.id });
+
+  // Débuter: the Friday session is the next one in their own programme
+  const beginner = isBeginner(preferences.level);
+  const mySession = beginner ? programmeSessions(preferences.level)[currentIndex(preferences, preferences.level)] : null;
+  const openMine = () => navigation.navigate("BeginnerSession", { level: preferences.level, index: mySession.index });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
@@ -120,6 +129,13 @@ const HomeScreen = ({ navigation }) => {
         <View style={{ flex: 1 }}>
           <Wordmark size={28} color={colors.text} accent={colors.accentText} />
         </View>
+        {!!preferences.coach && (
+          <Pressable onPress={() => setPreference("view", "coach")} small hitSlop={8}>
+            <View style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border, marginRight: 8 }]}>
+              <Text style={[typography.finePrint, typography.bold, styles.chipText]}>Vue coach</Text>
+            </View>
+          </Pressable>
+        )}
         <Pressable onPress={() => navigation.navigate("Profile")} small hitSlop={8}>
           <View
             accessibilityLabel="Mon profil"
@@ -142,7 +158,14 @@ const HomeScreen = ({ navigation }) => {
               <Text style={[typography.finePrint, typography.bold, styles.chipText]}>{level.name}</Text>
             </View>
           </Pressable>
-          <Pressable onPress={() => navigation.navigate("Vma")} small>
+          {beginner && (
+            <Pressable onPress={() => navigation.navigate("Programme")} small>
+              <View style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[typography.finePrint, typography.bold, styles.chipText]}>Mon programme</Text>
+              </View>
+            </Pressable>
+          )}
+          {!beginner && <Pressable onPress={() => navigation.navigate("Vma")} small>
             <View
               style={[
                 styles.chip,
@@ -163,10 +186,29 @@ const HomeScreen = ({ navigation }) => {
                 {preferences.vma ? `VMA ${formatVma(preferences.vma)}` : "Ajouter ma VMA"}
               </Text>
             </View>
-          </Pressable>
+          </Pressable>}
         </View>
 
-        {next ? (
+        {beginner && mySession && (
+          <View style={styles.section}>
+            <SectionLabel>Ta prochaine séance · semaine {mySession.week}</SectionLabel>
+            {next ? (
+              <NextCard
+                session={next}
+                onPress={openMine}
+                override={{
+                  kicker: `${mySession.slot === 0 ? formatDay(next.date) : mySession.slotName} · ${runMinutes(mySession)}' de course`,
+                  title: sessionLabel(mySession),
+                  summary: mySession.test
+                    ? `Le test de fin de ${PROGRAMMES[preferences.level].name}.`
+                    : "Marche-course à une allure où tu peux parler. Le vendredi, au club avec les autres.",
+                }}
+              />
+            ) : null}
+          </View>
+        )}
+
+        {next && !beginner ? (
           <View style={styles.section}>
             <SectionLabel>Prochaine séance</SectionLabel>
             <NextCard session={next} onPress={() => open(next)} />
@@ -176,11 +218,11 @@ const HomeScreen = ({ navigation }) => {
               </Text>
             )}
           </View>
-        ) : (
+        ) : !next ? (
           <Text style={[typography.copy, styles.empty]}>
             Les prochaines séances arrivent bientôt.
           </Text>
-        )}
+        ) : null}
 
         {!!upcoming.length && (
           <View style={styles.section}>
