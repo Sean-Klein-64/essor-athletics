@@ -9,7 +9,7 @@ import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
 import { splitSessions, formatDay, totalLabel, todayKey } from "../lib/plan";
-import { formatClock } from "../lib/paces";
+import { formatClock, formatPace, racePace } from "../lib/paces";
 import { levelById } from "../lib/levels";
 import useAttendance from "../lib/attendance";
 import useSessions from "../lib/store";
@@ -114,12 +114,14 @@ const RowCard = ({ session, done, onPress }) => {
 };
 
 /* The race the whole club is building towards (js/lib/goal.js) — Levels 1–3 only */
-const GoalCard = ({ onAddVma }) => {
+const GoalCard = ({ onPress }) => {
   const { theme, preferences } = useContext(UserContext);
   const { colors, typography } = theme;
   const days = daysToGo();
   if (days < 0) return null;
+  const mine = preferences.raceGoal;
   return (
+    <Pressable onPress={onPress} animation={false}>
     <View style={[styles.goal, { backgroundColor: colors.accent }]}>
       <View style={styles.goalHead}>
         <View style={{ flex: 1 }}>
@@ -140,19 +142,22 @@ const GoalCard = ({ onAddVma }) => {
         {goal.distances.map((d) => {
           const pb = best(preferences.records, d.id);
           const target = targetTime(d, preferences.vma);
+          const chosen = mine?.distance === d.id && mine?.seconds;
           return (
-            <View key={d.id} style={styles.goalDistance}>
-              <Text style={[typography.finePrint, styles.goalDistanceName]}>{d.name}</Text>
-              <Text style={[typography.title, typography.mono, styles.goalTarget]}>{target || "—"}</Text>
+            <View key={d.id} style={[styles.goalDistance, chosen && styles.goalChosen]}>
+              <Text style={[typography.finePrint, styles.goalDistanceName]}>{d.name}{chosen ? "  ·  mon objectif" : ""}</Text>
+              <Text style={[typography.title, typography.mono, styles.goalTarget]}>{chosen ? formatClock(mine.seconds) : target || "—"}</Text>
               <Text style={[typography.finePrint, styles.goalDistanceSub]}>
-                {target ? `à viser · ${d.vma} % VMA` : "ajoute ta VMA"}
+                {chosen ? `${formatPace(racePace(d.metres, mine.seconds))}${target ? ` · VMA dit ${target}` : ""}` : target ? `suggestion · ${d.vma} % VMA` : "ajoute ta VMA"}
                 {pb ? `\nrecord ${formatClock(pb.seconds)}` : ""}
               </Text>
             </View>
           );
         })}
       </View>
+      <Text style={[typography.finePrint, styles.goalCta]}>{mine?.seconds ? "Touche pour changer ton objectif" : "Touche pour choisir ta course et ton objectif"}</Text>
     </View>
+    </Pressable>
   );
 };
 
@@ -271,7 +276,7 @@ const HomeScreen = ({ navigation }) => {
           </Text>
         ) : null}
 
-        {!beginner && <GoalCard />}
+        {!beginner && <GoalCard onPress={() => navigation.navigate("Goal")} />}
 
         {!!upcoming.length && (
           <View style={styles.section}>
@@ -373,6 +378,8 @@ const styles = StyleSheet.create({
   goalDistanceName: { color: "white", opacity: 0.8, fontSize: 13 },
   goalTarget: { color: "white", fontSize: 24, lineHeight: 28 },
   goalDistanceSub: { color: "white", opacity: 0.75, fontSize: 12, lineHeight: 15 },
+  goalChosen: { backgroundColor: "rgba(255,255,255,0.24)" },
+  goalCta: { color: "white", opacity: 0.7, fontSize: 12, textAlign: "center" },
   empty: { textAlign: "center", opacity: 0.5, marginTop: 40 },
 });
 

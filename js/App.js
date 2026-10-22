@@ -86,6 +86,7 @@ const RootNavigator = createStackNavigator();
     name, level, runContinuous, runsPerWeek, fiveK, races, injury,
     injuryDetail, goal          the sign-up questionnaire (js/lib/onboarding.js)
     hrMax                       max heart rate, optional (zones show bpm)
+    raceGoal: { distance, seconds }   the runner's own goal for the group race
     programme: { [levelId]: index }   where a Débuter runner is in their programme
     coach, view                 coach unlocked; "coach" | "member" view
     coachSessions: { [id]: session }  sessions a coach wrote on this phone
