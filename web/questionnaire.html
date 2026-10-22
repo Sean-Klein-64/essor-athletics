@@ -45,6 +45,8 @@ p { margin: 0 }
 .opt small { display: block; color: var(--muted); font-size: 14px; }
 input[type=text], input[type=tel], input[type=email], textarea { width: 100%; font: inherit; font-size: 18px; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
 input:focus-visible, textarea:focus-visible { outline: 2px solid var(--mint); outline-offset: 1px; }
+input[aria-invalid="true"] { border-color: #E07A5F; }
+.hint-bad { color: #E07A5F; font-size: 14px; }
 .row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; }
 .row label { font-size: 15px; color: var(--muted); }
 .grid { display: flex; flex-direction: column; gap: 10px; }
@@ -169,7 +171,7 @@ const Q = [
   { id: "runContinuous", k: "Course", t: "Aujourd'hui, combien de temps peux-tu courir sans t'arrêter ?", h: "Pour aujourd'hui, pas pour ta meilleure période.", type: "choice", opts: [["under5", "Moins de 5 min"], ["5to15", "5 à 15 min"], ["15to30", "15 à 30 min"], ["over30", "30 min ou plus"]] },
   { id: "runsPerWeek", k: "Fréquence", t: "Combien de fois cours-tu par semaine en ce moment ?", type: "choice", opts: [["never", "Jamais"], ["once", "1 fois"], ["twice", "2 fois"], ["more", "3 fois ou plus"]] },
   { id: "fiveK", k: "5 km", t: "Ton temps récent sur 5 km ?", h: "Une estimation suffit.", type: "choice", opts: [["none", "Jamais couru 5 km"], ["over30", "Plus de 30 min"], ["25to30", "25 à 30 min"], ["under25", "Moins de 25 min"]] },
-  { id: "bests", k: "Records", t: "Tes meilleurs temps, si tu les connais", h: "Laisse vide ce que tu n'as jamais couru.", type: "bests", skip: "Je ne les connais pas" },
+  { id: "bests", k: "Records", t: "Tes meilleurs temps, si tu les connais", h: "Écris le temps complet, minutes et secondes : 52:30 pour un 10 km, 1:58:00 pour un semi. Laisse vide ce que tu n'as jamais couru.", type: "bests", skip: "Je ne les connais pas" },
   { id: "races", k: "Courses", t: "As-tu déjà fait une course ? Laquelle ?", type: "text", ph: "10 km, semi, marathon, HYROX…", skip: "Pas encore" },
   { id: "injury", k: "Douleurs", t: "As-tu une douleur ou une blessure quand tu cours en ce moment ?", type: "choice", opts: [["no", "Non"], ["yes", "Oui"]] },
   { id: "injuryDetail", k: "Douleurs", t: "Laquelle ?", h: "Seuls les coachs voient cette réponse. On en parle avant que tu coures.", type: "textarea", ph: "Genou droit depuis 2 semaines…", showIf: a => a.injury === "yes", req: true },
@@ -227,7 +229,7 @@ function render() {
       const r = document.createElement("div"); r.className = "row";
       r.innerHTML = `<label for="b-${id}">${name}</label><input type="text" id="b-${id}" inputmode="numeric" placeholder="${ph}" autocomplete="off">`;
       r.querySelector("input").value = (val && val[id]) || "";
-      r.querySelector("input").oninput = (e) => { answers.bests = { ...(answers.bests || {}), [id]: e.target.value }; valid(); };
+      r.querySelector("input").oninput = (e) => { answers.bests = { ...(answers.bests || {}), [id]: e.target.value }; e.target.setAttribute("aria-invalid", String(!clockOk(e.target.value))); valid(); };
       g.appendChild(r);
     });
     b.appendChild(g);
@@ -245,7 +247,13 @@ const clockOk = (t) => !t || !t.trim() || /^\d{1,2}(:\d{2}){1,2}$/.test(t.trim()
 function valid() {
   const q = current; let ok = true; const v = answers[q.id];
   if (q.type === "choice") ok = !!v;
-  else if (q.type === "bests") ok = Object.values(v || {}).some(t => t && t.trim()) && Object.values(v || {}).every(clockOk);
+  else if (q.type === "bests") {
+    const vals = Object.values(v || {});
+    ok = vals.some(t => t && t.trim()) && vals.every(clockOk);
+    let bad = document.getElementById("bests-bad");
+    if (!bad) { bad = document.createElement("p"); bad.id = "bests-bad"; bad.className = "hint-bad"; $("qbody").appendChild(bad); }
+    bad.textContent = vals.every(clockOk) ? "" : "Format attendu : minutes:secondes (52:30) ou heures:minutes:secondes (1:58:00).";
+  }
   else if (q.req || !q.skip) ok = !!(v && String(v).trim());
   $("next").disabled = !ok;
 }
