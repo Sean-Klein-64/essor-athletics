@@ -82,6 +82,27 @@ Then App Store Connect → the app → TestFlight → add yourself as an interna
 - **Garmin**: the Garmin Connect Training API pushes workouts to a runner's Garmin calendar and watch. Free, but Essor has to be approved as a business developer first — and as of autumn 2026 Garmin has paused new applications. Fallbacks: an aggregator such as Terra, or exporting .FIT workout files. The session format here is already step-by-step (distance or time + % VMA target), so it converts directly when the door opens.
 - Accounts (so data follows a runner to a new phone, and coaches see everyone's VMA).
 
+## Running it on your iPhone (on the Mac, same as Daily Move)
+
+Xcode, Homebrew (`node watchman cocoapods`), your Apple ID in Xcode and Developer Mode on the iPhone are already set up from Daily Move. Plug the iPhone in with a cable, then in Terminal:
+
+```
+git clone https://github.com/Sean-Klein-64/essor-athletics.git
+cd essor-athletics
+npm install
+npx expo run:ios --device
+```
+
+Pick your iPhone when it asks. The first build takes a while. If it stops on a signing error: `open ios/*.xcworkspace`, select the project → Signing & Capabilities → choose your Team, then run the last command again.
+
+After that, every update is:
+
+```
+git pull
+npm install
+npx expo run:ios --device
+```
+
 ## Checking the JavaScript without a phone
 
 ```
