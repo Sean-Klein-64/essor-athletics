@@ -34,7 +34,7 @@ if (clip && Platform.OS !== "web") {
 
 const Clip = () => {
   const player = useVideoPlayer(clip, (p) => {
-    p.loop = false;
+    p.loop = true; // the clip is 1.4 s; it loops under the wordmark until the fade
     p.muted = true;
     p.play();
   });
