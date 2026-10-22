@@ -1,0 +1,174 @@
+/*
+  The run club sessions — written here, one entry per Friday.
+  To add or change a session, edit this file and ship it (an over-the-air
+  update is enough, see README → "Updating the sessions").
+
+  ── How a session is written ─────────────────────────────────────────────
+
+    {
+      id: "2026-11-06-pyramide",     unique, never reused
+      date: "2026-11-06",            the Friday it happens
+      title: "Pyramide",
+      kind: "pyramid",               test | pyramid | vo2 | threshold | easy
+      summary: "One line on what the session is for",
+      warmup:   [steps],             for Levels 1–3 (and beginners unless they have their own)
+      cooldown: [steps],
+      levels: {
+        level1: [steps],             the main set for that level
+        level2: [steps],
+        level3: [steps],
+        beginnerA: { warmup: [steps], main: [steps], cooldown: [steps] },
+        …                            ← an object replaces the shared warm-up/cool-down
+      },
+    }
+
+  ── Steps ────────────────────────────────────────────────────────────────
+
+    { run: 400, vma: 100 }           400 m at 100 % VMA → the app shows the target time
+    { run: "0:30", vma: 105 }        30 seconds at 105 % VMA → the app shows the distance
+    { easy: "15:00" }                footing (EF pace from the runner's VMA)
+    { jog: "1:00" }                  recovery jog
+    { walk: "1:00" }                 walk
+    { test: "6:00" }                 the 6-minute VMA test (as far as possible)
+    { drills: "Montées de genoux, talons-fesses, pas chassés" }
+    { repeat: 3, steps: [steps], rest: { jog: "3:00" } }
+                                     a set repeated 3 times, `rest` between sets
+    Any step can carry `note: "…"`.
+
+  Durations are "m:ss" strings, distances are metres. Keep steps in this
+  shape — it maps one-to-one onto Garmin structured workouts for later.
+
+  The three below are DRAFTS of cycle 1 (VMA test, then pyramid and VO2max
+  alternating) — to rewrite with Mel before launch.
+*/
+
+const sharedWarmup = [
+  { easy: "15:00" },
+  { drills: "Montées de genoux, talons-fesses, pas chassés, foulées bondissantes" },
+  { repeat: 3, steps: [{ run: 80, vma: 90, note: "Accélération progressive" }, { walk: "0:45", note: "Retour en marchant" }] },
+];
+
+const sharedCooldown = [{ easy: "10:00", note: "Très facile, puis étirements" }];
+
+const beginnerWarmup = [
+  { walk: "5:00", note: "Marche active" },
+  { drills: "Montées de genoux, talons-fesses — doucement" },
+];
+
+const beginnerCooldown = [{ walk: "5:00", note: "Puis étirements" }];
+
+const sessions = [
+  {
+    id: "2026-10-30-test-vma",
+    date: "2026-10-30",
+    title: "Test VMA",
+    kind: "test",
+    summary:
+      "6 minutes à fond : la distance parcourue donne ta VMA, et toutes tes allures en découlent.",
+    warmup: sharedWarmup,
+    cooldown: sharedCooldown,
+    levels: {
+      level1: [{ test: "6:00" }],
+      level2: [{ test: "6:00" }],
+      level3: [{ test: "6:00" }],
+      beginnerA: {
+        warmup: beginnerWarmup,
+        main: [{ repeat: 8, steps: [{ easy: "1:00" }, { walk: "1:00" }] }],
+        cooldown: beginnerCooldown,
+      },
+      beginnerB: {
+        warmup: beginnerWarmup,
+        main: [{ repeat: 4, steps: [{ easy: "3:00" }, { walk: "1:00" }] }],
+        cooldown: beginnerCooldown,
+      },
+      beginnerC: [{ test: "6:00", note: "Régulier du début à la fin, pas de départ trop rapide" }],
+    },
+  },
+  {
+    id: "2026-11-06-pyramide",
+    date: "2026-11-06",
+    title: "Pyramide",
+    kind: "pyramid",
+    summary:
+      "On monte puis on redescend : plus c'est court, plus c'est rapide. Récup trottinée entre chaque.",
+    warmup: sharedWarmup,
+    cooldown: sharedCooldown,
+    levels: {
+      level1: [
+        { run: 200, vma: 105 }, { jog: "1:00" },
+        { run: 400, vma: 100 }, { jog: "1:00" },
+        { run: 600, vma: 95 }, { jog: "1:30" },
+        { run: 800, vma: 95 }, { jog: "1:30" },
+        { run: 600, vma: 95 }, { jog: "1:30" },
+        { run: 400, vma: 100 }, { jog: "1:00" },
+        { run: 200, vma: 105 },
+      ],
+      level2: [
+        { run: 200, vma: 105 }, { jog: "1:00" },
+        { run: 400, vma: 100 }, { jog: "1:00" },
+        { run: 600, vma: 95 }, { jog: "1:30" },
+        { run: 400, vma: 100 }, { jog: "1:00" },
+        { run: 200, vma: 105 },
+      ],
+      level3: [
+        { run: 200, vma: 105 }, { jog: "1:00" },
+        { run: 400, vma: 100 }, { jog: "1:00" },
+        { run: 400, vma: 100 }, { jog: "1:00" },
+        { run: 200, vma: 105 },
+      ],
+      beginnerA: {
+        warmup: beginnerWarmup,
+        main: [{ repeat: 6, steps: [{ easy: "1:30" }, { walk: "1:30" }] }],
+        cooldown: beginnerCooldown,
+      },
+      beginnerB: {
+        warmup: beginnerWarmup,
+        main: [{ repeat: 5, steps: [{ easy: "3:00" }, { walk: "1:00" }] }],
+        cooldown: beginnerCooldown,
+      },
+      beginnerC: {
+        warmup: beginnerWarmup,
+        main: [{ repeat: 3, steps: [{ easy: "6:00" }, { walk: "1:00" }] }],
+        cooldown: beginnerCooldown,
+      },
+    },
+  },
+  {
+    id: "2026-11-13-30-30",
+    date: "2026-11-13",
+    title: "30/30",
+    kind: "vo2",
+    summary:
+      "30 secondes vite, 30 secondes trottinées. On cherche la régularité : la dernière comme la première.",
+    warmup: sharedWarmup,
+    cooldown: sharedCooldown,
+    levels: {
+      level1: [
+        { repeat: 2, steps: [{ repeat: 10, steps: [{ run: "0:30", vma: 105 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
+      ],
+      level2: [
+        { repeat: 2, steps: [{ repeat: 8, steps: [{ run: "0:30", vma: 105 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
+      ],
+      level3: [
+        { repeat: 2, steps: [{ repeat: 6, steps: [{ run: "0:30", vma: 100 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
+      ],
+      beginnerA: {
+        warmup: beginnerWarmup,
+        main: [{ repeat: 7, steps: [{ easy: "2:00" }, { walk: "1:30" }] }],
+        cooldown: beginnerCooldown,
+      },
+      beginnerB: {
+        warmup: beginnerWarmup,
+        main: [{ repeat: 4, steps: [{ easy: "4:00" }, { walk: "1:00" }] }],
+        cooldown: beginnerCooldown,
+      },
+      beginnerC: {
+        warmup: beginnerWarmup,
+        main: [{ repeat: 2, steps: [{ easy: "10:00" }, { walk: "2:00" }] }],
+        cooldown: beginnerCooldown,
+      },
+    },
+  },
+];
+
+export default sessions;

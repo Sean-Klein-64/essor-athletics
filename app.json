@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Essor Athletics",
+    "slug": "essor-athletics",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/app/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0A0A0A",
+      "image": "./assets/app/splash-icon.png",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "bundleIdentifier": "fr.crossfitessor.athletics",
+      "supportsTablet": false,
+      "appleTeamId": "B9PZPU9HW5"
+    },
+    "android": {
+      "package": "fr.crossfitessor.athletics",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0A",
+        "foregroundImage": "./assets/app/android-icon-foreground.png",
+        "monochromeImage": "./assets/app/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/app/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/DiatypePre-Regular.otf",
+            "./assets/fonts/DiatypePreTrial-Medium.otf",
+            "./assets/fonts/ABCDiatypeMonoTrial-Regular.otf",
+            "./assets/fonts/Archivo-BlackItalic.ttf"
+          ]
+        }
+      ]
+    ]
+  }
+}
