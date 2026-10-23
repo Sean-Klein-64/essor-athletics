@@ -72,3 +72,19 @@ begin
 end $$;
 drop trigger if exists signups_cap on public.signups;
 create trigger signups_cap before insert on public.signups for each row execute function public.enforce_launch_cap();
+
+-- "Modifier mes réponses": the phone that created a row may update it (ids are unguessable uuids)
+create policy "edit own" on public.signups for update to anon using (true) with check (char_length(name) <= 80);
+-- cap also enforced on updates, except for a row that already held a place
+create or replace function public.enforce_launch_cap() returns trigger
+language plpgsql security definer as $$
+begin
+  if (new.answers->>'launch') = 'yes' and (new.answers->>'member') = 'yes'
+     and not (TG_OP = 'UPDATE' and (old.answers->>'launch') = 'yes' and (old.answers->>'member') = 'yes')
+     and (select count(*) from public.signups where (answers->>'launch') = 'yes' and (answers->>'member') = 'yes') >= 15 then
+    raise exception 'launch full' using errcode = 'check_violation';
+  end if;
+  return new;
+end $$;
+drop trigger if exists signups_cap on public.signups;
+create trigger signups_cap before insert or update on public.signups for each row execute function public.enforce_launch_cap();

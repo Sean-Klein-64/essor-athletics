@@ -78,7 +78,8 @@ input[aria-invalid="true"] { border-color: #E07A5F; }
 .card h3 { margin: 0; font-size: 17px; font-weight: 600; }
 .card ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; display: flex; flex-direction: column; gap: 4px; }
 .card a { color: var(--mint); }
-.card ul li.locked { text-decoration: line-through; color: var(--muted); opacity: .5; }
+.card ul li.locked { color: var(--muted); opacity: .6; list-style: none; margin-left: -18px; }
+.card ul li.locked::before { content: "🔒 "; }
 .card ul li.open { color: var(--fg); }
 pre.summary { white-space: pre-wrap; font: 14px/1.5 var(--body); background: var(--bg); border: 1px dashed var(--line); border-radius: 12px; padding: 12px; margin: 0; user-select: all; color: var(--fg); }
 .ok { color: var(--mint); font-size: 15px; }
@@ -161,17 +162,17 @@ pre.summary { white-space: pre-wrap; font: 14px/1.5 var(--body); background: var
       <ul id="teaserlist"></ul>
       <p class="muted" style="font-size:13px">Débloqué après ta première séance.</p>
     </div>
-    <div class="card" id="send">
-      <h3>Dernière étape : envoie tes réponses</h3>
-      <p class="muted" id="sendhint">Copie le résumé et envoie-le à Sean sur WhatsApp. C'est ce qui te met dans le groupe et te donne accès à la réservation.</p>
+    <p class="ok" id="sent" hidden></p>
+    <div class="card" id="send" hidden>
+      <h3>On n'a pas pu enregistrer tes réponses</h3>
+      <p class="muted" id="sendhint">Pas de panique : copie le résumé et envoie-le à Sean sur WhatsApp, c'est pareil.</p>
       <pre class="summary" id="sum"></pre>
       <div class="actions">
         <button class="btn" id="copy">Copier le résumé</button>
         <a class="btn" id="wa" style="display:none;align-items:center;justify-content:center;text-decoration:none" target="_blank" rel="noopener">Ouvrir WhatsApp</a>
-        <p class="ok" id="sent" hidden></p>
       </div>
     </div>
-    <button class="btn ghost" id="restart">Recommencer</button>
+    <div class="actions"><button class="btn ghost" id="edit">Modifier mes réponses</button><button class="btn ghost" id="restart">Recommencer</button></div>
   </section>
 </div>
 
@@ -312,7 +313,8 @@ $("laterback").onclick = () => show("intro");
 $("next").onclick = () => { const list = visible(); if (i + 1 >= list.length) finish(); else { i++; render(); } };
 $("skip").onclick = () => { if (current.type === "bests") delete answers.bests; else answers[current.id] = ""; $("next").disabled = false; $("next").click(); };
 $("back").onclick = () => { if (i > 0) { i--; render(); } };
-$("restart").onclick = () => { answers = {}; i = 0; show("intro"); };
+$("restart").onclick = () => { answers = {}; savedId = null; i = 0; show("intro"); };
+$("edit").onclick = () => { i = 0; show("q"); render(); };
 
 function finish() {
   const lv = suggest(answers); const L = LEVELS[lv]; answers.level = lv;
@@ -330,7 +332,8 @@ function finish() {
     ? [`Semaine 1 — 3 séances : ${WEEK1[lv]}`, "Semaine 2", "Semaine 3", "Semaine 4", "Semaine 5", "Semaine 6"]
     : CYCLE;
   $("teasertitle").textContent = lv.startsWith("beginner") ? `Ton programme — ${L.name}` : "Ton programme — Cycle 1";
-  $("teaserlist").innerHTML = teaser.map((x, n) => `<li class="${n === 0 ? "open" : "locked"}">${x}</li>`).join("");
+  const hide = (x) => x.replace(/ — .*$/, "");
+  $("teaserlist").innerHTML = teaser.map((x, n) => `<li class="${n === 0 ? "open" : "locked"}">${n === 0 ? x : hide(x)}</li>`).join("");
   const bests = answers.bests ? Object.entries(answers.bests).filter(([, t]) => t && t.trim()).map(([k, t]) => `${({ "5k": "5 km", "10k": "10 km", half: "semi", marathon: "marathon" })[k]} ${t.trim()}`).join(", ") : "";
   const lines = [
     `Run club Essor — ${answers.name}`, `Niveau : ${L.name}`, `Tél : ${answers.phone}`,
@@ -345,18 +348,27 @@ function finish() {
   submit(answers, text);
 }
 function keepLocal(text) { try { localStorage.setItem("essor-signup", text); } catch (e) { /* storage may be unavailable */ } }
+let savedId = null; // the row this phone created, so "Modifier mes réponses" updates it instead of adding a second one
+async function save(a, text) {
+  const H = { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json", Prefer: "return=representation" };
+  const body = JSON.stringify({ name: a.name, phone: a.phone, level: a.level, answers: a, summary: text });
+  const r = savedId
+    ? await fetch(SUPABASE_URL + "/rest/v1/signups?id=eq." + savedId, { method: "PATCH", headers: H, body })
+    : await fetch(SUPABASE_URL + "/rest/v1/signups", { method: "POST", headers: H, body });
+  if (r.ok) { try { const rows = await r.json(); if (rows && rows[0] && rows[0].id) savedId = rows[0].id; } catch (e) {} }
+  return r.ok;
+}
 async function submit(a, text) {
   keepLocal(text);
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  $("sent").hidden = true; $("send").hidden = true;
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) { $("send").hidden = false; return; }
   try {
-    const r = await fetch(SUPABASE_URL + "/rest/v1/signups", { method: "POST", headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ name: a.name, phone: a.phone, level: a.level, answers: a, summary: text }) });
-    if (!r.ok && a.launch === "yes") { a.launch = "waitlist"; $("rv").textContent = "Complet pour le 30 octobre — tu es sur la liste, on te prévient en priorité pour la séance suivante.";
-      const r2 = await fetch(SUPABASE_URL + "/rest/v1/signups", { method: "POST", headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ name: a.name, phone: a.phone, level: a.level, answers: a, summary: text.replace("Le 30/10 : oui", "Le 30/10 : liste d'attente") }) });
-      if (!r2.ok) return; }
-    else if (!r.ok) return;
-    $("sent").hidden = false; $("sendhint").textContent = "C'est enregistré. Tu peux aussi garder le résumé.";
-    $("sent").textContent = a.launch === "yes" ? "Réponses envoyées ✓ — ta place est prise." : a.launch === "waitlist" ? "Réponses envoyées ✓ — tu es sur la liste d'attente." : "Réponses envoyées ✓ — on te recontacte.";
-  } catch (e) { /* the copy / WhatsApp route stays */ }
+    let ok = await save(a, text);
+    if (!ok && a.launch === "yes") { a.launch = "waitlist"; $("rv").textContent = "Complet pour le 30 octobre — tu es sur la liste, on te prévient en priorité pour la séance suivante."; ok = await save(a, text.replace("Le 30/10 : oui", "Le 30/10 : liste d'attente")); }
+    if (!ok) { $("send").hidden = false; return; }
+    $("sent").hidden = false;
+    $("sent").textContent = a.launch === "yes" ? "Réponses enregistrées ✓ — ta place est prise. Sean t'ouvre la réservation dans Wodify." : a.launch === "waitlist" ? "Réponses enregistrées ✓ — tu es sur la liste d'attente." : "Réponses enregistrées ✓ — on te recontacte.";
+  } catch (e) { $("send").hidden = false; }
 }
 $("copy").onclick = async () => {
   const t = $("sum").textContent;
