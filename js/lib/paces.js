@@ -95,6 +95,37 @@ export const ZONES = [
 
 export const zoneById = (id) => ZONES.find((z) => z.id === id);
 
+/* "62 % VMA" / "70–81 % FC" — the percentages behind a zone, for the profile */
+export const zonePercent = (range, unit) => {
+  if (!range) return null;
+  const [low, high] = range;
+  if (low == null) return `< ${high} % ${unit}`;
+  if (high == null) return `> ${low} % ${unit}`;
+  return `${low}–${high} % ${unit}`;
+};
+
+/*
+  Race predictions from VMA, shown on the profile. 5 and 10 km use the same
+  % VMA as the group goal (js/lib/goal.js); semi and marathon use the usual
+  rules of thumb (85 % and 80 %). hr is the expected % HRmax band in the
+  race, read off the zones above.
+*/
+export const PREDICTIONS = [
+  { id: "5k", name: "5 km", metres: 5000, vma: 95, hr: [94, 98], note: "Proche de ta VMA : zone VO2max" },
+  { id: "10k", name: "10 km", metres: 10000, vma: 90, hr: [91, 94], note: "Entre le seuil et la VO2max" },
+  { id: "semi", name: "Semi-marathon", metres: 21097.5, vma: 85, hr: [87, 91], note: "Le haut du seuil" },
+  { id: "marathon", name: "Marathon", metres: 42195, vma: 80, hr: [79, 88], note: "Ton allure marathon" },
+];
+
+/* { time: "36:26", pace: "3:39 /km" } for a prediction at a given VMA */
+export const predict = (vma, prediction) =>
+  vma
+    ? {
+        time: formatClock(repTime(prediction.metres, vma, prediction.vma)),
+        pace: formatPace(paceFromSpeed(speedAt(vma, prediction.vma))),
+      }
+    : null;
+
 /* Pace for a % VMA range: "4:49 – 5:12 /km", "> 5:15 /km", "< 3:21 /km", or "FC uniquement" */
 export const zonePace = (vma, range) => {
   if (!range) return "FC uniquement";

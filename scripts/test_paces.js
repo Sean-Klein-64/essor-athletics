@@ -140,6 +140,13 @@ check("session builder round-trips blocs ↔ steps", () => {
   assert.strictEqual(m.stepsToBlocs([{ test: "6:00" }]), null);
 });
 
+check("predictions at VMA 18.3: 10 km 36:26, marathon 2:52:56", () => {
+  const at = (id) => m.predict(18.3, m.PREDICTIONS.find((r) => r.id === id));
+  assert.strictEqual(at("10k").time, "36:26");
+  assert.strictEqual(at("marathon").time, "2:52:56");
+  assert.strictEqual(at("5k").pace, "3:27 /km");
+  assert.strictEqual(m.zonePercent([70, 81], "FC max"), "70–81 % FC max");
+});
 check("group goal: 10 km target at VMA 15 is 44:27, days count down", () => {
   assert.strictEqual(m.targetTime(m.goal.distances[0], 15), "44:27");
   assert.strictEqual(m.targetTime(m.goal.distances[0], undefined), null);

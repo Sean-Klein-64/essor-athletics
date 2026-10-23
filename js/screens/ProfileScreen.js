@@ -11,7 +11,7 @@ import UserContext from "../variables/context";
 
 import { levelById } from "../lib/levels";
 import { DISTANCES, best } from "../lib/records";
-import { ZONES, zonePace, zoneHeartRate, formatClock, formatPace, racePace } from "../lib/paces";
+import { ZONES, PREDICTIONS, zonePace, zoneHeartRate, zonePercent, predict, formatClock, formatPace, racePace } from "../lib/paces";
 import { formatShortDate } from "../lib/plan";
 
 /*
@@ -99,6 +99,9 @@ const ProfileScreen = ({ navigation, route }) => {
                     <View style={{ flex: 1 }}>
                       <Text style={typography.heading}>{zone.name}</Text>
                       <Text style={[typography.finePrint, { fontSize: 13 }]}>{zone.note}</Text>
+                      <Text style={[typography.finePrint, styles.zonePct, { color: colors.accentText }]}>
+                        {[zonePercent(zone.vma, "VMA"), zonePercent(zone.hr, "FC max")].filter(Boolean).join(" · ")}
+                      </Text>
                     </View>
                     <View style={{ alignItems: "flex-end", gap: 2 }}>
                       {!!pace && (zone.vma || !hr) && (
@@ -119,6 +122,38 @@ const ProfileScreen = ({ navigation, route }) => {
                 </Text>
               </Pressable>
             )}
+          </View>
+        )}
+
+        {!!p.vma && (
+          <View style={styles.section}>
+            <SectionLabel>Tes prédictions</SectionLabel>
+            <Card colors={colors}>
+              {PREDICTIONS.map((race, i) => {
+                const result = predict(p.vma, race);
+                const hr = zoneHeartRate(p.hrMax, race.hr);
+                return (
+                  <View
+                    key={race.id}
+                    style={[styles.row, i < PREDICTIONS.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={typography.heading}>{race.name}</Text>
+                      <Text style={[typography.finePrint, { fontSize: 13 }]}>{race.note}</Text>
+                    </View>
+                    <View style={{ alignItems: "flex-end", gap: 2 }}>
+                      <Text style={[typography.heading, typography.mono, styles.predTime]}>{result.time}</Text>
+                      <Text style={[typography.finePrint, typography.mono, styles.zoneHr]}>
+                        {[result.pace, hr].filter(Boolean).join(" · ")}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </Card>
+            <Text style={[typography.finePrint, styles.hint]}>
+              Calculées depuis ta VMA ({vmaText} km/h). Refais le test VMA pour les mettre à jour.
+            </Text>
           </View>
         )}
 
@@ -194,6 +229,8 @@ const styles = StyleSheet.create({
   value: { fontSize: 16, opacity: 0.8 },
   zoneValue: { fontSize: 15, opacity: 0.85 },
   zoneHr: { fontSize: 13 },
+  zonePct: { fontSize: 12, opacity: 1, marginTop: 2 },
+  predTime: { fontSize: 17 },
   hint: { textAlign: "center", marginTop: 4, fontSize: 13 },
 });
 
