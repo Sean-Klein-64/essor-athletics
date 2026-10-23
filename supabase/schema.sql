@@ -61,11 +61,11 @@ language sql security definer stable as $$
 $$;
 grant execute on function public.launch_count() to anon;
 
--- the cap: 10 for the first session
+-- the cap: 15 for the first session
 create or replace function public.enforce_launch_cap() returns trigger
 language plpgsql security definer as $$
 begin
-  if (new.answers->>'launch') = 'yes' and (select count(*) from public.signups where (answers->>'launch') = 'yes') >= 10 then
+  if (new.answers->>'launch') = 'yes' and (select count(*) from public.signups where (answers->>'launch') = 'yes') >= 15 then
     raise exception 'launch full' using errcode = 'check_violation';
   end if;
   return new;

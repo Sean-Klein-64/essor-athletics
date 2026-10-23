@@ -109,21 +109,21 @@ pre.summary { white-space: pre-wrap; font: 14px/1.5 var(--body); background: var
   <div class="progress" aria-hidden="true"><i id="bar"></i></div>
 
   <section class="step" id="intro">
-    <h1>Première séance vendredi 30 octobre. 10 places.</h1>
+    <h1>Première séance vendredi 30 octobre. 15 places.</h1>
     <div class="facts">
       <div class="fact"><b>16h30</b><span>Floride</span></div>
       <div class="fact"><b>6'</b><span>test VMA</span></div>
-      <div class="fact"><b>10</b><span>places</span></div>
+      <div class="fact"><b>15</b><span>places</span></div>
     </div>
     <p class="muted">Deux minutes de questions pour te placer dans le bon groupe avant d'arriver. Tu repars avec ton niveau de départ. Le test VMA du premier vendredi confirme.</p>
-    <p class="muted">On commence petit pour bien lancer : 10 places le 30 octobre. D'autres séances ouvrent juste après, tous les vendredis.</p>
-    <div class="places" id="places" hidden><b id="left">10</b><span>places restantes pour le 30/10</span></div>
+    <p class="muted">On commence petit pour bien lancer : 15 places le 30 octobre. D'autres séances ouvrent juste après, tous les vendredis.</p>
+    <div class="places" id="places" hidden><b id="left">15</b><span>places restantes pour le 30/10</span></div>
     <div class="actions"><button class="btn" id="start">Je viens le 30 octobre</button><button class="btn ghost" id="later">Je ne peux pas le 30 — prévenez-moi pour les prochaines</button></div>
   </section>
 
   <section class="step" id="full" hidden>
     <h1>Complet pour le 30 octobre</h1>
-    <p class="muted">Les 10 places de la première séance sont prises — mais d'autres séances ouvrent dès la semaine suivante. Envoie « run club » à Sean sur WhatsApp et tu es sur la liste pour la prochaine, questionnaire compris.</p>
+    <p class="muted">Les 15 places de la première séance sont prises — mais d'autres séances ouvrent dès la semaine suivante. Envoie « run club » à Sean sur WhatsApp et tu es sur la liste pour la prochaine, questionnaire compris.</p>
     <div class="actions"><button class="btn ghost" id="fullback">Retour</button></div>
   </section>
 
@@ -237,7 +237,7 @@ const $ = (id) => document.getElementById(id);
 let answers = {}, i = 0, current = null;
 const visible = () => Q.filter(q => !q.showIf || q.showIf(answers));
 
-const CAP = 10;
+const CAP = 15;
 function show(step) { ["intro", "q", "done", "full", "laterdone"].forEach(s => $(s).hidden = s !== step); window.scrollTo(0, 0); }
 let placesLeft = null; // known only when Supabase is on
 async function loadCount() {
