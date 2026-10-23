@@ -8,8 +8,8 @@
   what it can do is limited by the rules in supabase/schema.sql.
 */
 
-export const SUPABASE_URL = ""; // e.g. "https://abcdefgh.supabase.co"
-export const SUPABASE_ANON_KEY = "";
+export const SUPABASE_URL = "https://rqomypmgbjigukvztjxz.supabase.co"; // e.g. "https://abcdefgh.supabase.co"
+export const SUPABASE_ANON_KEY = "sb_publishable_LnDYfyrKMTOunfAH29ZFTQ_CY3GtJE5";
 
 /*
   Typing this code in Profile → "Mode coach" unlocks the coach screens
