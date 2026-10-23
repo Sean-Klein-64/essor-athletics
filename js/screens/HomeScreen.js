@@ -16,6 +16,7 @@ import useSessions from "../lib/store";
 import { isBeginner, nextSession, sessionLabel, runMinutes, PROGRAMMES } from "../lib/beginner";
 import goal, { daysToGo, targetTime } from "../lib/goal";
 import { WODIFY_BOOKING_URL, JE_VIENS } from "../lib/config";
+import { bookingState } from "../lib/booking";
 import { formatShortDate } from "../lib/plan";
 import { best } from "../lib/records";
 
@@ -60,11 +61,33 @@ const NextCard = ({ session, onPress, override }) => {
           </Text>
         </View>
         {!JE_VIENS ? (
-          <Pressable onPress={() => Linking.openURL(WODIFY_BOOKING_URL)} small hitSlop={6}>
-            <View style={[styles.goingButton, { backgroundColor: colors.accent, borderColor: colors.accent }]}>
-              <Text style={[typography.heading, typography.bold, { fontSize: 15, color: "white" }]}>Réserver sur Wodify</Text>
-            </View>
-          </Pressable>
+          (() => {
+            const booking = bookingState(session.date, todayKey(), !!preferences.booked?.[session.id]);
+            if (booking.status === "booked")
+              return (
+                <Pressable onPress={onPress} small hitSlop={6}>
+                  <View style={[styles.goingButton, { borderColor: colors.accent }]}>
+                    <Glyph name="check" size={14} color={colors.accentText} strokeWidth={2.6} />
+                    <Text style={[typography.heading, typography.bold, { fontSize: 15, color: colors.accentText }]}>Réservé</Text>
+                  </View>
+                </Pressable>
+              );
+            if (booking.status === "soon")
+              return (
+                <Pressable onPress={onPress} small hitSlop={6}>
+                  <View style={[styles.goingButton, { borderColor: colors.border }]}>
+                    <Text style={[typography.heading, { fontSize: 14, color: colors.text }]}>Dès le {formatShortDate(booking.opensOn).slice(0, 5)}</Text>
+                  </View>
+                </Pressable>
+              );
+            return (
+              <Pressable onPress={() => Linking.openURL(WODIFY_BOOKING_URL)} small hitSlop={6}>
+                <View style={[styles.goingButton, { backgroundColor: colors.accent, borderColor: colors.accent }]}>
+                  <Text style={[typography.heading, typography.bold, { fontSize: 15, color: "white" }]}>Réserver sur Wodify</Text>
+                </View>
+              </Pressable>
+            );
+          })()
         ) : (
         <Pressable onPress={toggle} small hitSlop={6}>
           <View

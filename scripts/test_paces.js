@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -146,6 +146,13 @@ check("predictions at VMA 18.3: 10 km 36:26, marathon 2:52:56", () => {
   assert.strictEqual(at("marathon").time, "2:52:56");
   assert.strictEqual(at("5k").pace, "3:27 /km");
   assert.strictEqual(m.zonePercent([70, 81], "FC max"), "70–81 % FC max");
+});
+check("Wodify booking: opens 7 days before, ticks and past sessions", () => {
+  assert.deepStrictEqual(m.bookingState("2026-11-06", "2026-10-25"), { status: "soon", opensOn: "2026-10-30" });
+  assert.deepStrictEqual(m.bookingState("2026-11-06", "2026-10-30"), { status: "open" });
+  assert.deepStrictEqual(m.bookingState("2026-11-06", "2026-11-02", true), { status: "booked" });
+  assert.deepStrictEqual(m.bookingState("2026-11-06", "2026-11-07"), { status: "past" });
+  assert.strictEqual(m.bookingOpensOn("2026-12-04"), "2026-11-27");
 });
 check("group goal: 10 km target at VMA 15 is 44:27, days count down", () => {
   assert.strictEqual(m.targetTime(m.goal.distances[0], 15), "44:27");

@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Linking } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import SlideScreenContainer from "../components/SlideScreenContainer";
@@ -8,13 +8,14 @@ import Button from "../components/Button";
 import Glyph from "../components/Glyph";
 import StepRow from "../components/StepRow";
 import SectionLabel from "../components/SectionLabel";
+import BookingCard from "../components/BookingCard";
 import UserContext from "../variables/context";
 
 import { planFor, describeStep, formatDay, totalLabel, todayKey } from "../lib/plan";
 import useSessions from "../lib/store";
 import levels, { levelById } from "../lib/levels";
 import useAttendance from "../lib/attendance";
-import { WODIFY_BOOKING_URL, JE_VIENS } from "../lib/config";
+import { JE_VIENS } from "../lib/config";
 
 /*
   One session in full, for the runner's level: warm-up, main set and
@@ -122,7 +123,7 @@ const SessionScreen = ({ navigation, route }) => {
         )}
 
         {!isPast && !JE_VIENS && (
-          <Button onPress={() => Linking.openURL(WODIFY_BOOKING_URL)}>Réserver sur Wodify</Button>
+          <BookingCard session={session} />
         )}
 
         {/* Who's coming */}

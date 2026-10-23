@@ -23,5 +23,16 @@ export const COACH_CODE = "floride";
   session opens this link. Leave JE_VIENS false unless you want the in-app
   "Je viens" list as well.
 */
-export const WODIFY_BOOKING_URL = "https://app.wodify.com/Schedule/CalendarListViewEntry.aspx";
+export const WODIFY_BOOKING_URL = "https://app.wodify.com/Schedule/CalendarListViewEntry.aspx"; // TODO: the Run Club class link from the athlete app
+
+/*
+  The Wodify booking rules for the Run Club class, shown next to the button
+  (keep them in step with the class settings in Wodify Admin).
+*/
+export const BOOKING = {
+  opensDaysBefore: 7, // reservations open 7 days before
+  cancelHoursBefore: 2, // cancel up to 2 h before
+  time: "16h30",
+  place: "Piste de la Floride",
+};
 export const JE_VIENS = false;
