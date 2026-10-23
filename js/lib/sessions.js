@@ -108,6 +108,24 @@ const sessions = [
     },
   },
   {
+    id: "2026-11-20-vo2-10k",
+    date: "2026-11-20",
+    title: "VO2 Max",
+    kind: "vo2",
+    summary:
+      "Des répétitions à ton allure 10 km, 2' de récup en marchant. Toutes à la même vitesse : si la dernière est la plus lente, tu es parti·e trop vite.",
+    warmup: [
+      { easy: "15:00" },
+      { drills: "Skipping, talons-fesses, montées de genoux" },
+    ],
+    cooldown: sharedCooldown,
+    levels: {
+      level1: [{ repeat: 5, steps: [{ run: 1000, vma: 90 }], rest: { walk: "2:00" } }],
+      level2: [{ repeat: 4, steps: [{ run: 1000, vma: 90 }], rest: { walk: "2:00" } }],
+      level3: [{ repeat: 3, steps: [{ run: 800, vma: 90 }], rest: { walk: "2:00" } }],
+    },
+  },
+  {
     id: "2026-11-27-pyramide",
     date: "2026-11-27",
     title: "Pyramide",
@@ -139,6 +157,24 @@ const sessions = [
         { run: 400, vma: 100 }, { jog: "1:00" },
         { run: 200, vma: 105 },
       ],
+    },
+  },
+  {
+    id: "2026-12-11-vo2-10k",
+    date: "2026-12-11",
+    title: "VO2 Max · allure course",
+    kind: "vo2",
+    summary:
+      "Des répétitions à ton allure 10 km, 2' de récup en marchant. Toutes à la même vitesse : si la dernière est la plus lente, tu es parti·e trop vite.",
+    warmup: [
+      { easy: "15:00" },
+      { drills: "Skipping, talons-fesses, montées de genoux" },
+    ],
+    cooldown: sharedCooldown,
+    levels: {
+      level1: [{ repeat: 5, steps: [{ run: 1000, vma: 90 }], rest: { walk: "2:00" } }],
+      level2: [{ repeat: 4, steps: [{ run: 1000, vma: 90 }], rest: { walk: "2:00" } }],
+      level3: [{ repeat: 3, steps: [{ run: 800, vma: 90 }], rest: { walk: "2:00" } }],
     },
   },
 ];
