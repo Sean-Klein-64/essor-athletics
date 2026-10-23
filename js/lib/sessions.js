@@ -89,21 +89,21 @@ const sessions = [
   {
     id: "2026-11-13-30-30",
     date: "2026-11-13",
-    title: "30/30",
+    title: "VMA 30/30",
     kind: "vo2",
     summary:
       "30 secondes vite, 30 secondes trottinées. On cherche la régularité : la dernière comme la première.",
-    warmup: sharedWarmup,
-    cooldown: sharedCooldown,
+    warmup: [{ easy: "15:00" }],
+    cooldown: [{ easy: "10:00" }],
     levels: {
       level1: [
-        { repeat: 2, steps: [{ repeat: 10, steps: [{ run: "0:30", vma: 105 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
+        { repeat: 2, steps: [{ repeat: 8, steps: [{ run: "0:30", vma: 100 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
       ],
       level2: [
-        { repeat: 2, steps: [{ repeat: 8, steps: [{ run: "0:30", vma: 105 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
+        { repeat: 2, steps: [{ repeat: 6, steps: [{ run: "0:30", vma: 100 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
       ],
       level3: [
-        { repeat: 2, steps: [{ repeat: 6, steps: [{ run: "0:30", vma: 100 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
+        { repeat: 2, steps: [{ repeat: 4, steps: [{ run: "0:30", vma: 100 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
       ],
     },
   },
