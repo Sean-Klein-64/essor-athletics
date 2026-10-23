@@ -135,7 +135,7 @@ check("session builder round-trips blocs ↔ steps", () => {
   const steps = m.blocsToSteps(blocs);
   assert.deepStrictEqual(steps, [{ repeat: 6, steps: [{ run: 400, vma: 100 }, { jog: "1:00" }] }, { run: "0:30", vma: 105 }]);
   assert.deepStrictEqual(m.stepsToBlocs(steps), blocs);
-  const pyr = m.sessions.find((s) => s.kind === "pyramid").levels.level3;
+  const pyr = [{ run: 200, vma: 105 }, { jog: "1:00" }, { run: 400, vma: 100 }, { jog: "1:00" }, { run: 400, vma: 100 }, { jog: "1:00" }, { run: 200, vma: 105 }];
   assert.strictEqual(m.stepsToBlocs(pyr).length, 4);
   assert.strictEqual(m.stepsToBlocs([{ test: "6:00" }]), null);
 });
@@ -154,7 +154,7 @@ check("group goal: 10 km target at VMA 15 is 44:27, days count down", () => {
   assert.strictEqual(m.daysToGo("2026-12-21"), -1);
 });
 
-const pyramid = m.sessions.find((s) => s.kind === "pyramid");
+const pyramid = m.sessions.find((s) => s.id === "2026-11-06-vo2-10k");
 console.log(`\nExample — ${pyramid.title}, Level 2, VMA 15 (${m.totalLabel(pyramid, "level2", 15)}):`);
 const print = (row, indent = "  ") => {
   console.log(`${indent}${row.title}${row.meta ? `  ${row.meta}` : ""}${row.target ? `  → ${row.target}` : ""}${row.sub ? `  (${row.sub})` : ""}`);

@@ -40,8 +40,8 @@
   Durations are "m:ss" strings, distances are metres. Keep steps in this
   shape — it maps one-to-one onto Garmin structured workouts for later.
 
-  The three below are DRAFTS of cycle 1 (VMA test, then pyramid and VO2max
-  alternating) — to rewrite with Mel before launch.
+  Cycle 1 (30/10 → 18/12), towards the Course du Bout de l'An: VMA test /
+  VO2 max / VMA / VO2 max / Pyramid (Mel) / VMA / VO2 max race pace / Light.
 */
 
 const sharedWarmup = [
@@ -130,32 +130,33 @@ const sessions = [
     date: "2026-11-27",
     title: "Pyramide",
     kind: "pyramid",
-    summary:
-      "On monte puis on redescend : plus c'est court, plus c'est rapide. Récup trottinée entre chaque.",
-    warmup: sharedWarmup,
+    summary: "Séance préparée par Mel : les détails arrivent bientôt.",
+    warmup: [{ easy: "15:00" }, { drills: "Skipping, talons-fesses, montées de genoux" }],
     cooldown: sharedCooldown,
     levels: {
+      level1: [{ note: "Séance préparée par Mel, détails à venir" }],
+      level2: [{ note: "Séance préparée par Mel, détails à venir" }],
+      level3: [{ note: "Séance préparée par Mel, détails à venir" }],
+    },
+  },
+  {
+    id: "2026-12-04-30-30",
+    date: "2026-12-04",
+    title: "VMA 30/30",
+    kind: "vo2",
+    summary:
+      "Le 30/30 du 13/11, avec un peu plus de répétitions. Toujours la même régularité : la dernière comme la première.",
+    warmup: [{ easy: "15:00" }],
+    cooldown: [{ easy: "10:00" }],
+    levels: {
       level1: [
-        { run: 200, vma: 105 }, { jog: "1:00" },
-        { run: 400, vma: 100 }, { jog: "1:00" },
-        { run: 600, vma: 95 }, { jog: "1:30" },
-        { run: 800, vma: 95 }, { jog: "1:30" },
-        { run: 600, vma: 95 }, { jog: "1:30" },
-        { run: 400, vma: 100 }, { jog: "1:00" },
-        { run: 200, vma: 105 },
+        { repeat: 2, steps: [{ repeat: 10, steps: [{ run: "0:30", vma: 100 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
       ],
       level2: [
-        { run: 200, vma: 105 }, { jog: "1:00" },
-        { run: 400, vma: 100 }, { jog: "1:00" },
-        { run: 600, vma: 95 }, { jog: "1:30" },
-        { run: 400, vma: 100 }, { jog: "1:00" },
-        { run: 200, vma: 105 },
+        { repeat: 2, steps: [{ repeat: 7, steps: [{ run: "0:30", vma: 100 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
       ],
       level3: [
-        { run: 200, vma: 105 }, { jog: "1:00" },
-        { run: 400, vma: 100 }, { jog: "1:00" },
-        { run: 400, vma: 100 }, { jog: "1:00" },
-        { run: 200, vma: 105 },
+        { repeat: 2, steps: [{ repeat: 5, steps: [{ run: "0:30", vma: 100 }, { jog: "0:30" }] }], rest: { jog: "3:00" } },
       ],
     },
   },
@@ -175,6 +176,20 @@ const sessions = [
       level1: [{ repeat: 5, steps: [{ run: 1000, vma: 90 }], rest: { walk: "2:00" } }],
       level2: [{ repeat: 4, steps: [{ run: 1000, vma: 90 }], rest: { walk: "2:00" } }],
       level3: [{ repeat: 3, steps: [{ run: 800, vma: 90 }], rest: { walk: "2:00" } }],
+    },
+  },
+  {
+    id: "2026-12-18-legere",
+    date: "2026-12-18",
+    title: "Séance légère",
+    kind: "easy",
+    summary: "Deux jours avant la course : juste de quoi réveiller les jambes. On garde de la fraîcheur pour dimanche.",
+    warmup: [{ easy: "15:00" }],
+    cooldown: [{ easy: "10:00", note: "Très facile" }],
+    levels: {
+      level1: [{ repeat: 3, steps: [{ run: "1:00", vma: 90, note: "Allure course 10 km" }, { jog: "1:00" }] }],
+      level2: [{ repeat: 3, steps: [{ run: "1:00", vma: 90, note: "Allure course 10 km" }, { jog: "1:00" }] }],
+      level3: [{ repeat: 3, steps: [{ run: "1:00", vma: 90, note: "Allure course 10 km" }, { jog: "1:00" }] }],
     },
   },
 ];
