@@ -214,6 +214,7 @@ const LEVELS = {
 const Q = [
   { id: "name", k: "Toi", t: "Comment tu t'appelles ?", type: "text", ph: "Prénom Nom", req: true },
   { id: "phone", k: "Toi", t: "Ton numéro (WhatsApp)", h: "Pour le groupe du run club.", type: "tel", ph: "06 …", req: true },
+  { id: "member", k: "Toi", t: "Tu es adhérent·e à CrossFit Essor ?", h: "Le run club est réservé aux adhérents. Si tu ne l'es pas encore, tu peux quand même découvrir ton niveau et nous laisser ton nom.", type: "choice", opts: [["yes", "Oui, je suis adhérent·e"], ["no", "Pas encore"]] },
   { id: "runContinuous", k: "Course", t: "Aujourd'hui, combien de temps peux-tu courir sans t'arrêter ?", h: "Pour aujourd'hui, pas pour ta meilleure période.", type: "choice", opts: [["under5", "Moins de 5 min"], ["5to15", "5 à 15 min"], ["15to30", "15 à 30 min"], ["over30", "30 min ou plus"]] },
   { id: "runsPerWeek", k: "Fréquence", t: "Combien de fois cours-tu par semaine en ce moment ?", type: "choice", opts: [["never", "Jamais"], ["once", "1 fois"], ["twice", "2 fois"], ["more", "3 fois ou plus"]] },
   { id: "fiveK", k: "5 km", t: "Ton temps récent sur 5 km ?", h: "Une estimation suffit.", type: "choice", opts: [["none", "Jamais couru 5 km"], ["over30", "Plus de 30 min"], ["25to30", "25 à 30 min"], ["under25", "Moins de 25 min"]] },
@@ -234,6 +235,7 @@ function suggest(a) {
 }
 
 const $ = (id) => document.getElementById(id);
+const QB = (id) => Q.find(q => q.id === id);
 let answers = {}, i = 0, current = null;
 const visible = () => Q.filter(q => !q.showIf || q.showIf(answers));
 
@@ -247,7 +249,7 @@ async function loadCount() {
     if (!r.ok) return;
     const n = Number(await r.json()); placesLeft = Math.max(0, CAP - n);
     $("left").textContent = placesLeft; $("places").hidden = false;
-    if (placesLeft === 0) { $("start").textContent = "Complet — voir la suite"; }
+    if (placesLeft === 0) { $("start").textContent = "Complet pour le 30 — trouver mon niveau quand même"; }
   } catch (e) { /* unknown count: the form stays open */ }
 }
 loadCount();
@@ -303,7 +305,7 @@ function valid() {
   else if (q.req || !q.skip) ok = !!(v && String(v).trim());
   $("next").disabled = !ok;
 }
-$("start").onclick = () => { if (placesLeft === 0) return show("full"); answers.launch = "yes"; i = 0; show("q"); render(); };
+$("start").onclick = () => { answers.wants30 = true; i = 0; show("q"); render(); };
 $("later").onclick = () => show("laterdone");
 $("fullback").onclick = () => show("intro");
 $("laterback").onclick = () => show("intro");
@@ -316,7 +318,11 @@ function finish() {
   const lv = suggest(answers); const L = LEVELS[lv]; answers.level = lv;
   $("bar").style.width = "100%";
   $("rl").textContent = L.name; $("rd").textContent = L.desc;
-  $("rv").textContent = "Rendez-vous vendredi 30 octobre, 16h30 · piste de la Floride";
+  const isMember = answers.member === "yes";
+  answers.launch = !isMember ? "interested" : (placesLeft === 0 ? "waitlist" : "yes");
+  $("rv").textContent = !isMember ? "Le run club est réservé aux adhérents d'Essor — on a noté ton intérêt, on te recontacte."
+    : answers.launch === "waitlist" ? "Complet pour le 30 octobre — tu es sur la liste, on te prévient en priorité pour la séance suivante."
+    : "Rendez-vous vendredi 30 octobre, 16h30 · piste de la Floride";
   $("rnext").innerHTML = L.next.map(x => `<li>${x}</li>`).join("");
   const CYCLE = ["Ven 30/10 — Test VMA (6 minutes) · échauffement 15', test, retour au calme 10'", "Ven 06/11 — VO2 max, allure 10 km", "Ven 13/11 — VMA 30/30", "Ven 20/11 — VO2 max, allure 10 km", "Ven 27/11 — Pyramide", "Ven 04/12 — VMA 30/30", "Ven 11/12 — VO2 max, allure course", "Ven 18/12 — Séance légère avant la course"];
   const WEEK1 = { beginnerA: "1' course / 1' marche × 8", beginnerB: "3' course / 1' marche × 5", beginnerC: "10' course / 1' marche × 2" };
@@ -328,10 +334,10 @@ function finish() {
   const bests = answers.bests ? Object.entries(answers.bests).filter(([, t]) => t && t.trim()).map(([k, t]) => `${({ "5k": "5 km", "10k": "10 km", half: "semi", marathon: "marathon" })[k]} ${t.trim()}`).join(", ") : "";
   const lines = [
     `Run club Essor — ${answers.name}`, `Niveau : ${L.name}`, `Tél : ${answers.phone}`,
-    `Course sans arrêt : ${label(Q[2], answers.runContinuous)}`, `Par semaine : ${label(Q[3], answers.runsPerWeek)}`, `5 km : ${label(Q[4], answers.fiveK)}`,
+    `Course sans arrêt : ${label(QB("runContinuous"), answers.runContinuous)}`, `Par semaine : ${label(QB("runsPerWeek"), answers.runsPerWeek)}`, `5 km : ${label(QB("fiveK"), answers.fiveK)}`,
     bests ? `Records : ${bests}` : null, answers.races ? `Courses : ${answers.races}` : null,
     `Douleur : ${answers.injury === "yes" ? "oui — " + (answers.injuryDetail || "") : "non"}`,
-    `Objectif : ${label(Q[9], answers.goal)}`, `Le 30/10 : oui`,
+    `Objectif : ${label(QB("goal"), answers.goal)}`, `Adhérent : ${isMember ? "oui" : "non"}`, `Le 30/10 : ${answers.launch === "yes" ? "oui" : answers.launch === "waitlist" ? "liste d'attente" : "intéressé·e (pas encore adhérent·e)"}`,
   ].filter(Boolean);
   const text = lines.join("\n"); $("sum").textContent = text;
   if (WHATSAPP_NUMBER) { const a = $("wa"); a.href = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text); a.style.display = "flex"; }
@@ -344,8 +350,12 @@ async function submit(a, text) {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
   try {
     const r = await fetch(SUPABASE_URL + "/rest/v1/signups", { method: "POST", headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ name: a.name, phone: a.phone, level: a.level, answers: a, summary: text }) });
-    if (r.ok) { $("sent").textContent = "Réponses envoyées ✓ — ta place est prise."; $("sent").hidden = false; $("sendhint").textContent = "C'est enregistré. Tu peux aussi garder le résumé."; }
-    else if (r.status === 409 || r.status === 403) { $("sent").textContent = "Complet pour le 30/10 — envoie quand même le résumé, tu seras sur la liste pour la suite."; $("sent").hidden = false; }
+    if (!r.ok && a.launch === "yes") { a.launch = "waitlist"; $("rv").textContent = "Complet pour le 30 octobre — tu es sur la liste, on te prévient en priorité pour la séance suivante.";
+      const r2 = await fetch(SUPABASE_URL + "/rest/v1/signups", { method: "POST", headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ name: a.name, phone: a.phone, level: a.level, answers: a, summary: text.replace("Le 30/10 : oui", "Le 30/10 : liste d'attente") }) });
+      if (!r2.ok) return; }
+    else if (!r.ok) return;
+    $("sent").hidden = false; $("sendhint").textContent = "C'est enregistré. Tu peux aussi garder le résumé.";
+    $("sent").textContent = a.launch === "yes" ? "Réponses envoyées ✓ — ta place est prise." : a.launch === "waitlist" ? "Réponses envoyées ✓ — tu es sur la liste d'attente." : "Réponses envoyées ✓ — on te recontacte.";
   } catch (e) { /* the copy / WhatsApp route stays */ }
 }
 $("copy").onclick = async () => {

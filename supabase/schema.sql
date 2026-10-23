@@ -57,7 +57,7 @@ create policy "sign up" on public.signups for insert to anon with check (char_le
 -- how many are signed up for the launch (callable with the anon key; exposes only a number)
 create or replace function public.launch_count() returns integer
 language sql security definer stable as $$
-  select count(*)::int from public.signups where (answers->>'launch') = 'yes';
+  select count(*)::int from public.signups where (answers->>'launch') = 'yes' and (answers->>'member') = 'yes';
 $$;
 grant execute on function public.launch_count() to anon;
 
@@ -65,7 +65,7 @@ grant execute on function public.launch_count() to anon;
 create or replace function public.enforce_launch_cap() returns trigger
 language plpgsql security definer as $$
 begin
-  if (new.answers->>'launch') = 'yes' and (select count(*) from public.signups where (answers->>'launch') = 'yes') >= 15 then
+  if (new.answers->>'launch') = 'yes' and (new.answers->>'member') = 'yes' and (select count(*) from public.signups where (answers->>'launch') = 'yes' and (answers->>'member') = 'yes') >= 15 then
     raise exception 'launch full' using errcode = 'check_violation';
   end if;
   return new;
