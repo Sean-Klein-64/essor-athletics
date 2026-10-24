@@ -110,21 +110,21 @@ pre.summary { white-space: pre-wrap; font: 14px/1.5 var(--body); background: var
   <div class="progress" aria-hidden="true"><i id="bar"></i></div>
 
   <section class="step" id="intro">
-    <h1>Première séance vendredi 30 octobre. 15 places.</h1>
+    <h1>Première séance vendredi 30 octobre. 16 places.</h1>
     <div class="facts">
       <div class="fact"><b>16h30</b><span>Floride</span></div>
       <div class="fact"><b>6'</b><span>test VMA</span></div>
-      <div class="fact"><b>15</b><span>places</span></div>
+      <div class="fact"><b>16</b><span>places</span></div>
     </div>
     <p class="muted">Deux minutes de questions pour te placer dans le bon groupe avant d'arriver. Tu repars avec ton niveau de départ. Le test VMA du premier vendredi confirme.</p>
-    <p class="muted">On commence petit pour bien lancer : 15 places le 30 octobre. D'autres séances ouvrent juste après, tous les vendredis.</p>
-    <div class="places" id="places" hidden><b id="left">15</b><span>places restantes pour le 30/10</span></div>
+    <p class="muted">On commence petit pour bien lancer : 16 places le 30 octobre. D'autres séances ouvrent juste après, tous les vendredis.</p>
+    <div class="places" id="places" hidden><b id="left">1</b><span id="leftLabel">place restante pour le 30/10</span></div>
     <div class="actions"><button class="btn" id="start">Je viens le 30 octobre</button><button class="btn ghost" id="later">Je ne peux pas le 30 — prévenez-moi pour les prochaines</button></div>
   </section>
 
   <section class="step" id="full" hidden>
     <h1>Complet pour le 30 octobre</h1>
-    <p class="muted">Les 15 places de la première séance sont prises — mais d'autres séances ouvrent dès la semaine suivante. Envoie « run club » à Sean sur WhatsApp et tu es sur la liste pour la prochaine, questionnaire compris.</p>
+    <p class="muted">Les 16 places de la première séance sont prises — mais d'autres séances ouvrent dès la semaine suivante. Envoie « run club » à Sean sur WhatsApp et tu es sur la liste pour la prochaine, questionnaire compris.</p>
     <div class="actions"><button class="btn ghost" id="fullback">Retour</button></div>
   </section>
 
@@ -240,7 +240,7 @@ const QB = (id) => Q.find(q => q.id === id);
 let answers = {}, i = 0, current = null;
 const visible = () => Q.filter(q => !q.showIf || q.showIf(answers));
 
-const CAP = 15;
+const CAP = 16;
 function show(step) { ["intro", "q", "done", "full", "laterdone"].forEach(s => $(s).hidden = s !== step); window.scrollTo(0, 0); }
 let placesLeft = null; // known only when Supabase is on
 async function loadCount() {
@@ -249,7 +249,7 @@ async function loadCount() {
     const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/launch_count", { method: "POST", headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json" }, body: "{}" });
     if (!r.ok) return;
     const n = Number(await r.json()); placesLeft = Math.max(0, CAP - n);
-    $("left").textContent = placesLeft; $("places").hidden = false;
+    $("left").textContent = placesLeft; $("leftLabel").textContent = (placesLeft === 1 ? "place restante" : "places restantes") + " pour le 30/10"; $("places").hidden = false;
     if (placesLeft === 0) { $("start").textContent = "Complet pour le 30 — trouver mon niveau quand même"; }
   } catch (e) { /* unknown count: the form stays open */ }
 }
