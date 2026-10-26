@@ -170,6 +170,7 @@ a.text { color: var(--mint); }
       <div class="sess-head"><p class="kicker">Ta prochaine séance</p><span class="when" id="nextWhen"></span></div>
       <div class="sess-title" id="nextTitle"></div>
       <p class="muted" id="nextSummary"></p>
+      <p class="muted small" id="levelKnown" hidden></p>
       <div class="seg three" role="group" aria-label="Ton niveau" id="levelSeg">
         <button type="button" data-level="level3">Level 3</button>
         <button type="button" data-level="level2">Level 2</button>
@@ -288,14 +289,27 @@ function stepsHtml(list, v, main) {
   }).join("")}</ul>`;
 }
 const LEVEL_KEY = "essor-vma-level";
+const LEVEL_NAMES = { beginnerA: "Débuter A", beginnerB: "Débuter B", beginnerC: "Débuter C", level3: "Level 3", level2: "Level 2", level1: "Level 1" };
+/* The level from their questionnaire (looked up in Supabase by vma_get). Only when it's unknown can the runner pick. */
 function myLevel() {
-  try { const l = localStorage.getItem(LEVEL_KEY); if (l) return l; } catch (e) {}
-  try { const m = (localStorage.getItem("essor-signup") || "").match(/^Niveau : (.+)$/m); if (m) return ({ "Level 1": "level1", "Level 2": "level2", "Level 3": "level3" })[m[1].trim()] || "level3"; } catch (e) {}
-  return "level3";
+  if (me && LEVEL_NAMES[me.level]) return { id: me.level, known: true };
+  try { const l = localStorage.getItem(LEVEL_KEY); if (l) return { id: l, known: false }; } catch (e) {}
+  try { const m = (localStorage.getItem("essor-signup") || "").match(/^Niveau : (.+)$/m); const id = m && Object.keys(LEVEL_NAMES).find(k => LEVEL_NAMES[k] === m[1].trim()); if (id) return { id, known: true }; } catch (e) {}
+  return { id: "level3", known: false };
 }
 function renderNext() {
   const x = nextSession(); $("nextCard").hidden = !x || !me; if (!x || !me) return;
-  const v = Number(me.vma), lv = myLevel();
+  const v = Number(me.vma), L = myLevel(), lv = L.id;
+  $("levelSeg").hidden = L.known;
+  $("levelKnown").hidden = !L.known;
+  $("levelKnown").innerHTML = `Ton niveau : <b style="color:var(--fg)">${LEVEL_NAMES[lv]}</b> — d'après ton questionnaire. Pas le bon ? Dis-le à ton coach.`;
+  if (lv.startsWith("beginner")) {
+    $("nextTitle").textContent = "Ton programme " + LEVEL_NAMES[lv];
+    $("nextSummary").textContent = "Le vendredi, tu suis la séance débutants avec le coach. Le fractionné du club, ce sera après Débuter C.";
+    $("nextBody").innerHTML = ""; $("nextVma").textContent = fr(v);
+    $("nextWhen").textContent = new Date(x.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "2-digit" }).replace(".", "");
+    return;
+  }
   $("nextWhen").textContent = new Date(x.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "2-digit" }).replace(".", "");
   $("nextTitle").textContent = x.title; $("nextSummary").textContent = x.summary || "";
   $("nextVma").textContent = fr(v);
@@ -393,9 +407,18 @@ async function save() {
     await rpc("vma_save", { t: token, p_name: f.name, p_phone: f.phone || null, p_vma: f.vma, p_test_m: f.metres, p_hr_max: f.hr, p_signup: signupId });
     store.set({ token, cache: me, pending: false });
     setStatus("Enregistré ✓", true);
+    refreshLevel();
   } catch (e) {
     setStatus("Pas pu enregistrer pour l'instant — tes zones sont gardées sur ce téléphone, on réessaie à ta prochaine visite.", false);
   }
+}
+
+/* After a save, ask the server which level the questionnaire gave (matched by phone) */
+async function refreshLevel() {
+  try {
+    const rows = await rpc("vma_get", { t: me.token }); const row = Array.isArray(rows) ? rows[0] : rows;
+    if (row && row.level && row.level !== me.level) { me.level = row.level; store.set({ token: me.token, cache: me, pending: false }); renderNext(); }
+  } catch (e) { /* keep what we have */ }
 }
 
 /* ── The zones page ── */
@@ -436,7 +459,7 @@ async function load(token) {
     if (row && row.vma != null) {
       // A save made offline on this phone wins over the server copy until it goes through
       if (local && local.token === token && local.pending && local.cache) { me = local.cache; renderMine(); show("mine"); retryPending(); return; }
-      me = { ...(me || {}), token, name: row.name, vma: Number(row.vma), test_m: row.test_m, hr_max: row.hr_max, history: row.history || [] };
+      me = { ...(me || {}), token, name: row.name, vma: Number(row.vma), test_m: row.test_m, hr_max: row.hr_max, history: row.history || [], level: row.level || (me && me.level) || null };
       store.set({ token, cache: me, pending: false });
       renderMine(); show("mine"); setStatus("", true);
     } else if (local && local.token === token && local.pending) { retryPending(); }

@@ -70,3 +70,21 @@ $$;
 grant execute on function public.vma_get(uuid) to anon;
 grant execute on function public.vma_save(uuid, text, text, numeric, integer, integer, uuid) to anon;
 grant execute on function public.vma_find(text, text) to anon;
+
+-- ── 26/10: the runner's level comes from their questionnaire (signups) ──────
+-- Matched by the sign-up row the site knew about, otherwise by phone number.
+drop function if exists public.vma_get(uuid);
+create or replace function public.vma_get(t uuid)
+returns table (token uuid, name text, vma numeric, test_m integer, hr_max integer, history jsonb, updated_at timestamptz, level text)
+language sql security definer stable set search_path = public as $$
+  select v.token, v.name, v.vma, v.test_m, v.hr_max, v.history, v.updated_at,
+    coalesce(
+      (select s.level from public.signups s where s.id = v.signup_id),
+      (select s.level from public.signups s
+        where char_length(regexp_replace(coalesce(v.phone, ''), '\D', '', 'g')) >= 9
+          and right(regexp_replace(coalesce(s.phone, ''), '\D', '', 'g'), 9) = right(regexp_replace(coalesce(v.phone, ''), '\D', '', 'g'), 9)
+        order by s.created_at desc limit 1)
+    ) as level
+  from public.vma v where v.token = t;
+$$;
+grant execute on function public.vma_get(uuid) to anon;
