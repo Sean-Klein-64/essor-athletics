@@ -48,6 +48,22 @@ It fails with the session and step if something's mistyped.
 2. SQL Editor → New query → paste `supabase/schema.sql` → Run.
 3. Project Settings → API: copy the Project URL and the `anon` public key into `js/lib/config.js`.
 
+## Who gets in (members only)
+
+The app is for Essor members on the Run Club. Anyone can download it, but only approved runners can sign in:
+
+1. The runner fills in the questionnaire on the website (`docs/index.html` → a row in `signups`).
+2. When you add RUN CLUB to their Wodify membership, tick **app_access** on their row in Supabase (Table Editor → signups).
+3. In the app they tap "Je cours avec Essor" and type the phone number + first name from their questionnaire. Their name, level, answers, bests and website VMA come straight in.
+
+To place someone mid-programme, set **start_week** (1–6) on their row: e.g. level `beginnerC` + start_week `3` starts them at Débuter C week 3. Change level or start_week later and their app follows at its next launch. Untick app_access and they're signed out at their next launch.
+
+Database setup for this: `supabase/members.sql` (run once). The VMA page: `supabase/vma.sql`.
+
+## Booking
+
+Bookings are in Wodify only — the button on each session opens `WODIFY_BOOKING_URL` (`js/lib/config.js`). There is no in-app attendance list.
+
 ## Running it on your phone (first time, on a Mac)
 
 Same setup as Daily Move (Xcode, Homebrew, `brew install node watchman cocoapods`). Then:
@@ -80,7 +96,7 @@ Then App Store Connect → the app → TestFlight → add yourself as an interna
 ## Later
 
 - **Garmin**: the Garmin Connect Training API pushes workouts to a runner's Garmin calendar and watch. Free, but Essor has to be approved as a business developer first — and as of autumn 2026 Garmin has paused new applications. Fallbacks: an aggregator such as Terra, or exporting .FIT workout files. The session format here is already step-by-step (distance or time + % VMA target), so it converts directly when the door opens.
-- Accounts (so data follows a runner to a new phone, and coaches see everyone's VMA).
+- Coaches seeing everyone's VMA in the app (today: Supabase → vma table).
 
 ## Running it on your iPhone (on the Mac, same as Daily Move)
 

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext } from "react";
 import { StyleSheet, View, Text, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -10,13 +10,11 @@ import UserContext from "../variables/context";
 
 import useSessions from "../lib/store";
 import { splitSessions, formatDay, todayKey } from "../lib/plan";
-import { fetchAttendees, isShared } from "../lib/attendance";
-import { JE_VIENS } from "../lib/config";
 import myWeek from "../lib/myWeek";
 
 /*
-  Coach view — what members never see. Write and edit sessions, see who's
-  coming, and Sean's own week. "Vue membre" switches to the member Home.
+  Coach view — what members never see. Write and edit sessions, and
+  Sean's own week (bookings are in Wodify). "Vue membre" switches to the member Home.
 */
 
 const Row = ({ session, count, onPress, colors, typography, draft }) => (
@@ -48,15 +46,7 @@ const CoachHomeScreen = ({ navigation }) => {
   const { colors, typography } = theme;
   const { sessions, shared } = useSessions();
   const { next, upcoming, past } = splitSessions(todayKey(), sessions);
-  const [counts, setCounts] = useState({});
   const local = preferences.coachSessions || {};
-
-  useEffect(() => {
-    if (!JE_VIENS || !isShared() || !next) return;
-    Promise.all([next, ...upcoming].map((s) => fetchAttendees(s.id).then((a) => [s.id, a.length]).catch(() => [s.id, undefined])))
-      .then((pairs) => setCounts(Object.fromEntries(pairs)))
-      .catch(() => {});
-  }, [sessions.length]);
 
   const edit = (s) => navigation.navigate("SessionEditor", { id: s?.id });
   const today = myWeek[(new Date().getDay() + 6) % 7];
@@ -97,7 +87,7 @@ const CoachHomeScreen = ({ navigation }) => {
         {!!next && (
           <View style={styles.section}>
             <SectionLabel>Prochaine séance</SectionLabel>
-            <Row session={next} count={counts[next.id]} onPress={() => edit(next)} draft={!!local[next.id] && !shared} colors={colors} typography={typography} />
+            <Row session={next} onPress={() => edit(next)} draft={!!local[next.id] && !shared} colors={colors} typography={typography} />
             <Pressable onPress={() => navigation.navigate("Session", { id: next.id })} small>
               <Text style={[typography.finePrint, styles.link, { color: colors.accentText }]}>Voir comme un membre</Text>
             </Pressable>
@@ -108,7 +98,7 @@ const CoachHomeScreen = ({ navigation }) => {
           <View style={styles.section}>
             <SectionLabel>À venir</SectionLabel>
             {upcoming.map((s) => (
-              <Row key={s.id} session={s} count={counts[s.id]} onPress={() => edit(s)} draft={!!local[s.id] && !shared} colors={colors} typography={typography} />
+              <Row key={s.id} session={s} onPress={() => edit(s)} draft={!!local[s.id] && !shared} colors={colors} typography={typography} />
             ))}
           </View>
         )}

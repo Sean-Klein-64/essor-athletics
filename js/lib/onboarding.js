@@ -27,7 +27,7 @@ const onboarding = [
     title: "Prénom et nom",
     prompt: "Comment tu t'appelles ?",
     placeholder: "Prénom Nom",
-    tip: "Ton prénom apparaît dans la liste « Je viens ».",
+    tip: "Pour que les coachs sachent qui tu es.",
     cta: "Continuer",
   },
   {

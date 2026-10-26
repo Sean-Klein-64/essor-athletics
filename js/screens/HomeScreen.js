@@ -11,17 +11,16 @@ import UserContext from "../variables/context";
 import { splitSessions, formatDay, totalLabel, todayKey } from "../lib/plan";
 import { formatClock, formatPace, racePace } from "../lib/paces";
 import { levelById } from "../lib/levels";
-import useAttendance from "../lib/attendance";
 import useSessions from "../lib/store";
 import { isBeginner, nextSession, sessionLabel, runMinutes, PROGRAMMES } from "../lib/beginner";
 import goal, { daysToGo, targetTime } from "../lib/goal";
-import { WODIFY_BOOKING_URL, JE_VIENS } from "../lib/config";
+import { WODIFY_BOOKING_URL } from "../lib/config";
 import { bookingState } from "../lib/booking";
 import { formatShortDate } from "../lib/plan";
 import { best } from "../lib/records";
 
 /*
-  Home — the next session up front (big card, with "Je viens" right on it),
+  Home — the next session up front (big card, with the Wodify booking right on it),
   then what's coming and what's done. Everything is already sized for the
   runner's level and VMA; tapping a session opens the full detail.
 */
@@ -31,8 +30,6 @@ const formatVma = (vma) => `${String(vma).replace(".", ",")} km/h`;
 const NextCard = ({ session, onPress, override }) => {
   const { theme, preferences } = useContext(UserContext);
   const { colors, typography } = theme;
-  const { going, toggle, attendees, shared } = useAttendance(session.id);
-  const count = attendees.length;
   const kicker = override?.kicker ?? `${formatDay(session.date)} · ${totalLabel(session, preferences.level, preferences.vma)}`;
   const title = override?.title ?? session.title;
   const summary = override?.summary ?? session.summary;
@@ -57,11 +54,10 @@ const NextCard = ({ session, onPress, override }) => {
         <View style={styles.goingCount}>
           <Glyph name="people" size={16} color={colors.text} />
           <Text style={[typography.finePrint, { fontSize: 14 }]}>
-            {JE_VIENS && shared ? (count ? `${count} ${count === 1 ? "inscrit" : "inscrits"}` : "Personne encore") : "Vendredi 16h30, piste de Floride"}
+            Vendredi 16h30, piste de Floride
           </Text>
         </View>
-        {!JE_VIENS ? (
-          (() => {
+        {(() => {
             const booking = bookingState(session.date, todayKey(), !!preferences.booked?.[session.id]);
             if (booking.status === "booked")
               return (
@@ -87,32 +83,7 @@ const NextCard = ({ session, onPress, override }) => {
                 </View>
               </Pressable>
             );
-          })()
-        ) : (
-        <Pressable onPress={toggle} small hitSlop={6}>
-          <View
-            accessibilityRole="button"
-            accessibilityState={{ selected: going }}
-            style={[
-              styles.goingButton,
-              going
-                ? { backgroundColor: colors.accent, borderColor: colors.accent }
-                : { borderColor: colors.border },
-            ]}
-          >
-            {going && <Glyph name="check" size={14} color="white" strokeWidth={2.6} />}
-            <Text
-              style={[
-                typography.heading,
-                typography.bold,
-                { fontSize: 15, color: going ? "white" : colors.text },
-              ]}
-            >
-              {going ? "Je viens" : "Je viens ?"}
-            </Text>
-          </View>
-        </Pressable>
-        )}
+          })()}
       </View>
     </View>
   );

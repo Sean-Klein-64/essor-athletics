@@ -17,8 +17,8 @@ import UserContext from "../variables/context";
 
 /*
   First screen: the track lanes draw in behind the wordmark, then the
-  line and the buttons fade up. Members start the questionnaire;
-  coaches go to the coach code.
+  line and the buttons fade up. Members sign in (phone + first name from
+  the website questionnaire); coaches go to the coach code.
 */
 
 const ease = Easing.bezier(0.25, 0.1, 0.25, 1);
@@ -87,7 +87,7 @@ const WelcomeScreen = ({ navigation }) => {
 
       <Animated.View style={[styles.buttonContainer, { bottom: insets.bottom + 24 }, buttonStyle]}>
         <Button
-          onPress={() => navigation.navigate("Question", { index: 0 })}
+          onPress={() => navigation.navigate("SignIn")}
           style={{ backgroundColor: theme.colors.accent }}
         >
           Je cours avec Essor

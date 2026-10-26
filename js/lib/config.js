@@ -1,7 +1,6 @@
 /*
-  The shared parts — the "Je viens" list and sessions written by coaches —
-  live in a small Supabase database. Until these two are filled in, both
-  still work on the phone, but only that phone sees them.
+  The shared parts — sign-ups (members-only sign-in) and sessions written by
+  coaches — live in a small Supabase database.
   Setup: README → "Switching on the shared database".
 
   The anon key is meant to be public (it ships inside the app);
@@ -19,9 +18,8 @@ export const SUPABASE_ANON_KEY = "sb_publishable_LnDYfyrKMTOunfAH29ZFTQ_CY3GtJE5
 export const COACH_CODE = "floride";
 
 /*
-  Booking goes through Wodify (the run club class). The button on each
-  session opens this link. Leave JE_VIENS false unless you want the in-app
-  "Je viens" list as well.
+  Booking goes through Wodify only (the Run Club class). The button on each
+  session opens this link.
 */
 export const WODIFY_BOOKING_URL = "https://app.wodify.com/Schedule/CalendarListViewEntry.aspx"; // TODO: the Run Club class link from the athlete app
 
@@ -35,4 +33,3 @@ export const BOOKING = {
   time: "16h30",
   place: "Piste de la Floride",
 };
-export const JE_VIENS = false;

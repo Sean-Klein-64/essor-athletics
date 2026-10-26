@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -161,6 +161,77 @@ check("group goal: 10 km target at VMA 15 is 44:27, days count down", () => {
   assert.strictEqual(m.daysToGo("2026-12-21"), -1);
 });
 
+/* Members-only sign-in: a profile from the website lands on the phone the way Sean set it */
+const fakePhone = (prefs) => {
+  const p = { records: {}, vmaHistory: [], ...prefs };
+  return {
+    p,
+    ctx: {
+      get preferences() { return { ...p }; },
+      setPreference: async (k, v) => { p[k] = v; },
+      saveVma: async (value, source, date = "2026-10-26") => { p.vmaHistory = [...p.vmaHistory, { value, date, source }]; p.vma = value; },
+      saveRecord: async (id, seconds, date) => { p.records = { ...p.records, [id]: [...(p.records[id] || []), { seconds, date }] }; },
+    },
+  };
+};
+const profile = (extra) => ({ status: "ok", id: "row-1", name: "Camille Dupont", level: "beginnerC", start_week: 3,
+  answers: { runContinuous: "15to30", goal: "run30", bests: { "5k": "28:30", "10k": "" } },
+  vma: { vma: 12.4, test_m: 1240, hr_max: 186, history: [{ at: "2026-10-30T17:10:00Z", vma: 12.4, test_m: 1240 }] }, ...extra });
+const syncWith = async (phone, prof, opts) => {
+  const realFetch = global.fetch;
+  global.fetch = async () => ({ ok: true, json: async () => prof });
+  try { return await m.syncMember(phone.ctx, "06 12 34 56 78", "Camille", opts); } finally { global.fetch = realFetch; }
+};
+const asyncChecks = [];
+const checkAsync = (name, fn) => asyncChecks.push([name, fn]);
+checkAsync("sign-in: Débuter C placed at week 3, answers, best and VMA from the website", async () => {
+  const ph = fakePhone({});
+  assert.strictEqual(await syncWith(ph, profile(), { first: true }), "ok");
+  assert.strictEqual(ph.p.level, "beginnerC");
+  assert.strictEqual(ph.p.programme.beginnerC, 6); // week 3 = session index 6
+  assert.strictEqual(m.nextSession(ph.p, "beginnerC").week, 3);
+  assert.strictEqual(ph.p.name, "Camille Dupont");
+  assert.strictEqual(ph.p.runContinuous, "15to30");
+  assert.deepStrictEqual(ph.p.records["5k"], [{ seconds: 1710, date: null }]);
+  assert.strictEqual(ph.p.records["10k"], undefined);
+  assert.strictEqual(ph.p.vma, 12.4);
+  assert.strictEqual(ph.p.vmaHistory[0].source, "test");
+  assert.strictEqual(ph.p.vmaHistory[0].date, "2026-10-30");
+  assert.strictEqual(ph.p.hrMax, 186);
+  assert.strictEqual(ph.p.member.startWeek, 3);
+});
+checkAsync("re-check at launch: runner's own progress is kept until Sean changes something", async () => {
+  const ph = fakePhone({});
+  await syncWith(ph, profile(), { first: true });
+  ph.p.programme = { beginnerC: 10 }; // they've done a few sessions since
+  await syncWith(ph, profile(), {});
+  assert.strictEqual(ph.p.programme.beginnerC, 10);
+  ph.p.level = "level3"; // passed the Débuter C test in the app
+  await syncWith(ph, profile(), {});
+  assert.strictEqual(ph.p.level, "level3");
+});
+checkAsync("re-check at launch: Sean moves the runner → the phone follows", async () => {
+  const ph = fakePhone({});
+  await syncWith(ph, profile(), { first: true });
+  await syncWith(ph, profile({ start_week: 5 }), {});
+  assert.strictEqual(ph.p.programme.beginnerC, 12);
+  await syncWith(ph, profile({ level: "level2", start_week: null }), {});
+  assert.strictEqual(ph.p.level, "level2");
+});
+checkAsync("re-check at launch: a newer VMA logged in the app beats an older one from the site", async () => {
+  const ph = fakePhone({});
+  await syncWith(ph, profile(), { first: true });
+  await ph.ctx.saveVma(13.1, "test", "2026-12-04");
+  await syncWith(ph, profile(), {});
+  assert.strictEqual(ph.p.vma, 13.1);
+});
+checkAsync("pending / unknown runners don't get in", async () => {
+  const ph = fakePhone({});
+  assert.strictEqual(await syncWith(ph, { status: "pending" }, { first: true }), "pending");
+  assert.strictEqual(await syncWith(ph, { status: "none" }, { first: true }), "none");
+  assert.strictEqual(ph.p.member, undefined);
+});
+
 const pyramid = m.sessions.find((s) => s.id === "2026-11-06-vo2-10k");
 console.log(`\nExample — ${pyramid.title}, Level 2, VMA 15 (${m.totalLabel(pyramid, "level2", 15)}):`);
 const print = (row, indent = "  ") => {
@@ -170,4 +241,9 @@ const print = (row, indent = "  ") => {
 };
 m.planFor(pyramid, "level2").main.forEach((s) => print(m.describeStep(s, 15)));
 
-console.log(`\n${passed} checks passed`);
+(async () => {
+  for (const [name, fn] of asyncChecks) {
+    try { await fn(); passed++; } catch (e) { console.error(`✗ ${name}`); throw e; }
+  }
+  console.log(`\n${passed} checks passed`);
+})().catch(() => process.exit(1));

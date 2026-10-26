@@ -11,6 +11,7 @@ import OnboardingStack from "./navigation/stacks/OnboardingStack";
 import AppStack from "./navigation/stacks/AppStack";
 import UserContext from "./variables/context";
 import { todayKey } from "./lib/plan";
+import { syncMember } from "./lib/member";
 
 const LoadingScreen = () => <View style={{ flex: 1, backgroundColor: "black" }} />;
 
@@ -97,12 +98,12 @@ const RootNavigator = createStackNavigator();
     vmaHistory: [{ value, date, source: "typed" | "test" }]
     records: { "10k": [{ seconds, date }] }   see js/lib/records.js
     done: { [sessionId]: "YYYY-MM-DD" }
-    going: { [sessionId]: true }   "Je viens", mirrored to the shared list
-    deviceId                    random id that stands in for an account
+    deviceId                    random id for this phone
+    member: { id, phone, first, level, startWeek, checked }   the website sign-up this phone signed in with
     onboarded
 */
 const PREFERENCES_KEY = "preferences";
-const DEFAULT_PREFERENCES = { records: {}, vmaHistory: [], done: {}, going: {} };
+const DEFAULT_PREFERENCES = { records: {}, vmaHistory: [], done: {} };
 
 const newDeviceId = () =>
   `d-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -171,6 +172,23 @@ function App() {
     if (newTheme) AsyncStorage.setItem("theme", newTheme);
     else AsyncStorage.removeItem("theme");
   };
+
+  /*
+    At each launch, a signed-in member is checked again: a level or start week
+    Sean changed in Supabase comes through, and a runner whose app access was
+    removed goes back to the sign-in screen (their data stays on the phone).
+    Coaches and offline launches are left alone.
+  */
+  const synced = useRef(false);
+  useEffect(() => {
+    const m = preferences.member;
+    if (isLoading || synced.current || !preferences.onboarded || preferences.coach || !m?.phone) return;
+    synced.current = true;
+    const ctx = { preferences: latest.current, setPreference, saveVma, saveRecord };
+    syncMember(ctx, m.phone, m.first)
+      .then((status) => { if (status === "pending" || status === "none") setPreference("onboarded", false); })
+      .catch(() => {});
+  }, [isLoading, preferences.onboarded]);
 
   const dark = (selectedTheme || systemTheme) === "dark";
 
