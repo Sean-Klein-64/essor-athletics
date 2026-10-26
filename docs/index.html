@@ -245,7 +245,7 @@ const QB = (id) => Q.find(q => q.id === id);
 let answers = {}, i = 0, current = null;
 const visible = () => Q.filter(q => !q.showIf || q.showIf(answers));
 
-const CAP = 16;
+const CAP = 15;
 function show(step) { ["intro", "q", "done", "full", "laterdone"].forEach(s => $(s).hidden = s !== step); window.scrollTo(0, 0); }
 let placesLeft = null; // known only when Supabase is on
 async function loadCount() {
