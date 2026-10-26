@@ -260,7 +260,8 @@ const SESSIONS = [{"id":"2026-10-30-test-vma","date":"2026-10-30","title":"Test 
 function nextSession(now = new Date()) {
   const key = (d) => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
   const today = key(now), hour = Number(now.toLocaleString("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", hour12: false }));
-  return SESSIONS.find(x => x.date > today || (x.date === today && hour < 19)) || null;
+  // Anyone on this page has their VMA already, so the test session is behind them: skip to the next real session
+  return SESSIONS.find(x => x.kind !== "test" && (x.date > today || (x.date === today && hour < 19))) || null;
 }
 const secs = (v) => { if (typeof v === "number") return v; const [m, s2] = String(v).split(":").map(Number); return m * 60 + (s2 || 0); };
 const dur = (v) => { const t = secs(v), m = Math.floor(t / 60), r = t % 60; return m ? (r ? `${m}'${String(r).padStart(2, "0")}` : `${m}'`) : `${r}"`; };
