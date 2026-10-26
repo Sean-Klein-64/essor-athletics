@@ -89,6 +89,10 @@ const RootNavigator = createStackNavigator();
     injuryDetail, goal          the sign-up questionnaire (js/lib/onboarding.js)
     hrMax                       max heart rate, optional (zones show bpm)
     raceGoal: { distance, seconds }   the runner's own goal for the group race
+    myRace: { name, place, date, metres, seconds, photoQuery }   their own race (js/lib/objectives.js)
+    objectives: [{ id, text, done }]  smaller personal goals
+    racePhotos: { [raceKey]: { query, skip, uri, credit } }   countdown photos (js/lib/photo.js)
+    raceChecklist: { [raceKey]: { [itemId]: true } }   race-week checklist ticks
     runsWeek                    Levels 1–3: runs per week for the weekly plan (js/lib/week.js)
     beginnerSessions            Débuter: 2 or 3 sessions a week
     programme: { [levelId]: index }   where a Débuter runner is in their programme

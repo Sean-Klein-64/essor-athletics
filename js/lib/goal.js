@@ -19,7 +19,10 @@ const goal = {
   ],
   blurb: "L'objectif de tout le groupe pour finir l'année. Chacun à son allure, tous sur la même ligne.",
   register: "http://www.courseduboutdelan.com/fr/", // inscriptions pas encore ouvertes au 22/10/2026
-  photo: null, // require("../../assets/goal/bayonne.jpg") once a photo of Bayonne is in
+  // The countdown photo. The app searches Wikimedia Commons with photoQuery;
+  // a coach's own photo wins: photo: require("../../assets/goal/bayonne.jpg")
+  photoQuery: "Bayonne Nive quais",
+  photo: null,
 };
 
 /* Whole days from today to the race (negative once it's gone) */

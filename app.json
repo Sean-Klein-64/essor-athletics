@@ -15,7 +15,14 @@
     "ios": {
       "bundleIdentifier": "fr.crossfitessor.athletics",
       "supportsTablet": false,
-      "appleTeamId": "B9PZPU9HW5"
+      "appleTeamId": "B9PZPU9HW5",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "wodify",
+          "wodifyapp",
+          "wodifyclient"
+        ]
+      }
     },
     "android": {
       "package": "fr.crossfitessor.athletics",

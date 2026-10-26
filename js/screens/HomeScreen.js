@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { StyleSheet, View, Text, ScrollView, Linking, Image } from "react-native";
+import { StyleSheet, View, Text, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Pressable from "../components/Pressable";
@@ -9,15 +9,14 @@ import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
 import { splitSessions, formatDay, totalLabel, todayKey } from "../lib/plan";
-import { formatClock, formatPace, racePace } from "../lib/paces";
 import { levelById } from "../lib/levels";
 import useSessions from "../lib/store";
 import { isBeginner, nextSession, sessionLabel, runMinutes, PROGRAMMES } from "../lib/beginner";
-import goal, { daysToGo, targetTime } from "../lib/goal";
-import { WODIFY_BOOKING_URL } from "../lib/config";
+import { RaceCountdown, RaceWeekCard } from "../components/RaceCountdown";
+import { countdownRace } from "../lib/objectives";
+import { openWodify } from "../lib/wodify";
 import { bookingState } from "../lib/booking";
 import { formatShortDate } from "../lib/plan";
-import { best } from "../lib/records";
 
 /*
   Home — the next session up front (big card, with the Wodify booking right on it),
@@ -77,7 +76,7 @@ const NextCard = ({ session, onPress, override }) => {
                 </Pressable>
               );
             return (
-              <Pressable onPress={() => Linking.openURL(WODIFY_BOOKING_URL)} hitSlop={6}>
+              <Pressable onPress={() => openWodify()} hitSlop={6}>
                 <View style={[styles.goingButton, { backgroundColor: colors.accent, borderColor: colors.accent }]}>
                   <Text style={[typography.heading, typography.bold, { fontSize: 16, color: "white" }]}>Réserver ma place</Text>
                 </View>
@@ -116,55 +115,6 @@ const RowCard = ({ session, done, onPress }) => {
   );
 };
 
-/* The race the whole club is building towards (js/lib/goal.js) — Levels 1–3 only */
-const GoalCard = ({ onPress }) => {
-  const { theme, preferences } = useContext(UserContext);
-  const { colors, typography } = theme;
-  const days = daysToGo();
-  if (days < 0) return null;
-  const mine = preferences.raceGoal;
-  return (
-    <Pressable onPress={onPress} animation={false}>
-    <View style={[styles.goal, { backgroundColor: colors.accent }]}>
-      {!!goal.photo && <Image source={goal.photo} style={[StyleSheet.absoluteFill, { width: "100%", height: "100%", opacity: 0.35 }]} resizeMode="cover" />}
-      <View style={styles.goalHead}>
-        <View style={{ flex: 1 }}>
-          <Text style={[typography.finePrint, styles.goalKicker]}>OBJECTIF DU GROUPE</Text>
-          <Text style={styles.goalTitle}>{goal.name}</Text>
-          <Text style={[typography.finePrint, styles.goalSub]}>
-            {goal.place} · {formatShortDate(goal.date)}
-            {goal.confirmed ? "" : " (date à confirmer)"}
-          </Text>
-        </View>
-        <View style={styles.goalDays}>
-          <Text style={styles.goalDaysNumber}>{days}</Text>
-          <Text style={[typography.finePrint, styles.goalDaysLabel]}>{days === 1 ? "jour" : "jours"}</Text>
-        </View>
-      </View>
-      <Text style={[typography.finePrint, styles.goalBlurb]}>{goal.blurb}</Text>
-      <View style={styles.goalRow}>
-        {goal.distances.map((d) => {
-          const pb = best(preferences.records, d.id);
-          const target = targetTime(d, preferences.vma);
-          const chosen = mine?.distance === d.id && mine?.seconds;
-          return (
-            <View key={d.id} style={[styles.goalDistance, chosen && styles.goalChosen]}>
-              <Text style={[typography.finePrint, styles.goalDistanceName]}>{d.name}{chosen ? "  ·  mon objectif" : ""}</Text>
-              <Text style={[typography.title, typography.mono, styles.goalTarget]}>{chosen ? formatClock(mine.seconds) : target || "—"}</Text>
-              <Text style={[typography.finePrint, styles.goalDistanceSub]}>
-                {chosen ? `${formatPace(racePace(d.metres, mine.seconds))}${target ? ` · VMA dit ${target}` : ""}` : target ? `suggestion · ${d.vma} % VMA` : "ajoute ta VMA"}
-                {pb ? `\nrecord ${formatClock(pb.seconds)}` : ""}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
-      <Text style={[typography.finePrint, styles.goalCta]}>{mine?.seconds ? "Touche pour changer ton objectif" : "Touche pour choisir ta course et ton objectif"}</Text>
-    </View>
-    </Pressable>
-  );
-};
-
 const HomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { theme, preferences, setPreference } = useContext(UserContext);
@@ -178,6 +128,7 @@ const HomeScreen = ({ navigation }) => {
   const beginner = isBeginner(preferences.level);
   const mySession = beginner ? nextSession(preferences, preferences.level) : null;
   const openMine = () => navigation.navigate("BeginnerSession", { level: preferences.level, index: mySession.index });
+  const race = countdownRace(preferences, todayKey(), { clubLevel: !beginner });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
@@ -221,6 +172,12 @@ const HomeScreen = ({ navigation }) => {
               </View>
             </Pressable>
           )}
+          <Pressable onPress={() => navigation.navigate("Objectives")} small>
+            <View style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Glyph name="trophy" size={13} color={colors.accentText} strokeWidth={2.2} />
+              <Text style={[typography.finePrint, typography.bold, styles.chipText]}>Mes objectifs</Text>
+            </View>
+          </Pressable>
           {!beginner && (
             <Pressable onPress={() => navigation.navigate("Week")} small>
               <View style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -251,6 +208,19 @@ const HomeScreen = ({ navigation }) => {
             </View>
           </Pressable>}
         </View>
+
+        {/* The race countdown: their own race if set, else the club's (Levels 1–3) */}
+        {!!race && (
+          <View style={styles.section}>
+            <RaceCountdown
+              race={race}
+              sessions={sessions}
+              onOpen={() => navigation.navigate("Objectives")}
+              onLogTime={(id) => navigation.navigate("Record", { id })}
+            />
+            <RaceWeekCard race={race} />
+          </View>
+        )}
 
         {beginner && mySession && (
           <View style={styles.section}>
@@ -286,8 +256,6 @@ const HomeScreen = ({ navigation }) => {
             Les prochaines séances arrivent bientôt.
           </Text>
         ) : null}
-
-        {!beginner && <GoalCard onPress={() => navigation.navigate("Goal")} />}
 
         {!!upcoming.length && (
           <View style={styles.section}>
@@ -378,22 +346,6 @@ const styles = StyleSheet.create({
   },
   doneDot: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   hint: { textAlign: "center", fontSize: 14, paddingHorizontal: 20 },
-  goal: { borderRadius: 24, padding: 18, gap: 10, overflow: "hidden" },
-  goalHead: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
-  goalKicker: { color: "white", opacity: 0.75, fontSize: 11, letterSpacing: 0.8 },
-  goalTitle: { fontFamily: "Archivo-BlackItalic", fontSize: 28, lineHeight: 32, letterSpacing: -0.6, color: "white", marginTop: 2 },
-  goalSub: { color: "white", opacity: 0.8, fontSize: 14 },
-  goalDays: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8, minWidth: 68 },
-  goalDaysNumber: { fontFamily: "Archivo-BlackItalic", fontSize: 30, lineHeight: 34, color: "white" },
-  goalDaysLabel: { color: "white", opacity: 0.8, fontSize: 12 },
-  goalBlurb: { color: "white", opacity: 0.85, fontSize: 14, lineHeight: 18 },
-  goalRow: { flexDirection: "row", gap: 10 },
-  goalDistance: { flex: 1, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 16, padding: 12, gap: 2 },
-  goalDistanceName: { color: "white", opacity: 0.8, fontSize: 13 },
-  goalTarget: { color: "white", fontSize: 24, lineHeight: 28 },
-  goalDistanceSub: { color: "white", opacity: 0.75, fontSize: 12, lineHeight: 15 },
-  goalChosen: { backgroundColor: "rgba(255,255,255,0.24)" },
-  goalCta: { color: "white", opacity: 0.7, fontSize: 12, textAlign: "center" },
   empty: { textAlign: "center", opacity: 0.5, marginTop: 40 },
 });
 

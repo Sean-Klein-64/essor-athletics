@@ -2,6 +2,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY, COACH_CODE } from "./config";
 import levels, { levelById } from "./levels";
 import { planFor } from "./plan";
 import goal from "./goal";
+import { distanceName } from "./objectives";
 import onboarding from "./onboarding";
 import { DISTANCES } from "./records";
 import {
@@ -114,6 +115,8 @@ export const toAthlete = (row) => {
     bests: pickBests(a.bests || {}, p.records || {}),
     sessionsDone: reported ? Object.keys(p.done || {}).length : null,
     raceGoal: p.raceGoal || null,
+    myRace: p.raceGoal?.myRace || null,
+    objectives: p.raceGoal?.objectives || [],
     goal: a.goal || null,
     races: a.races || "",
     injury: a.injury || null,
@@ -250,6 +253,20 @@ export const goalLabel = (athlete) => {
   }
   return GOALS[athlete.goal] || "—";
 };
+
+/* The runner's own race: "Marathon de Rome · 22/03/2027 · Marathon en 3:30:00", or "—" */
+export const myRaceLabel = (athlete) => {
+  const r = athlete.myRace;
+  if (!r?.name) return "—";
+  const [y, m, d] = String(r.date || "").split("-");
+  const date = d ? `${d}/${m}/${y}` : "";
+  const time = r.seconds ? ` en ${formatClock(r.seconds)}` : "";
+  return [r.name, date, r.metres ? `${distanceName(r.metres)}${time}` : ""].filter(Boolean).join(" · ");
+};
+
+/* Smaller objectives, one per line, ✓ when done; "—" when none */
+export const objectivesLabel = (athlete) =>
+  (athlete.objectives || []).length ? athlete.objectives.map((o) => `${o.done ? "✓ " : ""}${o.text}`).join("\n") : "—";
 
 /* Personal bests as rows, "—" where unknown */
 export const bestRows = (athlete) =>

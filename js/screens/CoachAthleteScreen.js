@@ -9,7 +9,7 @@ import UserContext from "../variables/context";
 
 import useSessions from "../lib/store";
 import { levelById } from "../lib/levels";
-import { vmaDateLabel, goalLabel, bestRows, trainingPaces, injuryLabel, sessionTargets, isClubLevel } from "../lib/coach";
+import { vmaDateLabel, goalLabel, myRaceLabel, objectivesLabel, bestRows, trainingPaces, injuryLabel, sessionTargets, isClubLevel } from "../lib/coach";
 
 /*
   One runner, for the coach: level and VMA up top, then what today's session
@@ -100,6 +100,8 @@ const CoachAthleteScreen = ({ navigation, route }) => {
           <Card colors={colors}>
             <Row title="Séances faites" sub="Marquées dans l'app" value={athlete.sessionsDone == null ? "—" : String(athlete.sessionsDone)} {...rowProps} />
             <Row title="Objectif" value={goalLabel(athlete)} {...rowProps} />
+            <Row title="Sa course" value={myRaceLabel(athlete)} {...rowProps} />
+            <Row title="Autres objectifs" value={objectivesLabel(athlete)} {...rowProps} />
             <Row title="Courses déjà faites" value={athlete.races || "—"} last {...rowProps} />
           </Card>
         </View>

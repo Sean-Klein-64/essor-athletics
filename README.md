@@ -7,7 +7,8 @@ The run club app for CrossFit Essor (Bayonne). iPhone and Android from one codeb
 - **Débuter A/B/C** — the three walk-run programmes from the Level System page, built in. The app keeps each beginner's place, checks the "ready?" rules before moving on, and the end-of-level test moves them up.
 - **VMA and zones** — VMA typed in or from the 6-minute test (metres ÷ 100); the Pfitzinger zones from Sean's Running Progression Plan as % VMA (and bpm once a max HR is added).
 - **Records** — 5 km, 10 km, semi, marathon: every time logged, best one marked.
-- **Je viens** — say you're coming to a session and see who else is.
+- **Objectives** — the club race plus the runner's own ("Ma course": name, city, date, distance, goal time) and smaller goals they tick off. All visible to the coaches.
+- **Race countdown** — the hero card on Home: J-55, a photo of the race city (found on Wikimedia Commons, credit shown, "Autre photo" to swap), the cycle's Fridays as dots, race-week taper note + checklist, "Ajouter mon temps" after the race.
 - **Coach view** — unlocked with the coach code (`js/lib/config.js`): write and edit sessions in the app, see who's coming, Sean's own week. "Vue membre" switches to what members see.
 - No account yet: everything is saved on the phone. "Je viens" and coach-written sessions are shared through a small Supabase database once it's switched on (below). Until then they live on the phone that made them.
 
@@ -27,6 +28,8 @@ Expo (React Native), same base as Daily Move: Programme's components, transition
 | `js/lib/plan.js` | Turns a session into one runner's version (their level, their VMA) |
 | `js/lib/paces.js` | VMA → speed → pace → target time |
 | `js/lib/records.js` | Record distances |
+| `js/lib/objectives.js`, `js/lib/photo.js` | Own race + objectives, countdown phases; the race-city photo |
+| `js/lib/wodify.js` | Opens the Wodify app (schemes → store page → website) |
 | `js/lib/attendance.js`, `js/lib/config.js` | "Je viens" and the shared list |
 | `js/screens/` | Welcome, Question (questionnaire), Home, Session, Profile, Vma, Record, Programme, BeginnerSession, CoachCode, CoachHome, SessionEditor, MyWeek |
 | `supabase/schema.sql` | The tables behind "Je viens" and coach-written sessions |
@@ -62,7 +65,9 @@ Database setup for this: `supabase/members.sql` (run once). The VMA page: `supab
 
 ## Booking
 
-Bookings are in Wodify only — the button on each session opens `WODIFY_BOOKING_URL` (`js/lib/config.js`). There is no in-app attendance list.
+Bookings are in Wodify only, in the Wodify app: the button tries the app's URL schemes, then its App Store / Google Play page, then the website (`WODIFY_APP`, `WODIFY_BOOKING_URL` in `js/lib/config.js`). There is no in-app attendance list.
+
+Still to fill in: `WODIFY_APP.androidPackage` — the `id=` from the Wodify app's Google Play link (Play Store → Wodify → Partager). Wodify doesn't publish a URL scheme; if one of the guesses in `schemes` turns out to work, keep just that one.
 
 ## Running it on your phone (first time, on a Mac)
 

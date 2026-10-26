@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -286,6 +286,71 @@ const print = (row, indent = "  ") => {
   if (row.rest) print({ ...row.rest, title: `entre les séries : ${row.rest.title}` }, indent + "   ");
 };
 m.planFor(pyramid, "level2").main.forEach((s) => print(m.describeStep(s, 15)));
+
+console.log("\nObjectives, countdown, photo, Wodify");
+check("% VMA by distance follows the predictions", () => {
+  assert.strictEqual(m.vmaShare(5000), 95);
+  assert.strictEqual(m.vmaShare(10000), 90);
+  assert.strictEqual(m.vmaShare(42195), 80);
+  assert.strictEqual(m.vmaShare(15000), 87.7);
+});
+check("marathon at VMA 15 is 3:30:59", () => assert.strictEqual(m.formatClock(m.vmaRaceSeconds(42195, 15)), "3:30:59"));
+check("dates JJ/MM/AAAA, future allowed", () => {
+  assert.strictEqual(m.parseDayKey("22/03/2027"), "2027-03-22");
+  assert.strictEqual(m.parseDayKey("31/02/2027"), null);
+  assert.strictEqual(m.daysBetween("2026-10-26", "2026-12-20"), 55);
+});
+check("countdown follows my race, else the club race", () => {
+  const club = m.countdownRace({}, "2026-10-26");
+  assert.strictEqual(club.kind, "club");
+  assert.strictEqual(club.days, 55);
+  const mine = m.countdownRace({ myRace: { name: "Marathon de Rome", place: "Rome", date: "2027-03-21", metres: 42195 } }, "2026-10-26");
+  assert.strictEqual(mine.kind, "mine");
+  assert.strictEqual(m.countdownRace({}, "2026-10-26", { clubLevel: false }), null);
+  // own race long gone → back to the club race
+  assert.strictEqual(m.countdownRace({ myRace: { name: "X", date: "2026-09-01", metres: 10000 } }, "2026-10-26").kind, "club");
+});
+check("phases: build, race week, race day, after", () => {
+  assert.deepStrictEqual([10, 7, 1, 0, -3].map(m.racePhase), ["build", "raceweek", "raceweek", "raceday", "after"]);
+});
+check("cycle dots: the Fridays up to the club race", () => {
+  const race = m.countdownRace({}, "2026-11-10");
+  const dots = m.cycleDots(m.sessions, race, "2026-11-10");
+  assert.ok(dots.length >= 2 && dots.every((d) => d.date <= "2026-12-20"));
+  assert.ok(/^semaine \d+\/\d+$/.test(m.cycleLabel(dots)));
+  assert.strictEqual(m.weeksLabel(120), "dans 17 semaines");
+});
+check("photo search words: own words, landmark, else city", () => {
+  assert.strictEqual(m.photoQueryFor({ place: "Rome" }), "Rome Colosseum");
+  assert.strictEqual(m.photoQueryFor({ place: "Hendaye" }), "Hendaye ville");
+  assert.strictEqual(m.photoQueryFor({ place: "Rome", photoQuery: "Rome Trevi" }), "Rome Trevi");
+});
+check("Commons results: landscape JPEGs only, credit kept", () => {
+  const json = { query: { pages: {
+    1: { index: 2, imageinfo: [{ mime: "image/jpeg", width: 4000, height: 2600, thumburl: "https://x/b.jpg", descriptionurl: "https://c/b", extmetadata: { Artist: { value: "<a href='x'>Jane Doe</a>" }, LicenseShortName: { value: "CC BY-SA 4.0" } } }] },
+    2: { index: 1, imageinfo: [{ mime: "image/jpeg", width: 2000, height: 3000, thumburl: "https://x/portrait.jpg" }] },
+    3: { index: 3, imageinfo: [{ mime: "image/png", width: 4000, height: 2000, thumburl: "https://x/c.png" }] },
+  } } };
+  const list = m.photosFrom(json);
+  assert.strictEqual(list.length, 1);
+  assert.strictEqual(list[0].uri, "https://x/b.jpg");
+  assert.strictEqual(list[0].credit, "Photo : Jane Doe · CC BY-SA 4.0 · Wikimedia Commons");
+});
+check("goals reach the coach inside raceGoal", () => {
+  assert.strictEqual(m.goalsReport({}), null);
+  const r = m.goalsReport({ raceGoal: { distance: "10k", seconds: 2700 }, objectives: [{ id: "o", text: "Sub 25", done: true }] });
+  assert.deepStrictEqual(r, { distance: "10k", seconds: 2700, myRace: null, objectives: [{ text: "Sub 25", done: true }] });
+  const a = m.toAthlete({ id: 1, answers: {}, progress: { at: "2026-10-26", raceGoal: { myRace: { name: "Marathon de Rome", date: "2027-03-21", metres: 42195, seconds: 12600 }, objectives: [{ text: "Sub 25", done: false }] } } });
+  assert.strictEqual(m.myRaceLabel(a), "Marathon de Rome · 21/03/2027 · Marathon en 3:30:00");
+  assert.strictEqual(m.objectivesLabel(a), "Sub 25");
+});
+check("Wodify: app first, then store, then website", () => {
+  const ios = m.wodifyTargets("ios").map((t) => t.url);
+  assert.ok(ios[0].startsWith("wodify"));
+  assert.ok(ios.includes("itms-apps://apps.apple.com/app/id1563729830"));
+  assert.ok(ios[ios.length - 1].includes("app.wodify.com"));
+  assert.ok(m.wodifyTargets("android").some((t) => t.url.startsWith("market://")));
+});
 
 (async () => {
   for (const [name, fn] of asyncChecks) {

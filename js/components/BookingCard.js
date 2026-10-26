@@ -1,10 +1,11 @@
 import React, { useContext } from "react";
-import { View, Text, StyleSheet, Linking } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 
 import Pressable from "./Pressable";
 import Glyph from "./Glyph";
 import UserContext from "../variables/context";
-import { WODIFY_BOOKING_URL, BOOKING } from "../lib/config";
+import { BOOKING, WODIFY_HINT } from "../lib/config";
+import { openWodify, openWodifySite } from "../lib/wodify";
 import { bookingState, bookingRules } from "../lib/booking";
 import { formatDay, todayKey } from "../lib/plan";
 
@@ -44,12 +45,18 @@ const BookingCard = ({ session }) => {
       </View>
 
       {state.status === "open" && (
-        <Pressable onPress={() => Linking.openURL(WODIFY_BOOKING_URL)}>
-          <View style={[styles.primary, { backgroundColor: colors.accent }]}>
-            <Text style={[typography.heading, typography.bold, styles.primaryText]}>Réserver sur Wodify</Text>
-            <Glyph name="right" size={16} color="white" />
-          </View>
-        </Pressable>
+        <View style={{ gap: 6 }}>
+          <Pressable onPress={() => openWodify()}>
+            <View style={[styles.primary, { backgroundColor: colors.accent }]}>
+              <Text style={[typography.heading, typography.bold, styles.primaryText]}>{"Réserver dans l'app Wodify"}</Text>
+              <Glyph name="right" size={16} color="white" />
+            </View>
+          </Pressable>
+          <Text style={[typography.finePrint, styles.hint]}>{WODIFY_HINT}</Text>
+          <Pressable onPress={openWodifySite} small>
+            <Text style={[typography.finePrint, styles.hint, { color: colors.accentText, opacity: 1 }]}>{"Pas l'app ? Réserver sur le site"}</Text>
+          </Pressable>
+        </View>
       )}
 
       {state.status === "soon" && (
@@ -91,6 +98,7 @@ const styles = StyleSheet.create({
   tick: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 4 },
   box: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   rules: { fontSize: 12, lineHeight: 16 },
+  hint: { fontSize: 13, textAlign: "center" },
 });
 
 export default BookingCard;

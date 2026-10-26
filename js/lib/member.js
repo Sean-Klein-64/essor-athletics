@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config";
 import { PROGRAMMES } from "./beginner";
 import { parseClock } from "./paces";
+import { goalsReport } from "./objectives";
 
 /*
   Members-only sign-in, linked to the website.
@@ -90,13 +91,14 @@ export const syncMember = async (ctx, phone, firstName, { first = false } = {}) 
 
 /*
   What the phone tells the coaches (member_progress(), supabase/coach.sql):
-  sessions marked done, the runner's goal for the group race, their best
+  sessions marked done, their goals (group race choice + own race + smaller
+  objectives, packed into raceGoal — js/lib/objectives.js), their best
   time per distance and the VMA on the phone. Read in the Coach Session Hub.
   Fails quietly — it's a report, nothing on the phone depends on it.
 */
 export const progressReport = (p) => ({
   done: p.done || {},
-  raceGoal: p.raceGoal || null,
+  raceGoal: goalsReport(p),
   records: Object.fromEntries(
     Object.entries(p.records || {})
       .map(([id, list]) => [id, Math.min(...(list || []).map((e) => e.seconds).filter(Boolean))])

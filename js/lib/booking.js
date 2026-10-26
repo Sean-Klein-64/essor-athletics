@@ -1,4 +1,4 @@
-import { BOOKING } from "./config";
+import { BOOKING, WODIFY_APP, WODIFY_BOOKING_URL } from "./config";
 
 /*
   Where a runner stands with booking a session in Wodify:
@@ -28,3 +28,19 @@ export const bookingState = (sessionDate, today, booked) => {
 /* The small print under the button */
 export const bookingRules = () =>
   `Réservations ouvertes ${BOOKING.opensDaysBefore} jours avant · annulation jusqu'à ${BOOKING.cancelHoursBefore} h avant`;
+
+/*
+  Where the booking button goes, in order (first that works):
+    the Wodify app by one of its schemes → its store page → the website.
+  [{ url, probe }] — probe = ask the phone first (iOS can check a scheme
+  without leaving the app; Android just tries).
+*/
+export const wodifyTargets = (os, app = WODIFY_APP) => {
+  const list = (app.schemes || []).map((url) => ({ url, probe: true }));
+  if (os === "ios") list.push({ url: app.ios }, { url: app.iosWeb });
+  if (os === "android") {
+    list.push(app.androidPackage ? { url: `market://details?id=${app.androidPackage}` } : { url: "market://search?q=Wodify&c=apps" });
+  }
+  list.push({ url: WODIFY_BOOKING_URL });
+  return list;
+};
