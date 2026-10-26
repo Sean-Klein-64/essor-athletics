@@ -172,6 +172,11 @@ pre.summary { white-space: pre-wrap; font: 14px/1.5 var(--body); background: var
         <a class="btn" id="wa" style="display:none;align-items:center;justify-content:center;text-decoration:none" target="_blank" rel="noopener">Ouvrir WhatsApp</a>
       </div>
     </div>
+    <div class="card">
+      <h3>Après le test VMA</h3>
+      <p class="muted">Entre ta distance des 6 minutes : tu obtiens ta VMA et toutes tes allures d'entraînement, à retrouver quand tu veux.</p>
+      <a class="btn" href="vma.html" style="text-decoration:none">Ma VMA et mes zones</a>
+    </div>
     <div class="actions"><button class="btn ghost" id="edit">Modifier mes réponses</button><button class="btn ghost" id="restart">Recommencer</button></div>
   </section>
 </div>
@@ -356,7 +361,7 @@ async function save(a, text) {
   const r = isNew
     ? await fetch(SUPABASE_URL + "/rest/v1/signups", { method: "POST", headers: H, body })
     : await fetch(SUPABASE_URL + "/rest/v1/signups?id=eq." + id, { method: "PATCH", headers: H, body });
-  if (r.ok) savedId = id;
+  if (r.ok) { savedId = id; try { localStorage.setItem("essor-signup-id", id); } catch (e) { /* storage may be unavailable */ } }
   return r.ok;
 }
 async function submit(a, text) {

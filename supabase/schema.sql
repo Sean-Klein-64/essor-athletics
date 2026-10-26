@@ -88,3 +88,5 @@ begin
 end $$;
 drop trigger if exists signups_cap on public.signups;
 create trigger signups_cap before insert or update on public.signups for each row execute function public.enforce_launch_cap();
+
+-- 4. VMA results from the website (docs/vma.html) — see supabase/vma.sql

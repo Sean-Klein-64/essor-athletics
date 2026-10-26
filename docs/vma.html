@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Essor Athletics — entre ton test VMA et retrouve tes allures d'entraînement.">
+<meta property="og:title" content="Essor Athletics — ma VMA">
+<meta property="og:description" content="Ton test VMA, tes zones d'entraînement, toujours à portée de main.">
+<title>Ma VMA · Essor Athletics</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@1,900&family=DM+Sans:wght@400;500;600&display=swap">
+<style>
+/* Same look as the sign-up page (index.html): near-black, off-white, vert sapin and mint. */
+:root {
+  --bg: #0A0A0A; --fg: #FAFAF8; --card: #161616; --line: #262626; --muted: #9AA7A1;
+  --accent: #1E4D3A; --accent-soft: rgba(124,196,162,0.12); --mint: #7CC4A2; --bad: #E07A5F;
+  --display: 'Archivo', 'Arial Black', Arial, sans-serif; --body: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body { font-family: var(--body); font-size: 17px; line-height: 1.45; }
+[hidden] { display: none !important }
+.hero { position: relative; overflow: hidden; background: linear-gradient(160deg, #12291f 0%, #0A0A0A 70%); }
+.hero .in { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 22px max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 8px; min-height: 190px; justify-content: flex-end; }
+.lanes { position: absolute; right: -14%; top: -30%; width: 64%; max-width: 360px; opacity: 0.45; }
+.brand { display: flex; align-items: baseline; gap: 8px; }
+.brand a { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 46px; letter-spacing: -1.4px; line-height: 0.95; color: #fff; text-decoration: none; }
+.brand span { font-size: 15px; color: var(--mint); letter-spacing: 3px; }
+.kicker { font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); margin: 0; }
+.hero .kicker { color: var(--mint); }
+.wrap { max-width: 520px; margin: 0 auto; padding: 18px max(16px, env(safe-area-inset-right, 0px)) 56px max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 18px; }
+.view { display: flex; flex-direction: column; gap: 16px; }
+h1 { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 34px; line-height: 1.02; letter-spacing: -0.9px; margin: 0; text-wrap: balance; }
+h2 { font-size: 22px; font-weight: 600; line-height: 1.2; margin: 0; }
+h3 { margin: 0; font-size: 17px; font-weight: 600; }
+p { margin: 0 }
+.muted { color: var(--muted); font-size: 15px; }
+.small { font-size: 13px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 14px; color: var(--muted); }
+.unit { position: relative; }
+.unit span { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
+input { width: 100%; font: inherit; font-size: 18px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 13px 16px; }
+input:focus-visible { outline: 2px solid var(--mint); outline-offset: 1px; }
+input[aria-invalid="true"] { border-color: var(--bad); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 4px; }
+.seg button { font: inherit; font-size: 15px; border: 0; border-radius: 10px; padding: 9px 8px; background: transparent; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--fg); box-shadow: inset 0 0 0 1px var(--mint); }
+.hint-bad { color: var(--bad); font-size: 14px; }
+.calc { color: var(--mint); font-size: 15px; min-height: 1.4em; }
+.actions { display: flex; flex-direction: column; gap: 8px; }
+.btn { font: inherit; font-size: 18px; font-weight: 500; border: 0; border-radius: 26px; height: 52px; padding: 0 20px; background: var(--mint); color: #0A0A0A; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.btn:disabled { background: var(--line); color: var(--muted); cursor: default; }
+.btn.ghost { background: transparent; color: var(--muted); font-size: 15px; height: 40px; }
+.btn.line { background: transparent; color: var(--fg); border: 1px solid var(--line); font-size: 16px; height: 46px; }
+.btn:focus-visible, .seg button:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+.result { background: var(--accent); color: #fff; border-radius: 24px; padding: 22px; display: flex; flex-direction: column; gap: 6px; }
+.result .kicker { color: rgba(255,255,255,0.75); }
+.result .big { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 64px; line-height: 0.95; letter-spacing: -1.5px; }
+.result .big small { font-family: var(--body); font-style: normal; font-weight: 500; font-size: 20px; letter-spacing: 0; margin-left: 6px; opacity: .85; }
+.result p { color: rgba(255,255,255,0.88); font-size: 15px; }
+.zones { display: flex; flex-direction: column; }
+.zone { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.zone:first-child { border-top: 0; padding-top: 2px; }
+.zone b { font-weight: 600; font-size: 16px; }
+.zone .pace { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--mint); text-align: right; white-space: nowrap; }
+.zone .meta { grid-column: 1 / -1; color: var(--muted); font-size: 13px; }
+.zone .hr { color: var(--fg); font-variant-numeric: tabular-nums; }
+.preds { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pred { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.pred span { display: block; font-size: 12px; color: var(--muted); letter-spacing: .6px; text-transform: uppercase; }
+.pred b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.pred i { display: block; font-style: normal; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.hist li { display: flex; justify-content: space-between; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hist li:last-child { color: var(--fg); }
+.link { font-size: 14px; word-break: break-all; color: var(--fg); background: var(--bg); border: 1px dashed var(--line); border-radius: 12px; padding: 10px 12px; user-select: all; }
+.ok { color: var(--mint); font-size: 15px; }
+a.text { color: var(--mint); }
+@media (min-width: 420px) { .preds { grid-template-columns: repeat(4, 1fr); } }
+</style>
+</head>
+<body>
+<header class="hero">
+  <svg class="lanes" viewBox="0 0 400 620" aria-hidden="true">
+    <rect x="1" y="1" width="398" height="618" rx="199" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.6"/>
+    <rect x="15" y="15" width="370" height="590" rx="185" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.45"/>
+    <rect x="29" y="29" width="342" height="562" rx="171" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.3"/>
+    <rect x="43" y="43" width="314" height="534" rx="157" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.18"/>
+  </svg>
+  <div class="in">
+    <p class="kicker">Run club · CrossFit Essor</p>
+    <div class="brand"><a href="./">essor</a><span>athletics</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="muted" id="loading">Chargement…</p>
+
+  <!-- 1. Enter or change the result -->
+  <section class="view" id="form" hidden>
+    <div>
+      <p class="kicker" id="formKicker">Test VMA</p>
+      <h1 id="formTitle">Ta VMA, tes allures</h1>
+    </div>
+    <p class="muted" id="formIntro">Entre la distance de ton test de 6 minutes. On calcule ta VMA et toutes tes allures d'entraînement, et tu peux revenir les voir quand tu veux.</p>
+    <div class="card">
+      <div class="field"><label for="name">Prénom et nom</label><input id="name" type="text" autocomplete="name" placeholder="Prénom Nom"></div>
+      <div class="field"><label for="phone">Ton numéro</label><input id="phone" type="tel" autocomplete="tel" placeholder="06 …"><p class="muted small">Pour retrouver tes zones sur un autre téléphone.</p></div>
+    </div>
+    <div class="card">
+      <div class="seg" role="group" aria-label="Ce que tu connais">
+        <button type="button" id="modeTest" aria-pressed="true">Test 6 minutes</button>
+        <button type="button" id="modeVma" aria-pressed="false">Je connais ma VMA</button>
+      </div>
+      <div class="field" id="testField"><label for="metres">Distance parcourue en 6 minutes</label><div class="unit"><input id="metres" type="text" inputmode="numeric" placeholder="1500" autocomplete="off"><span>m</span></div></div>
+      <div class="field" id="vmaField" hidden><label for="vmaIn">Ta VMA</label><div class="unit"><input id="vmaIn" type="text" inputmode="decimal" placeholder="15,5" autocomplete="off"><span>km/h</span></div></div>
+      <p class="calc" id="calc"></p>
+      <div class="field"><label for="hr">FC max <span class="small">(facultatif — pour tes zones cardio)</span></label><div class="unit"><input id="hr" type="text" inputmode="numeric" placeholder="190" autocomplete="off"><span>bpm</span></div></div>
+      <p class="hint-bad" id="formBad" hidden></p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="save" disabled>Voir mes zones</button>
+      <button class="btn ghost" id="cancel" hidden>Annuler</button>
+      <button class="btn ghost" id="toFind">Déjà enregistré sur un autre téléphone ?</button>
+    </div>
+  </section>
+
+  <!-- 2. Find an existing result on a new phone -->
+  <section class="view" id="find" hidden>
+    <div><p class="kicker">Retrouver</p><h1>Mes zones</h1></div>
+    <p class="muted">Le numéro et le prénom que tu as donnés en enregistrant ta VMA.</p>
+    <div class="card">
+      <div class="field"><label for="fPhone">Ton numéro</label><input id="fPhone" type="tel" autocomplete="tel" placeholder="06 …"></div>
+      <div class="field"><label for="fFirst">Ton prénom</label><input id="fFirst" type="text" autocomplete="given-name" placeholder="Prénom"></div>
+      <p class="hint-bad" id="findBad" hidden></p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="findGo">Retrouver</button>
+      <button class="btn ghost" id="findBack">Retour</button>
+    </div>
+  </section>
+
+  <!-- 3. The runner's zones -->
+  <section class="view" id="mine" hidden>
+    <div class="result">
+      <p class="kicker" id="who"></p>
+      <div class="big" id="bigVma"></div>
+      <p id="testLine"></p>
+    </div>
+    <p class="ok" id="status" hidden></p>
+
+    <div class="card">
+      <h3>Tes zones d'entraînement</h3>
+      <div class="zones" id="zones"></div>
+      <p class="muted small" id="hrNote"></p>
+    </div>
+
+    <div class="card">
+      <h3>Ce que ta VMA prédit</h3>
+      <div class="preds" id="preds"></div>
+      <p class="muted small">Des repères, pas des promesses : il faut l'entraînement qui va avec.</p>
+    </div>
+
+    <div class="card" id="histCard" hidden>
+      <h3>Tes tests</h3>
+      <ul class="hist" id="hist"></ul>
+    </div>
+
+    <div class="card" id="linkCard" hidden>
+      <h3>Ton lien perso</h3>
+      <p class="muted small">Garde-le (favori, notes, écran d'accueil) pour revenir ici depuis n'importe quel téléphone. Ne le partage pas : il permet de modifier ton résultat.</p>
+      <p class="link" id="link"></p>
+      <button class="btn line" id="copy">Copier mon lien</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="edit">Modifier mon résultat</button>
+      <button class="btn ghost" id="notMe">Ce n'est pas moi</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ── Supabase (same project as the sign-up page). Data goes through the vma_* functions in supabase/vma.sql. ── */
+const SUPABASE_URL = "https://rqomypmgbjigukvztjxz.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_LnDYfyrKMTOunfAH29ZFTQ_CY3GtJE5";
+const rpc = async (fn, args) => {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  if (!r.ok) throw new Error(fn + " " + r.status);
+  return r.json();
+};
+
+/* ── The running maths — the same numbers as the app (js/lib/paces.js). Keep the two in step. ── */
+const ZONES = [
+  { name: "Recovery", vma: [null, 62], hr: [null, 76], note: "Juste faire circuler le sang — le lendemain d'une séance dure" },
+  { name: "Zone 2", vma: null, hr: [60, 70], note: "Base aérobie facile, à la FC uniquement" },
+  { name: "General Aerobic", vma: [63, 68], hr: [70, 81], note: "Le gros de la semaine : footing, base aérobie" },
+  { name: "Endurance", vma: [66, 72], hr: [74, 84], note: "Sorties longues et moyennes-longues" },
+  { name: "Marathon Pace", vma: [77, 80], hr: [79, 88], note: "Allure marathon — rythme de course" },
+  { name: "Lactate Threshold", vma: [87, 89], hr: [80, 91], note: "Seuil — tenable 30 à 60'" },
+  { name: "VO2max", vma: [93, 97], hr: [94, 98], note: "Répétitions de 2 à 6'" },
+  { name: "Speed / Strides", vma: [98, null], hr: null, note: "Au ressenti, relâché, jamais crispé" },
+];
+const PREDICTIONS = [
+  { name: "5 km", metres: 5000, vma: 95 },
+  { name: "10 km", metres: 10000, vma: 90 },
+  { name: "Semi", metres: 21097.5, vma: 85 },
+  { name: "Marathon", metres: 42195, vma: 80 },
+];
+const pace = (vma, pct) => 3600 / (vma * pct / 100);
+const clock = (sec) => { const s = Math.round(sec), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), p = (n) => String(n).padStart(2, "0"); return h ? `${h}:${p(m)}:${p(s % 60)}` : `${m}:${p(s % 60)}`; };
+const zonePace = (vma, r) => { if (!r) return "à la FC"; const [lo, hi] = r; if (lo == null) return `> ${clock(pace(vma, hi))} /km`; if (hi == null) return `< ${clock(pace(vma, lo))} /km`; return `${clock(pace(vma, hi))} – ${clock(pace(vma, lo))} /km`; };
+const pct = (r, u) => { if (!r) return ""; const [lo, hi] = r; return lo == null ? `< ${hi} % ${u}` : hi == null ? `> ${lo} % ${u}` : `${lo}–${hi} % ${u}`; };
+const bpm = (hr, r) => { if (!r || !hr) return ""; const [lo, hi] = r, b = (p) => Math.round(hr * p / 100); return lo == null ? `< ${b(hi)} bpm` : hi == null ? `> ${b(lo)} bpm` : `${b(lo)}–${b(hi)} bpm`; };
+const dec = (t) => { const n = Number(String(t).trim().replace(",", ".")); return Number.isFinite(n) && n > 0 ? n : null; };
+const fr = (n) => String(n).replace(".", ",");
+const vmaFromMetres = (m) => Math.round(m / 10) / 10; // 6' test: metres ÷ 100, one decimal
+
+/* ── Who is this? A token in the link (?p=…) or on this phone. ── */
+const $ = (id) => document.getElementById(id);
+const KEY = "essor-vma";
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { return null; } },
+  set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) { /* private mode: the link still works */ } },
+  clear() { try { localStorage.removeItem(KEY); } catch (e) {} },
+};
+const uuid = () => crypto.randomUUID ? crypto.randomUUID() : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+const isUuid = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s || "");
+const personalLink = (t) => location.origin + location.pathname + "?p=" + t;
+
+/* The questionnaire on index.html keeps the runner's name, phone and row id: reuse them. */
+function fromSignup() {
+  const out = {};
+  try {
+    const text = localStorage.getItem("essor-signup") || "";
+    const name = text.match(/^Run club Essor — (.+)$/m); if (name) out.name = name[1].trim();
+    const tel = text.match(/^Tél : (.+)$/m); if (tel) out.phone = tel[1].trim();
+    const id = localStorage.getItem("essor-signup-id"); if (isUuid(id)) out.signupId = id;
+  } catch (e) {}
+  return out;
+}
+
+let me = null;     // { token, name, phone, vma, test_m, hr_max, history, signupId }
+let mode = "test"; // "test" | "vma"
+
+function show(view) { ["loading", "form", "find", "mine"].forEach(v => $(v).hidden = v !== view); window.scrollTo(0, 0); }
+
+/* ── Form ── */
+function setMode(m) {
+  mode = m;
+  $("modeTest").setAttribute("aria-pressed", String(m === "test"));
+  $("modeVma").setAttribute("aria-pressed", String(m === "vma"));
+  $("testField").hidden = m !== "test"; $("vmaField").hidden = m !== "vma";
+  check();
+}
+function readForm() {
+  const name = $("name").value.trim(), phone = $("phone").value.trim();
+  const metres = mode === "test" ? Math.round(dec($("metres").value) || 0) || null : null;
+  const vma = mode === "test" ? (metres ? vmaFromMetres(metres) : null) : (dec($("vmaIn").value) ? Math.round(dec($("vmaIn").value) * 10) / 10 : null);
+  const hrRaw = $("hr").value.trim(); const hr = hrRaw ? Math.round(dec(hrRaw) || 0) : null;
+  return { name, phone, metres, vma, hr, hrRaw };
+}
+function check() {
+  const f = readForm(); let bad = "";
+  if (mode === "test" && $("metres").value.trim() && (!f.metres || f.metres < 600 || f.metres > 3000)) bad = "Entre la distance en mètres, par exemple 1500.";
+  else if (mode === "vma" && $("vmaIn").value.trim() && (!f.vma || f.vma < 6 || f.vma > 30)) bad = "Une VMA entre 6 et 30 km/h, par exemple 15,5.";
+  else if (f.hrRaw && (!f.hr || f.hr < 120 || f.hr > 230)) bad = "Une FC max entre 120 et 230 bpm — ou laisse vide.";
+  $("formBad").hidden = !bad; $("formBad").textContent = bad;
+  $("metres").setAttribute("aria-invalid", String(mode === "test" && !!bad && bad.includes("mètres")));
+  $("vmaIn").setAttribute("aria-invalid", String(mode === "vma" && !!bad && bad.includes("VMA entre")));
+  $("hr").setAttribute("aria-invalid", String(!!bad && bad.includes("FC")));
+  $("calc").textContent = !bad && mode === "test" && f.vma ? `${f.metres} m en 6' → VMA ${fr(f.vma)} km/h` : "";
+  $("save").disabled = !!bad || !f.name || !f.vma || f.vma < 6 || f.vma > 30;
+}
+function openForm(editing) {
+  const s = me || fromSignup();
+  $("name").value = s.name || ""; $("phone").value = s.phone || "";
+  $("metres").value = me && me.test_m ? me.test_m : ""; $("vmaIn").value = me && !me.test_m && me.vma ? fr(me.vma) : "";
+  $("hr").value = me && me.hr_max ? me.hr_max : "";
+  setMode(me && me.vma && !me.test_m ? "vma" : "test");
+  $("formKicker").textContent = editing ? "Modifier" : "Test VMA";
+  $("formTitle").textContent = editing ? "Ton résultat" : "Ta VMA, tes allures";
+  $("formIntro").hidden = !!editing;
+  $("cancel").hidden = !editing; $("toFind").hidden = !!editing;
+  $("save").textContent = editing ? "Enregistrer" : "Voir mes zones";
+  show("form");
+}
+
+async function save() {
+  const f = readForm(); if ($("save").disabled) return;
+  const token = me && me.token ? me.token : uuid();
+  const signupId = (me && me.signupId) || fromSignup().signupId || null;
+  const prevHistory = (me && me.history) || [];
+  const changed = !me || me.vma !== f.vma || (me.test_m || null) !== f.metres;
+  me = { token, name: f.name, phone: f.phone, vma: f.vma, test_m: f.metres, hr_max: f.hr, signupId,
+         history: changed ? [...prevHistory, { at: new Date().toISOString(), vma: f.vma, test_m: f.metres }] : prevHistory };
+  store.set({ token, cache: me, pending: true });
+  history.replaceState(null, "", "?p=" + token);
+  renderMine(); show("mine");
+  setStatus("Enregistrement…", true);
+  try {
+    await rpc("vma_save", { t: token, p_name: f.name, p_phone: f.phone || null, p_vma: f.vma, p_test_m: f.metres, p_hr_max: f.hr, p_signup: signupId });
+    store.set({ token, cache: me, pending: false });
+    setStatus("Enregistré ✓", true);
+  } catch (e) {
+    setStatus("Pas pu enregistrer pour l'instant — tes zones sont gardées sur ce téléphone, on réessaie à ta prochaine visite.", false);
+  }
+}
+
+/* ── The zones page ── */
+function setStatus(text, ok) { $("status").hidden = !text; $("status").textContent = text; $("status").className = ok ? "ok" : "hint-bad"; }
+const day = (iso) => new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+function renderMine() {
+  const v = Number(me.vma), hr = me.hr_max;
+  $("who").textContent = (me.name || "Ma VMA").toUpperCase();
+  $("bigVma").innerHTML = `${fr(v)}<small>km/h VMA</small>`;
+  const last = (me.history || []).slice(-1)[0];
+  $("testLine").textContent = me.test_m
+    ? `${me.test_m} m en 6 minutes${last ? " · " + day(last.at) : ""}`
+    : `VMA entrée à la main${last ? " · " + day(last.at) : ""}`;
+  $("zones").innerHTML = ZONES.map(z => {
+    const showPace = z.vma || hr; // Zone 2 is HR-only: hide it until there's a FC max
+    if (!showPace) return "";
+    const right = z.vma ? zonePace(v, z.vma) : bpm(hr, z.hr);
+    const hrTxt = z.vma && hr && z.hr ? ` · <span class="hr">${bpm(hr, z.hr)}</span>` : "";
+    return `<div class="zone"><b>${z.name}</b><span class="pace">${right}</span><span class="meta">${z.vma ? pct(z.vma, "VMA") : pct(z.hr, "FC max")}${hrTxt} — ${z.note}</span></div>`;
+  }).join("");
+  $("hrNote").textContent = hr ? `Fréquences cardiaques calculées sur une FC max de ${hr} bpm.` : "Ajoute ta FC max (Modifier) pour voir aussi tes zones cardio.";
+  $("preds").innerHTML = PREDICTIONS.map(p => `<div class="pred"><span>${p.name}</span><b>${clock(p.metres / 1000 * pace(v, p.vma))}</b><i>${clock(pace(v, p.vma))} /km</i></div>`).join("");
+  const h = me.history || [];
+  $("histCard").hidden = h.length < 2;
+  $("hist").innerHTML = h.map(e => `<li><span>${day(e.at)}</span><span>${e.test_m ? e.test_m + " m · " : ""}${fr(e.vma)} km/h</span></li>`).join("");
+  $("linkCard").hidden = !me.token;
+  $("link").textContent = me.token ? personalLink(me.token) : "";
+}
+
+async function load(token) {
+  show("loading");
+  const local = store.get();
+  if (local && local.token === token && local.cache) { me = local.cache; renderMine(); show("mine"); }
+  try {
+    const rows = await rpc("vma_get", { t: token });
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    if (row && row.vma != null) {
+      // A save made offline on this phone wins over the server copy until it goes through
+      if (local && local.token === token && local.pending && local.cache) { me = local.cache; renderMine(); show("mine"); retryPending(); return; }
+      me = { ...(me || {}), token, name: row.name, vma: Number(row.vma), test_m: row.test_m, hr_max: row.hr_max, history: row.history || [] };
+      store.set({ token, cache: me, pending: false });
+      renderMine(); show("mine"); setStatus("", true);
+    } else if (local && local.token === token && local.pending) { retryPending(); }
+    else if (!me) { me = null; openForm(false); }
+  } catch (e) {
+    if (me) setStatus("Hors ligne — tu vois la dernière version enregistrée sur ce téléphone.", false);
+    else { openForm(false); }
+  }
+}
+async function retryPending() {
+  try {
+    await rpc("vma_save", { t: me.token, p_name: me.name, p_phone: me.phone || null, p_vma: me.vma, p_test_m: me.test_m, p_hr_max: me.hr_max, p_signup: me.signupId || null });
+    store.set({ token: me.token, cache: me, pending: false });
+    setStatus("Enregistré ✓", true);
+  } catch (e) { setStatus("Pas encore enregistré — on réessaie à ta prochaine visite.", false); }
+}
+
+/* ── Find on a new phone ── */
+async function find() {
+  const phone = $("fPhone").value.trim(), first = $("fFirst").value.trim();
+  $("findBad").hidden = true;
+  if (phone.replace(/\D/g, "").length < 9 || !first) { $("findBad").hidden = false; $("findBad").textContent = "Il faut ton numéro complet et ton prénom."; return; }
+  $("findGo").disabled = true; $("findGo").textContent = "Recherche…";
+  try {
+    const token = await rpc("vma_find", { p_phone: phone, p_first: first });
+    if (isUuid(token)) { store.set({ token, cache: null, pending: false }); history.replaceState(null, "", "?p=" + token); await load(token); }
+    else { $("findBad").hidden = false; $("findBad").textContent = "Rien trouvé avec ce numéro et ce prénom. Vérifie-les, ou entre ton test à nouveau."; }
+  } catch (e) { $("findBad").hidden = false; $("findBad").textContent = "Pas de connexion pour l'instant — réessaie dans un moment."; }
+  $("findGo").disabled = false; $("findGo").textContent = "Retrouver";
+}
+
+/* ── Wiring ── */
+["name", "phone", "metres", "vmaIn", "hr"].forEach(id => $(id).addEventListener("input", check));
+$("metres").addEventListener("keydown", e => { if (e.key === "Enter") save(); });
+$("modeTest").onclick = () => setMode("test");
+$("modeVma").onclick = () => setMode("vma");
+$("save").onclick = save;
+$("cancel").onclick = () => show("mine");
+$("edit").onclick = () => openForm(true);
+$("toFind").onclick = () => { const s = fromSignup(); $("fPhone").value = s.phone || ""; $("fFirst").value = (s.name || "").split(" ")[0]; show("find"); };
+$("findBack").onclick = () => show("form");
+$("findGo").onclick = find;
+$("notMe").onclick = () => { store.clear(); me = null; history.replaceState(null, "", location.pathname); openForm(false); };
+$("copy").onclick = async () => {
+  const t = $("link").textContent;
+  try { await navigator.clipboard.writeText(t); $("copy").textContent = "Copié ✓"; }
+  catch (e) { const r = document.createRange(); r.selectNodeContents($("link")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $("copy").textContent = "Sélectionné — copie-le"; }
+  setTimeout(() => $("copy").textContent = "Copier mon lien", 2000);
+};
+
+const fromUrl = new URLSearchParams(location.search).get("p");
+const saved = store.get();
+const startToken = isUuid(fromUrl) ? fromUrl : saved && isUuid(saved.token) ? saved.token : null;
+if (startToken) { if (!fromUrl) history.replaceState(null, "", "?p=" + startToken); load(startToken); }
+else openForm(false);
+</script>
+</body>
+</html>
