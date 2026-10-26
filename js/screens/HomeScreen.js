@@ -61,7 +61,7 @@ const NextCard = ({ session, onPress, override }) => {
             const booking = bookingState(session.date, todayKey(), !!preferences.booked?.[session.id]);
             if (booking.status === "booked")
               return (
-                <Pressable onPress={onPress} small hitSlop={6}>
+                <Pressable onPress={onPress} hitSlop={6}>
                   <View style={[styles.goingButton, { borderColor: colors.accent }]}>
                     <Glyph name="check" size={14} color={colors.accentText} strokeWidth={2.6} />
                     <Text style={[typography.heading, typography.bold, { fontSize: 15, color: colors.accentText }]}>Réservé</Text>
@@ -70,16 +70,16 @@ const NextCard = ({ session, onPress, override }) => {
               );
             if (booking.status === "soon")
               return (
-                <Pressable onPress={onPress} small hitSlop={6}>
+                <Pressable onPress={onPress} hitSlop={6}>
                   <View style={[styles.goingButton, { borderColor: colors.border }]}>
                     <Text style={[typography.heading, { fontSize: 14, color: colors.text }]}>Dès le {formatShortDate(booking.opensOn).slice(0, 5)}</Text>
                   </View>
                 </Pressable>
               );
             return (
-              <Pressable onPress={() => Linking.openURL(WODIFY_BOOKING_URL)} small hitSlop={6}>
+              <Pressable onPress={() => Linking.openURL(WODIFY_BOOKING_URL)} hitSlop={6}>
                 <View style={[styles.goingButton, { backgroundColor: colors.accent, borderColor: colors.accent }]}>
-                  <Text style={[typography.heading, typography.bold, { fontSize: 15, color: "white" }]}>Réserver sur Wodify</Text>
+                  <Text style={[typography.heading, typography.bold, { fontSize: 16, color: "white" }]}>Réserver ma place</Text>
                 </View>
               </Pressable>
             );
@@ -347,21 +347,24 @@ const styles = StyleSheet.create({
   summary: { fontSize: 15, lineHeight: 20 },
   openRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
   goingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 12,
     borderTopWidth: 1,
     paddingHorizontal: 18,
-    paddingVertical: 12,
+    paddingTop: 14,
+    paddingBottom: 18,
   },
-  goingCount: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },
+  goingCount: { flexDirection: "row", alignItems: "center", gap: 8 },
   goingButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "stretch",
     gap: 6,
-    height: 38,
+    height: 48,
     paddingHorizontal: 16,
-    borderRadius: 19,
+    borderRadius: 24,
     borderWidth: 1,
   },
   row: {
