@@ -87,3 +87,39 @@ export const syncMember = async (ctx, phone, firstName, { first = false } = {}) 
   await ctx.setPreference("member", { ...meta, phone, first: firstName, checked: new Date().toISOString() });
   return "ok";
 };
+
+/*
+  What the phone tells the coaches (member_progress(), supabase/coach.sql):
+  sessions marked done, the runner's goal for the group race, their best
+  time per distance and the VMA on the phone. Read in the Coach Session Hub.
+  Fails quietly — it's a report, nothing on the phone depends on it.
+*/
+export const progressReport = (p) => ({
+  done: p.done || {},
+  raceGoal: p.raceGoal || null,
+  records: Object.fromEntries(
+    Object.entries(p.records || {})
+      .map(([id, list]) => [id, Math.min(...(list || []).map((e) => e.seconds).filter(Boolean))])
+      .filter(([, s]) => Number.isFinite(s)),
+  ),
+  vma: p.vma ? { value: p.vma, ...((p.vmaHistory || []).slice(-1)[0] || {}) } : null,
+});
+
+export const reportProgress = async (preferences) => {
+  const m = preferences.member;
+  if (!m?.phone || !SUPABASE_URL) return false;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/member_progress`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ p_phone: m.phone, p_first: m.first, p_progress: progressReport(preferences) }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+};

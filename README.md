@@ -126,3 +126,11 @@ npx expo export --platform ios
 npx expo export --platform android
 node scripts/test_paces.js
 ```
+
+## Coach Session Hub
+
+In the coach view, tapping a session opens its hub: the session (date, time, Floride, structure), then every runner expected, grouped by level, with their VMA and the times that session asks of them. Tap a runner for their page (level, VMA and test date, bests, sessions done, goal race, injury notes from the questionnaire, training paces).
+
+- Run `supabase/coach.sql` once in Supabase → SQL Editor. It adds `coach_athletes(code)` (the roster, gated by the coach code stored in `coach_settings`) and `member_progress()` (members' phones report sessions done, race goal, bests and VMA at launch and when they change).
+- Who's in the list is decided in one place: `getSessionAttendees()` in `js/lib/coach.js`. Today it's everyone with `app_access`; Wodify bookings plug in there later.
+- Lint: `npx expo lint` (ESLint config in `eslint.config.js`). Pure helpers are covered by `node scripts/test_paces.js`.

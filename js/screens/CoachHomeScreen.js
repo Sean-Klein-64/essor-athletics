@@ -13,11 +13,12 @@ import { splitSessions, formatDay, todayKey } from "../lib/plan";
 import myWeek from "../lib/myWeek";
 
 /*
-  Coach view — what members never see. Write and edit sessions, and
+  Coach view — what members never see. Tap a session for its hub (who's
+  coming, their paces — CoachSessionScreen), the pencil to edit it, and
   Sean's own week (bookings are in Wodify). "Vue membre" switches to the member Home.
 */
 
-const Row = ({ session, count, onPress, colors, typography, draft }) => (
+const Row = ({ session, count, onPress, onEdit, colors, typography, draft }) => (
   <Pressable onPress={onPress}>
     <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={{ flex: 1, gap: 2 }}>
@@ -35,7 +36,15 @@ const Row = ({ session, count, onPress, colors, typography, draft }) => (
           <Text style={[typography.finePrint, { fontSize: 14 }]}>{count}</Text>
         </View>
       )}
-      <Glyph name="pencil" size={16} color={colors.text} />
+      {onEdit ? (
+        <Pressable onPress={onEdit} small hitSlop={10}>
+          <View style={[styles.edit, { borderColor: colors.border }]}>
+            <Glyph name="pencil" size={15} color={colors.text} />
+          </View>
+        </Pressable>
+      ) : (
+        <Glyph name="right" size={16} color={colors.text} />
+      )}
     </View>
   </Pressable>
 );
@@ -49,6 +58,7 @@ const CoachHomeScreen = ({ navigation }) => {
   const local = preferences.coachSessions || {};
 
   const edit = (s) => navigation.navigate("SessionEditor", { id: s?.id });
+  const hub = (s) => navigation.navigate("CoachSession", { id: s.id });
   const today = myWeek[(new Date().getDay() + 6) % 7];
 
   return (
@@ -87,7 +97,7 @@ const CoachHomeScreen = ({ navigation }) => {
         {!!next && (
           <View style={styles.section}>
             <SectionLabel>Prochaine séance</SectionLabel>
-            <Row session={next} onPress={() => edit(next)} draft={!!local[next.id] && !shared} colors={colors} typography={typography} />
+            <Row session={next} onPress={() => hub(next)} onEdit={() => edit(next)} draft={!!local[next.id] && !shared} colors={colors} typography={typography} />
             <Pressable onPress={() => navigation.navigate("Session", { id: next.id })} small>
               <Text style={[typography.finePrint, styles.link, { color: colors.accentText }]}>Voir comme un membre</Text>
             </Pressable>
@@ -98,7 +108,7 @@ const CoachHomeScreen = ({ navigation }) => {
           <View style={styles.section}>
             <SectionLabel>À venir</SectionLabel>
             {upcoming.map((s) => (
-              <Row key={s.id} session={s} onPress={() => edit(s)} draft={!!local[s.id] && !shared} colors={colors} typography={typography} />
+              <Row key={s.id} session={s} onPress={() => hub(s)} onEdit={() => edit(s)} draft={!!local[s.id] && !shared} colors={colors} typography={typography} />
             ))}
           </View>
         )}
@@ -108,7 +118,7 @@ const CoachHomeScreen = ({ navigation }) => {
           <Pressable onPress={() => navigation.navigate("MyWeek")}>
             <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={[typography.finePrint, { fontSize: 13 }]}>Aujourd'hui · {today.day}</Text>
+                <Text style={[typography.finePrint, { fontSize: 13 }]}>Aujourd{"'"}hui · {today.day}</Text>
                 <Text style={[typography.heading, typography.bold]}>{today.title}</Text>
               </View>
               <Glyph name="right" size={16} color={colors.text} />
@@ -120,7 +130,7 @@ const CoachHomeScreen = ({ navigation }) => {
           <View style={styles.section}>
             <SectionLabel>Passées</SectionLabel>
             {past.map((s) => (
-              <Row key={s.id} session={s} onPress={() => edit(s)} colors={colors} typography={typography} />
+              <Row key={s.id} session={s} onPress={() => hub(s)} onEdit={() => edit(s)} colors={colors} typography={typography} />
             ))}
           </View>
         )}
@@ -140,6 +150,7 @@ const styles = StyleSheet.create({
   section: { gap: 10 },
   row: { flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12 },
   count: { flexDirection: "row", alignItems: "center", gap: 4 },
+  edit: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   link: { textAlign: "center", opacity: 1, fontSize: 14, paddingVertical: 4 },
 });
 

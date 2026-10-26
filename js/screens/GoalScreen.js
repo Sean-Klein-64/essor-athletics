@@ -12,6 +12,7 @@ import goal, { targetTime, daysToGo } from "../lib/goal";
 import { parseClock, formatClock, formatPace, racePace, repTime } from "../lib/paces";
 import { best } from "../lib/records";
 import { formatShortDate } from "../lib/plan";
+import { reportProgress } from "../lib/member";
 
 /*
   Pick your race and your goal time for the group goal. The VMA target is
@@ -46,7 +47,9 @@ const GoalScreen = ({ navigation, route }) => {
   };
 
   const save = async () => {
-    await setPreference("raceGoal", { distance: distanceId, seconds });
+    const raceGoal = { distance: distanceId, seconds };
+    await setPreference("raceGoal", raceGoal);
+    reportProgress({ ...preferences, raceGoal });
     navigation.goBack();
   };
 

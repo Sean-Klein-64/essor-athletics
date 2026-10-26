@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -233,6 +233,52 @@ checkAsync("pending / unknown runners don't get in", async () => {
 });
 
 const pyramid = m.sessions.find((s) => s.id === "2026-11-06-vo2-10k");
+check("coach hub: a roster row becomes an athlete, bests merged, VMA newest wins", () => {
+  const a = m.toAthlete({
+    id: "x", name: "Léa Martin", level: "level2", start_week: null,
+    answers: { bests: { "10k": "52:30" }, goal: "race", races: "10 km", injury: "yes", injuryDetail: "Genou droit" },
+    vma: { vma: "14.5", test_m: 1450, history: [{ at: "2026-10-30T16:00:00Z", vma: 14.5 }], updated_at: "2026-10-30T16:00:00Z" },
+    progress: { done: { a: "2026-11-06", b: "2026-11-13" }, records: { "10k": 3000, "5k": 1500 }, raceGoal: { distance: "10k", seconds: 2940 }, vma: { value: 15, date: "2026-11-13", source: "test" }, at: "2026-11-14T10:00:00Z" },
+  });
+  assert.strictEqual(a.vma, 15);
+  assert.strictEqual(a.vmaDate, "2026-11-13");
+  assert.strictEqual(a.bests["10k"], 3000); // faster than the typed 52:30
+  assert.strictEqual(a.bests["5k"], 1500);
+  assert.strictEqual(a.sessionsDone, 2);
+  assert.strictEqual(m.goalLabel(a), "Course du Bout de l'An · 10 km en 49:00");
+  assert.strictEqual(m.injuryLabel(a), "Genou droit");
+  assert.strictEqual(m.vmaDateLabel(a), "Test du 13/11/2026");
+  const empty = m.toAthlete({ id: "y", name: "Zoé", answers: {}, progress: {} });
+  assert.strictEqual(empty.vma, null);
+  assert.strictEqual(empty.sessionsDone, null); // phone never reported
+  assert.strictEqual(m.goalLabel(empty), "—");
+  assert.strictEqual(m.vmaDateLabel(empty), "—");
+  assert.deepStrictEqual(m.bestRows(empty).map((r) => r.time), ["—", "—", "—", "—"]);
+  assert.deepStrictEqual(m.trainingPaces(null), []);
+});
+
+check("coach hub: grouped by level in order, targets from the VMA, structure in one line", () => {
+  const list = [
+    { id: "1", name: "Zoé", level: "level3" }, { id: "2", name: "Ana", level: "level1" },
+    { id: "3", name: "Bob", level: "level3" }, { id: "4", name: "Cat", level: "beginnerB" }, { id: "5", name: "Dan", level: null },
+  ];
+  const groups = m.groupByLevel(list);
+  assert.deepStrictEqual(groups.map((g) => g.id), ["level1", "level3", "beginnerB", "none"]);
+  assert.deepStrictEqual(groups[1].athletes.map((a) => a.name), ["Bob", "Zoé"]);
+  const vo2 = m.sessions.find((s) => s.id === "2026-11-06-vo2-10k");
+  const t = m.sessionTargets(vo2, "level1", 15);
+  assert.deepStrictEqual(t, [{ label: "1 km", reps: 5, target: "4:27", pace: "4:27 /km", pct: 90 }]);
+  assert.deepStrictEqual(m.sessionTargets(vo2, "level1", null), []);
+  const test = m.sessions.find((s) => s.kind === "test");
+  assert.deepStrictEqual(m.sessionTargets(test, "level3", 14), [{ label: "Test 6'", reps: 1, target: "1400 m", pace: "à battre", pct: 100 }]);
+  assert.deepStrictEqual(m.sessionTargets(vo2, "beginnerA", 15), []);
+  const thirty = m.sessions.find((s) => s.id === "2026-11-13-30-30");
+  assert.deepStrictEqual(m.sessionTargets(thirty, "level2", 15), [{ label: "30\"", reps: 12, target: "125 m", pace: "4:00 /km", pct: 100 }]);
+  assert.strictEqual(m.structureLine(vo2.levels.level1), "5 × 1 km à 90 %, entre les séries 2' marche");
+  assert.strictEqual(m.structureLine(thirty.levels.level3), "2 × 4 × (30\" à 100 % + 30\" trot), entre les séries 3' trot");
+  assert.strictEqual(m.sessionStructure(vo2)[0].text, "15' footing · Gammes");
+});
+
 console.log(`\nExample — ${pyramid.title}, Level 2, VMA 15 (${m.totalLabel(pyramid, "level2", 15)}):`);
 const print = (row, indent = "  ") => {
   console.log(`${indent}${row.title}${row.meta ? `  ${row.meta}` : ""}${row.target ? `  → ${row.target}` : ""}${row.sub ? `  (${row.sub})` : ""}`);

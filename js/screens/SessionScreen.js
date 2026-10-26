@@ -14,6 +14,7 @@ import UserContext from "../variables/context";
 import { planFor, describeStep, formatDay, totalLabel, todayKey } from "../lib/plan";
 import useSessions from "../lib/store";
 import levels, { levelById } from "../lib/levels";
+import { reportProgress } from "../lib/member";
 
 /*
   One session in full, for the runner's level: warm-up, main set and
@@ -43,6 +44,7 @@ const SessionScreen = ({ navigation, route }) => {
     if (done) delete map[session.id];
     else map[session.id] = todayKey();
     setPreference("done", map);
+    reportProgress({ ...preferences, done: map }); // the coaches see it in the hub
   };
 
   const parts = [

@@ -11,7 +11,7 @@ import OnboardingStack from "./navigation/stacks/OnboardingStack";
 import AppStack from "./navigation/stacks/AppStack";
 import UserContext from "./variables/context";
 import { todayKey } from "./lib/plan";
-import { syncMember } from "./lib/member";
+import { syncMember, reportProgress } from "./lib/member";
 
 const LoadingScreen = () => <View style={{ flex: 1, backgroundColor: "black" }} />;
 
@@ -186,7 +186,11 @@ function App() {
     synced.current = true;
     const ctx = { preferences: latest.current, setPreference, saveVma, saveRecord };
     syncMember(ctx, m.phone, m.first)
-      .then((status) => { if (status === "pending" || status === "none") setPreference("onboarded", false); })
+      .then((status) => {
+        if (status === "pending" || status === "none") return setPreference("onboarded", false);
+        // and tell the coaches where this runner is (sessions done, goal, records, VMA)
+        return reportProgress(latest.current);
+      })
       .catch(() => {});
   }, [isLoading, preferences.onboarded]);
 
