@@ -78,6 +78,21 @@ input[aria-invalid="true"] { border-color: var(--bad); }
 .link { font-size: 14px; word-break: break-all; color: var(--fg); background: var(--bg); border: 1px dashed var(--line); border-radius: 12px; padding: 10px 12px; user-select: all; }
 .ok { color: var(--mint); font-size: 15px; }
 a.text { color: var(--mint); }
+.sess-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.sess-head .when { color: var(--mint); font-size: 14px; white-space: nowrap; }
+.sess-title { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 28px; line-height: 1; letter-spacing: -0.6px; }
+.seg.three { grid-template-columns: repeat(3, 1fr); }
+.block { display: flex; flex-direction: column; gap: 6px; }
+.block > .lbl { font-size: 12px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.steps li { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+.steps li .t { font-variant-numeric: tabular-nums; color: var(--mint); font-weight: 600; text-align: right; white-space: nowrap; }
+.steps li.main { font-size: 16px; }
+.steps li .n { display: block; color: var(--muted); font-size: 13px; }
+.steps .rep { flex-direction: column; gap: 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.steps .rep > b { font-weight: 600; }
+.steps .rep .rest { color: var(--muted); font-size: 13px; }
+.steps .rep .steps li { font-size: 15px; }
 @media (min-width: 420px) { .preds { grid-template-columns: repeat(4, 1fr); } }
 </style>
 </head>
@@ -151,6 +166,19 @@ a.text { color: var(--mint); }
     </div>
     <p class="ok" id="status" hidden></p>
 
+    <div class="card" id="nextCard" hidden>
+      <div class="sess-head"><p class="kicker">Ta prochaine séance</p><span class="when" id="nextWhen"></span></div>
+      <div class="sess-title" id="nextTitle"></div>
+      <p class="muted" id="nextSummary"></p>
+      <div class="seg three" role="group" aria-label="Ton niveau" id="levelSeg">
+        <button type="button" data-level="level3">Level 3</button>
+        <button type="button" data-level="level2">Level 2</button>
+        <button type="button" data-level="level1">Level 1</button>
+      </div>
+      <div id="nextBody"></div>
+      <p class="muted small">Temps calculés sur ta VMA de <span id="nextVma"></span> km/h. Vendredi 16h30, piste de la Floride.</p>
+    </div>
+
     <div class="card">
       <h3>Tes zones d'entraînement</h3>
       <div class="zones" id="zones"></div>
@@ -221,6 +249,63 @@ const bpm = (hr, r) => { if (!r || !hr) return ""; const [lo, hi] = r, b = (p) =
 const dec = (t) => { const n = Number(String(t).trim().replace(",", ".")); return Number.isFinite(n) && n > 0 ? n : null; };
 const fr = (n) => String(n).replace(".", ",");
 const vmaFromMetres = (m) => Math.round(m / 10) / 10; // 6' test: metres ÷ 100, one decimal
+
+/* ── Cycle 1 sessions — generated from js/lib/sessions.js by scripts/build_site_sessions.js. Don't edit by hand. ── */
+/* SESSIONS:START */
+const SESSIONS = [{"id":"2026-10-30-test-vma","date":"2026-10-30","title":"Test VMA","kind":"test","summary":"6 minutes à fond : la distance parcourue donne ta VMA, et toutes tes allures en découlent.","warmup":[{"easy":"15:00"},{"drills":"Montées de genoux, talons-fesses, pas chassés, foulées bondissantes"},{"repeat":3,"steps":[{"run":80,"vma":90,"note":"Accélération progressive"},{"walk":"0:45","note":"Retour en marchant"}]}],"cooldown":[{"easy":"10:00","note":"Très facile, puis étirements"}],"levels":{"level1":[{"test":"6:00"}],"level2":[{"test":"6:00"}],"level3":[{"test":"6:00"}]}},{"id":"2026-11-06-vo2-10k","date":"2026-11-06","title":"VO2 Max","kind":"vo2","summary":"Des répétitions à ton allure 10 km, 2' de récup en marchant. Toutes à la même vitesse : si la dernière est la plus lente, tu es parti·e trop vite.","warmup":[{"easy":"15:00"},{"drills":"Skipping, talons-fesses, montées de genoux"}],"cooldown":[{"easy":"10:00","note":"Très facile, puis étirements"}],"levels":{"level1":[{"repeat":5,"steps":[{"run":1000,"vma":90}],"rest":{"walk":"2:00"}}],"level2":[{"repeat":4,"steps":[{"run":1000,"vma":90}],"rest":{"walk":"2:00"}}],"level3":[{"repeat":3,"steps":[{"run":800,"vma":90}],"rest":{"walk":"2:00"}}]}},{"id":"2026-11-13-30-30","date":"2026-11-13","title":"VMA 30/30","kind":"vo2","summary":"30 secondes vite, 30 secondes trottinées. On cherche la régularité : la dernière comme la première.","warmup":[{"easy":"15:00"}],"cooldown":[{"easy":"10:00"}],"levels":{"level1":[{"repeat":2,"steps":[{"repeat":8,"steps":[{"run":"0:30","vma":100},{"jog":"0:30"}]}],"rest":{"jog":"3:00"}}],"level2":[{"repeat":2,"steps":[{"repeat":6,"steps":[{"run":"0:30","vma":100},{"jog":"0:30"}]}],"rest":{"jog":"3:00"}}],"level3":[{"repeat":2,"steps":[{"repeat":4,"steps":[{"run":"0:30","vma":100},{"jog":"0:30"}]}],"rest":{"jog":"3:00"}}]}},{"id":"2026-11-20-vo2-10k","date":"2026-11-20","title":"VO2 Max","kind":"vo2","summary":"Des répétitions à ton allure 10 km, 2' de récup en marchant. Toutes à la même vitesse : si la dernière est la plus lente, tu es parti·e trop vite.","warmup":[{"easy":"15:00"},{"drills":"Skipping, talons-fesses, montées de genoux"}],"cooldown":[{"easy":"10:00","note":"Très facile, puis étirements"}],"levels":{"level1":[{"repeat":5,"steps":[{"run":1000,"vma":90}],"rest":{"walk":"2:00"}}],"level2":[{"repeat":4,"steps":[{"run":1000,"vma":90}],"rest":{"walk":"2:00"}}],"level3":[{"repeat":3,"steps":[{"run":800,"vma":90}],"rest":{"walk":"2:00"}}]}},{"id":"2026-11-27-pyramide","date":"2026-11-27","title":"Pyramide","kind":"pyramid","summary":"Séance préparée par Mel : les détails arrivent bientôt.","warmup":[{"easy":"15:00"},{"drills":"Skipping, talons-fesses, montées de genoux"}],"cooldown":[{"easy":"10:00","note":"Très facile, puis étirements"}],"levels":{"level1":[{"note":"Séance préparée par Mel, détails à venir"}],"level2":[{"note":"Séance préparée par Mel, détails à venir"}],"level3":[{"note":"Séance préparée par Mel, détails à venir"}]}},{"id":"2026-12-04-30-30","date":"2026-12-04","title":"VMA 30/30","kind":"vo2","summary":"Le 30/30 du 13/11, avec un peu plus de répétitions. Toujours la même régularité : la dernière comme la première.","warmup":[{"easy":"15:00"}],"cooldown":[{"easy":"10:00"}],"levels":{"level1":[{"repeat":2,"steps":[{"repeat":10,"steps":[{"run":"0:30","vma":100},{"jog":"0:30"}]}],"rest":{"jog":"3:00"}}],"level2":[{"repeat":2,"steps":[{"repeat":7,"steps":[{"run":"0:30","vma":100},{"jog":"0:30"}]}],"rest":{"jog":"3:00"}}],"level3":[{"repeat":2,"steps":[{"repeat":5,"steps":[{"run":"0:30","vma":100},{"jog":"0:30"}]}],"rest":{"jog":"3:00"}}]}},{"id":"2026-12-11-vo2-10k","date":"2026-12-11","title":"VO2 Max · allure course","kind":"vo2","summary":"Des répétitions à ton allure 10 km, 2' de récup en marchant. Toutes à la même vitesse : si la dernière est la plus lente, tu es parti·e trop vite.","warmup":[{"easy":"15:00"},{"drills":"Skipping, talons-fesses, montées de genoux"}],"cooldown":[{"easy":"10:00","note":"Très facile, puis étirements"}],"levels":{"level1":[{"repeat":5,"steps":[{"run":1000,"vma":90}],"rest":{"walk":"2:00"}}],"level2":[{"repeat":4,"steps":[{"run":1000,"vma":90}],"rest":{"walk":"2:00"}}],"level3":[{"repeat":3,"steps":[{"run":800,"vma":90}],"rest":{"walk":"2:00"}}]}},{"id":"2026-12-18-legere","date":"2026-12-18","title":"Séance légère","kind":"easy","summary":"Deux jours avant la course : juste de quoi réveiller les jambes. On garde de la fraîcheur pour dimanche.","warmup":[{"easy":"15:00"}],"cooldown":[{"easy":"10:00","note":"Très facile"}],"levels":{"level1":[{"repeat":3,"steps":[{"run":"1:00","vma":90,"note":"Allure course 10 km"},{"jog":"1:00"}]}],"level2":[{"repeat":3,"steps":[{"run":"1:00","vma":90,"note":"Allure course 10 km"},{"jog":"1:00"}]}],"level3":[{"repeat":3,"steps":[{"run":"1:00","vma":90,"note":"Allure course 10 km"},{"jog":"1:00"}]}]}}];
+/* SESSIONS:END */
+
+/* The next session: the first one after today (a Friday's session stays "next" until 19h that day). */
+function nextSession(now = new Date()) {
+  const key = (d) => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
+  const today = key(now), hour = Number(now.toLocaleString("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", hour12: false }));
+  return SESSIONS.find(x => x.date > today || (x.date === today && hour < 19)) || null;
+}
+const secs = (v) => { if (typeof v === "number") return v; const [m, s2] = String(v).split(":").map(Number); return m * 60 + (s2 || 0); };
+const dur = (v) => { const t = secs(v), m = Math.floor(t / 60), r = t % 60; return m ? (r ? `${m}'${String(r).padStart(2, "0")}` : `${m}'`) : `${r}"`; };
+const dist = (m) => m < 1000 ? `${Math.round(m / 5) * 5} m` : `${fr(Math.round(m / 100) / 10)} km`;
+const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+/* One step → [label, target, note] */
+function stepLine(st, v) {
+  const note = st.note ? esc(st.note) : "";
+  if (st.run != null && typeof st.run === "number") return [`${st.run} m à ${st.vma} % VMA`, clock(st.run / 1000 * pace(v, st.vma)), note];
+  if (st.run != null) { const t = secs(st.run); return [`${dur(st.run)} à ${st.vma} % VMA`, `≈ ${dist(v * st.vma / 100 * 1000 * t / 3600)}`, note]; }
+  if (st.easy) return [`${dur(st.easy)} footing`, zonePace(v, [63, 68]), note];
+  if (st.jog) return [`${dur(st.jog)} trot`, "très facile", note];
+  if (st.walk) return [`${dur(st.walk)} marche`, "", note];
+  if (st.test) return [`Test ${dur(st.test)} : le plus loin possible`, "à fond", note];
+  if (st.drills) return ["Gammes", "", esc(st.drills)];
+  return [note || "—", "", ""];
+}
+function stepsHtml(list, v, main) {
+  return `<ul class="steps">${list.map(st => {
+    if (st.repeat) {
+      const rest = st.rest ? `<span class="rest">Récup entre chaque : ${stepLine(st.rest, v)[0]}</span>` : "";
+      return `<li class="rep"><b>${st.repeat} ×</b>${stepsHtml(st.steps, v, main)}${rest}</li>`;
+    }
+    const [l, t, n] = stepLine(st, v);
+    return `<li class="${main ? "main" : ""}"><span>${l}${n ? `<span class="n">${n}</span>` : ""}</span><span class="t">${t}</span></li>`;
+  }).join("")}</ul>`;
+}
+const LEVEL_KEY = "essor-vma-level";
+function myLevel() {
+  try { const l = localStorage.getItem(LEVEL_KEY); if (l) return l; } catch (e) {}
+  try { const m = (localStorage.getItem("essor-signup") || "").match(/^Niveau : (.+)$/m); if (m) return ({ "Level 1": "level1", "Level 2": "level2", "Level 3": "level3" })[m[1].trim()] || "level3"; } catch (e) {}
+  return "level3";
+}
+function renderNext() {
+  const x = nextSession(); $("nextCard").hidden = !x || !me; if (!x || !me) return;
+  const v = Number(me.vma), lv = myLevel();
+  $("nextWhen").textContent = new Date(x.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "2-digit" }).replace(".", "");
+  $("nextTitle").textContent = x.title; $("nextSummary").textContent = x.summary || "";
+  $("nextVma").textContent = fr(v);
+  document.querySelectorAll("#levelSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.level === lv)));
+  const lvl = x.levels[lv]; const plain = Array.isArray(lvl);
+  const warm = plain ? x.warmup : lvl.warmup || x.warmup, main = plain ? lvl : lvl.main, cool = plain ? x.cooldown : lvl.cooldown || x.cooldown;
+  $("nextBody").innerHTML = [["Échauffement", warm, false], ["Séance", main, true], ["Retour au calme", cool, false]]
+    .filter(([, l]) => l && l.length).map(([t, l, m]) => `<div class="block"><span class="lbl">${t}</span>${stepsHtml(l, v, m)}</div>`).join('<div style="height:10px"></div>');
+}
+document.querySelectorAll("#levelSeg button").forEach(b => b.onclick = () => { try { localStorage.setItem(LEVEL_KEY, b.dataset.level); } catch (e) {} renderNext(); });
 
 /* ── Who is this? A token in the link (?p=…) or on this phone. ── */
 const $ = (id) => document.getElementById(id);
@@ -338,6 +423,7 @@ function renderMine() {
   $("hist").innerHTML = h.map(e => `<li><span>${day(e.at)}</span><span>${e.test_m ? e.test_m + " m · " : ""}${fr(e.vma)} km/h</span></li>`).join("");
   $("linkCard").hidden = !me.token;
   $("link").textContent = me.token ? personalLink(me.token) : "";
+  renderNext();
 }
 
 async function load(token) {
