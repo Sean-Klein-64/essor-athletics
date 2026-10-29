@@ -6,6 +6,7 @@ import Pressable from "../components/Pressable";
 import Glyph from "../components/Glyph";
 import Wordmark from "../components/Wordmark";
 import SectionLabel from "../components/SectionLabel";
+import OutingsCard from "../components/OutingsCard";
 import UserContext from "../variables/context";
 
 import useSessions from "../lib/store";
@@ -14,8 +15,8 @@ import myWeek from "../lib/myWeek";
 
 /*
   Coach view — what members never see. Tap a session for its hub (who's
-  coming, their paces — CoachSessionScreen), the pencil to edit it, and
-  Sean's own week (bookings are in Wodify). "Vue membre" switches to the member Home.
+  coming, their paces — CoachSessionScreen), the pencil to edit it, who said
+  "Je viens" to this week's group runs, and Sean's own week (bookings are in Wodify). "Vue membre" switches to the member Home.
 */
 
 const Row = ({ session, count, onPress, onEdit, colors, typography, draft }) => (
@@ -112,6 +113,8 @@ const CoachHomeScreen = ({ navigation }) => {
             ))}
           </View>
         )}
+
+        <OutingsCard coach />
 
         <View style={styles.section}>
           <SectionLabel>Ma semaine</SectionLabel>

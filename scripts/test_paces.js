@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/log"; export * from "../js/lib/timer"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/log"; export * from "../js/lib/timer"; export * from "../js/lib/outings"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -430,6 +430,36 @@ check("next label and countdown read in French", () => {
   assert.strictEqual(m.nextLabel(t, t.length - 1), "Ensuite : fin de séance");
   assert.strictEqual(m.formatCountdown(65), "1:05");
   assert.strictEqual(m.formatCountdown(0.2), "0:01");
+});
+
+console.log("Sorties du club — Je viens");
+check("the week ahead holds one Tuesday and one Saturday, dated", () => {
+  const list = m.upcoming("2026-11-02"); // a Monday
+  assert.deepStrictEqual(list.map((o) => [o.key, o.date]), [["tue", "2026-11-03"], ["sat", "2026-11-07"]]);
+  assert.strictEqual(list[0].id, "outing-tue-2026-11-03");
+  assert.strictEqual(m.upcoming("2026-11-03")[0].date, "2026-11-03"); // today counts
+});
+check("outing days read as Aujourd'hui / Demain / Mardi 3 novembre", () => {
+  const [tue] = m.upcoming("2026-11-02");
+  assert.strictEqual(m.outingDay(tue, "2026-11-03"), "Aujourd'hui");
+  assert.strictEqual(m.outingDay(tue, "2026-11-02"), "Demain");
+  assert.strictEqual(m.outingDay(tue, "2026-10-30"), "Mardi 3 novembre");
+});
+check("who's coming: me first, others by name, label in French", () => {
+  const rows = [
+    { session_id: "o", device_id: "me", name: "Sean" },
+    { session_id: "o", device_id: "b", name: "Mel" },
+    { session_id: "o", device_id: "c", name: "Kamel" },
+    { session_id: "other", device_id: "d", name: "Zoé" },
+  ];
+  const c = m.comingList(rows, "o", "me");
+  assert.deepStrictEqual(c, { count: 3, me: true, names: ["Moi", "Kamel", "Mel"] });
+  assert.strictEqual(m.comingLabel(c), "Toi, Kamel et Mel");
+  assert.strictEqual(m.comingLabel(m.comingList(rows, "o", "zz")), "Kamel, Mel et Sean");
+  assert.strictEqual(m.comingLabel(m.comingList([], "o", "me")), "Personne pour l'instant");
+  assert.strictEqual(m.comingLabel(m.comingList(rows.slice(0, 1), "o", "me")), "Toi, pour l'instant");
+  const many = [...rows, { session_id: "o", device_id: "e", name: "Ana" }, { session_id: "o", device_id: "f", name: "Bo" }];
+  assert.strictEqual(m.comingLabel(m.comingList(many, "o", "zz")), "Ana, Bo, Kamel et 2 autres");
 });
 
 (async () => {

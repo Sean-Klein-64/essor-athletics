@@ -13,6 +13,8 @@ import { levelById } from "../lib/levels";
 import useSessions from "../lib/store";
 import { isBeginner, nextSession, sessionLabel, runMinutes, PROGRAMMES } from "../lib/beginner";
 import { RaceCountdown, RaceWeekCard } from "../components/RaceCountdown";
+import OutingsCard from "../components/OutingsCard";
+import GroupCard from "../components/GroupCard";
 import { countdownRace } from "../lib/objectives";
 import { openWodify } from "../lib/wodify";
 import { bookingState } from "../lib/booking";
@@ -20,7 +22,7 @@ import { formatShortDate } from "../lib/plan";
 
 /*
   Home — the next session up front (big card, with the Wodify booking right on it),
-  then what's coming and what's done. Everything is already sized for the
+  the club's group runs this week ("Je viens"), then what's coming and what's done. Everything is already sized for the
   runner's level and VMA; tapping a session opens the full detail.
 */
 
@@ -257,6 +259,8 @@ const HomeScreen = ({ navigation }) => {
           </Text>
         ) : null}
 
+        <OutingsCard />
+
         {!!upcoming.length && (
           <View style={styles.section}>
             <SectionLabel>À venir</SectionLabel>
@@ -265,6 +269,8 @@ const HomeScreen = ({ navigation }) => {
             ))}
           </View>
         )}
+
+        <GroupCard />
 
         {!!past.length && (
           <View style={styles.section}>
