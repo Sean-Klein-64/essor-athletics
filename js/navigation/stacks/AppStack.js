@@ -20,6 +20,7 @@ import GoalScreen from "../../screens/GoalScreen";
 import WeekScreen from "../../screens/WeekScreen";
 import ObjectivesScreen from "../../screens/ObjectivesScreen";
 import MyRaceScreen from "../../screens/MyRaceScreen";
+import RacePlanScreen from "../../screens/RacePlanScreen";
 import { horizontalSlide, verticalSlideModal } from "../screenOptions";
 
 const AppNavigator = createStackNavigator();
@@ -45,6 +46,7 @@ const AppNavigator = createStackNavigator();
     Week             Levels 1–3: the other runs of the week around Friday
     Objectives       Mes objectifs: club race, own race, smaller goals
     MyRace           the runner's own race (name, city, date, distance, goal)
+    RacePlan         Mon plan de course: pace plan + the Jour J running order ({ tab })
 */
 const AppStack = () => (
   <AppNavigator.Navigator screenOptions={horizontalSlide}>
@@ -67,6 +69,7 @@ const AppStack = () => (
     <AppNavigator.Screen name="Week" component={WeekScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="Objectives" component={ObjectivesScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="MyRace" component={MyRaceScreen} />
+    <AppNavigator.Screen name="RacePlan" component={RacePlanScreen} options={verticalSlideModal} />
   </AppNavigator.Navigator>
 );
 

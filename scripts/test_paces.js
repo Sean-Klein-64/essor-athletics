@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/log"; export * from "../js/lib/timer"; export * from "../js/lib/outings"; export * from "../js/lib/notes"; export * from "../js/lib/club"; export * from "../js/lib/week"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/log"; export * from "../js/lib/timer"; export * from "../js/lib/outings"; export * from "../js/lib/notes"; export * from "../js/lib/club"; export * from "../js/lib/week"; export * from "../js/lib/raceplan"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -566,6 +566,50 @@ check("the volume line reads in French", () => {
   assert.strictEqual(m.volumeLine({ km: 32, week: 3, factor: 1.1, hold: false }), "≈ 32 km cette semaine · semaine 3 du cycle · +10 %");
   assert.strictEqual(m.volumeLine({ km: 30, week: 3, factor: 1.05, hold: true }), "≈ 30 km cette semaine · semaine 3 du cycle · volume maintenu");
   assert.strictEqual(m.volumeLine({ km: 24, week: 4, factor: 0.85, hold: false }), "≈ 24 km cette semaine · semaine 4 du cycle · −15 %");
+});
+
+console.log("Race build — taper, plan, Jour J");
+check("the last two weeks taper: −30 % then −50 %, long run capped", () => {
+  assert.strictEqual(m.taperFor(20), null);
+  assert.deepStrictEqual([m.taperFor(10).phase, m.taperFor(10).factor], ["taper", 0.7]);
+  assert.deepStrictEqual([m.taperFor(3).phase, m.taperFor(3).longCap], ["race", 30]);
+  const { days, volume } = m.weekPlan({ level: "level2", kmWeek: "20to40", vma: 15, runsWeek: 4, runsPerWeek: "more" }, { daysToRace: 5 });
+  assert.strictEqual(volume.taper, "race");
+  assert.ok(days.find((d) => d.kind === "long").minutes <= 30);
+  assert.ok(volume.km <= 20, `km ${volume.km}`);
+  assert.strictEqual(m.volumeLine(volume), `≈ ${volume.km} km · semaine de course · −50 %`);
+});
+check("a 10 km in 48:00 plans 4:48 /km with an easier start that still lands on 48:00", () => {
+  const plan = m.racePlan({ metres: 10000, seconds: 2880 }, 15);
+  assert.strictEqual(plan.source, "goal");
+  assert.strictEqual(plan.pace, "4:48 /km");
+  assert.strictEqual(plan.splits.length, 10);
+  assert.strictEqual(plan.splits[0].pace, "4:56 /km");
+  assert.strictEqual(plan.splits[9].cumulative, "48:00");
+  assert.strictEqual(m.planHeadline(plan), "48:00 · 4:48 /km · ton objectif");
+});
+check("without a goal the VMA decides; without either, no plan", () => {
+  const plan = m.racePlan({ metres: 5000 }, 15);
+  assert.strictEqual(plan.source, "vma");
+  assert.ok(plan.seconds > 1100 && plan.seconds < 1300, `seconds ${plan.seconds}`);
+  assert.strictEqual(m.racePlan({ metres: 5000 }, null).seconds, null);
+  assert.ok(m.planHeadline(m.racePlan({ metres: 5000 }, null)).startsWith("Ajoute"));
+});
+check("Jour J counts back from the start and forward to the finish", () => {
+  const steps = m.raceDay({ kind: "club", metres: 10000 }, "10:00", 2880);
+  assert.strictEqual(steps[0].at, "07:00");
+  assert.strictEqual(steps.find((s) => s.key === "warmup").at, "09:35");
+  assert.strictEqual(steps.find((s) => s.key === "start").at, "10:00");
+  assert.strictEqual(steps.find((s) => s.key === "finish").at, "10:48");
+  assert.strictEqual(m.currentStep(steps, "06:30"), -1);
+  assert.strictEqual(steps[m.currentStep(steps, "09:40")].key, "warmup");
+  assert.strictEqual(m.relativeLabel("10:00", "09:35"), "dans 25 min");
+  assert.strictEqual(m.relativeLabel("10:00", "11:30"), "il y a 1 h 30");
+});
+check("the club start time falls back to the placeholder until published", () => {
+  const st = m.startTimeFor({ kind: "club", metres: 10000 });
+  assert.strictEqual(st.confirmed, false);
+  assert.strictEqual(st.time, "10:00");
 });
 
 (async () => {
