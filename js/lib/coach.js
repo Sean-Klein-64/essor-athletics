@@ -121,6 +121,7 @@ export const toAthlete = (row) => {
     myRace: p.raceGoal?.myRace || null,
     objectives: p.raceGoal?.objectives || [],
     goal: a.goal || null,
+    kmWeek: a.kmWeek || null, // average km/week over the last 3 months, from the questionnaire
     races: a.races || "",
     injury: a.injury || null,
     injuryDetail: a.injuryDetail || "",

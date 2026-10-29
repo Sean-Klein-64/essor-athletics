@@ -223,6 +223,7 @@ const Q = [
   { id: "member", k: "Toi", t: "Tu es adhérent·e à CrossFit Essor ?", h: "Le run club est réservé aux adhérents. Si tu ne l'es pas encore, tu peux quand même découvrir ton niveau et nous laisser ton nom.", type: "choice", opts: [["yes", "Oui, je suis adhérent·e"], ["no", "Pas encore"]] },
   { id: "runContinuous", k: "Course", t: "Aujourd'hui, combien de temps peux-tu courir sans t'arrêter ?", h: "Pour aujourd'hui, pas pour ta meilleure période.", type: "choice", opts: [["under5", "Moins de 5 min"], ["5to15", "5 à 15 min"], ["15to30", "15 à 30 min"], ["over30", "30 min ou plus"]] },
   { id: "runsPerWeek", k: "Fréquence", t: "Combien de fois cours-tu par semaine en ce moment ?", type: "choice", opts: [["never", "Jamais"], ["once", "1 fois"], ["twice", "2 fois"], ["more", "3 fois ou plus"]] },
+  { id: "kmWeek", k: "Volume", t: "Sur les 3 derniers mois, combien de km par semaine en moyenne ?", h: "Une moyenne honnête, pas ta meilleure semaine — c'est ce qui règle ton volume de départ.", type: "choice", opts: [["0", "0 km"], ["under10", "Moins de 10 km"], ["10to20", "10 à 20 km"], ["20to40", "20 à 40 km"], ["over40", "Plus de 40 km"]] },
   { id: "fiveK", k: "5 km", t: "Ton temps récent sur 5 km ?", h: "Une estimation suffit.", type: "choice", opts: [["none", "Jamais couru 5 km"], ["over30", "Plus de 30 min"], ["25to30", "25 à 30 min"], ["under25", "Moins de 25 min"]] },
   { id: "bests", k: "Records", t: "Tes meilleurs temps, si tu les connais", h: "Tape juste les chiffres, les deux-points se mettent tout seuls : 5230 devient 52:30 (10 km), 15800 devient 1:58:00 (semi). Laisse vide ce que tu n'as jamais couru.", type: "bests", skip: "Je ne les connais pas" },
   { id: "races", k: "Courses", t: "As-tu déjà fait une course ? Laquelle ?", type: "text", ph: "10 km, semi, marathon, HYROX…", skip: "Pas encore" },
@@ -342,7 +343,7 @@ function finish() {
   const bests = answers.bests ? Object.entries(answers.bests).filter(([, t]) => t && t.trim()).map(([k, t]) => `${({ "5k": "5 km", "10k": "10 km", half: "semi", marathon: "marathon" })[k]} ${t.trim()}`).join(", ") : "";
   const lines = [
     `Run club Essor — ${answers.name}`, `Niveau : ${L.name}`, `Tél : ${answers.phone}`,
-    `Course sans arrêt : ${label(QB("runContinuous"), answers.runContinuous)}`, `Par semaine : ${label(QB("runsPerWeek"), answers.runsPerWeek)}`, `5 km : ${label(QB("fiveK"), answers.fiveK)}`,
+    `Course sans arrêt : ${label(QB("runContinuous"), answers.runContinuous)}`, `Par semaine : ${label(QB("runsPerWeek"), answers.runsPerWeek)}`, answers.kmWeek ? `Volume 3 mois : ${label(QB("kmWeek"), answers.kmWeek)}` : null, `5 km : ${label(QB("fiveK"), answers.fiveK)}`,
     bests ? `Records : ${bests}` : null, answers.races ? `Courses : ${answers.races}` : null,
     `Douleur : ${answers.injury === "yes" ? "oui — " + (answers.injuryDetail || "") : "non"}`,
     `Objectif : ${label(QB("goal"), answers.goal)}`, `Adhérent : ${isMember ? "oui" : "non"}`, `Le 30/10 : ${answers.launch === "yes" ? "oui" : answers.launch === "waitlist" ? "liste d'attente" : "intéressé·e (pas encore adhérent·e)"}`,
