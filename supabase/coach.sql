@@ -40,6 +40,7 @@ begin
   if not found then return false; end if;
 
   update public.signups set progress = jsonb_build_object(
+    'level',    p_progress->'level',
     'done',     coalesce(p_progress->'done', '{}'::jsonb),
     'logs',     coalesce(p_progress->'logs', '{}'::jsonb),
     'raceGoal', p_progress->'raceGoal',
