@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/log"; export * from "../js/lib/timer"; export * from "../js/lib/outings"; export * from "../js/lib/notes"; export * from "../js/lib/club"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/log"; export * from "../js/lib/timer"; export * from "../js/lib/outings"; export * from "../js/lib/notes"; export * from "../js/lib/club"; export * from "../js/lib/week"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -518,6 +518,54 @@ check("the progress report carries the Débuter place", () => {
   const r = m.progressReport({ level: "beginnerB", programme: { beginnerB: 5 }, programmeLog: { beginnerB: [{ index: 4, at: "2026-11-06" }] } });
   assert.deepStrictEqual(r.programme, { index: 5, lastAt: "2026-11-06", return: null });
   assert.strictEqual(m.progressReport({ level: "level1" }).programme, null);
+});
+
+console.log("Ma semaine — sized for the runner");
+check("the base comes from the 3-month volume, else the level", () => {
+  assert.strictEqual(m.baseKm({ kmWeek: "20to40", level: "level3" }), 30);
+  assert.strictEqual(m.baseKm({ kmWeek: "0", level: "level1" }), 8);
+  assert.strictEqual(m.baseKm({ level: "level1" }), 30);
+  assert.strictEqual(m.baseKm({ level: "level3" }), 12);
+});
+check("volume steps +5 % a week, eases week 4, caps at +25 %", () => {
+  assert.strictEqual(m.volumeFactor(1), 1);
+  assert.strictEqual(m.volumeFactor(3), 1.1);
+  assert.strictEqual(m.volumeFactor(4), 0.85);
+  assert.strictEqual(Math.round(m.volumeFactor(5) * 100), 115);
+  assert.strictEqual(m.volumeFactor(12), 1.25);
+});
+check("the cycle week counts from the first club session", () => {
+  const sessions = [{ date: "2026-10-30" }, { date: "2026-11-06" }];
+  assert.strictEqual(m.cycleWeek(sessions, "2026-10-29"), 1);
+  assert.strictEqual(m.cycleWeek(sessions, "2026-11-01"), 1);
+  assert.strictEqual(m.cycleWeek(sessions, "2026-11-13"), 3);
+});
+check("two hard logs or a missed Friday hold the volume", () => {
+  const sessions = [{ id: "a", date: "2026-10-30" }, { id: "b", date: "2026-11-06" }];
+  assert.strictEqual(m.holdCheck({ log: { a: { at: "2026-10-30", feel: 4 }, b: { at: "2026-11-06", feel: 5 } }, done: { a: 1, b: 1 } }, sessions, "2026-11-10").hold, true);
+  assert.strictEqual(m.holdCheck({ log: { a: { at: "2026-10-30", feel: 3 } }, done: { a: 1 } }, sessions, "2026-11-10").hold, true); // b missed
+  assert.strictEqual(m.holdCheck({ log: { a: { at: "2026-10-30", feel: 3 }, b: { at: "2026-11-06", feel: 4 } }, done: { a: 1, b: 1 } }, sessions, "2026-11-10").hold, false);
+});
+check("a 30 km/week runner at VMA 15 gets a week that adds up to about 30 km, long run largest", () => {
+  const { days, volume } = m.weekPlan({ level: "level2", kmWeek: "20to40", vma: 15, runsWeek: 4, runsPerWeek: "more" });
+  assert.strictEqual(volume.week, 1);
+  assert.ok(Math.abs(volume.km - 30) <= 4, `km ${volume.km}`);
+  const long = days.find((d) => d.kind === "long");
+  assert.ok(days.filter((d) => d.kind !== "club").every((d) => d.minutes <= long.minutes));
+  assert.ok(days.every((d) => d.kind === "club" || d.minutes % 5 === 0));
+  assert.strictEqual(days.map((d) => d.day).join(","), "Mardi,Jeudi,Vendredi,Dimanche");
+});
+check("someone new to running is capped at 3 runs with no strides", () => {
+  const { days } = m.weekPlan({ level: "level3", kmWeek: "under10", runsWeek: 5, runsPerWeek: "once" });
+  assert.strictEqual(days.length, 3);
+  assert.ok(!days.some((d) => d.title.includes("lignes droites")));
+  const { days: exp } = m.weekPlan({ level: "level2", kmWeek: "20to40", runsWeek: 3, runsPerWeek: "more" });
+  assert.ok(exp.some((d) => d.title.includes("lignes droites")));
+});
+check("the volume line reads in French", () => {
+  assert.strictEqual(m.volumeLine({ km: 32, week: 3, factor: 1.1, hold: false }), "≈ 32 km cette semaine · semaine 3 du cycle · +10 %");
+  assert.strictEqual(m.volumeLine({ km: 30, week: 3, factor: 1.05, hold: true }), "≈ 30 km cette semaine · semaine 3 du cycle · volume maintenu");
+  assert.strictEqual(m.volumeLine({ km: 24, week: 4, factor: 0.85, hold: false }), "≈ 24 km cette semaine · semaine 4 du cycle · −15 %");
 });
 
 (async () => {

@@ -59,6 +59,21 @@ const onboarding = [
     cta: "Continuer",
   },
   {
+    field: "kmWeek",
+    type: "choice",
+    title: "Volume",
+    prompt: "Sur les 3 derniers mois, combien de km par semaine en moyenne ?",
+    options: [
+      { id: "0", name: "0 km" },
+      { id: "under10", name: "Moins de 10 km" },
+      { id: "10to20", name: "10 à 20 km" },
+      { id: "20to40", name: "20 à 40 km" },
+      { id: "over40", name: "Plus de 40 km" },
+    ],
+    tip: "Une moyenne honnête, pas ta meilleure semaine — c'est ce qui règle ton volume de départ.",
+    cta: "Continuer",
+  },
+  {
     field: "fiveK",
     type: "choice",
     title: "5 km",

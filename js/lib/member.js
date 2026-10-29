@@ -57,7 +57,7 @@ export const applyProfile = async (profile, { preferences: p, setPreference, sav
   }
 
   if (first) {
-    for (const key of ["runContinuous", "runsPerWeek", "fiveK", "races", "goal"]) {
+    for (const key of ["runContinuous", "runsPerWeek", "kmWeek", "fiveK", "races", "goal"]) {
       if (a[key] != null && a[key] !== "") await setPreference(key, a[key]);
     }
     for (const [id, time] of Object.entries(a.bests || {})) {

@@ -72,6 +72,7 @@ begin
         'answers', jsonb_build_object(
           'runContinuous', s.answers->'runContinuous',
           'runsPerWeek', s.answers->'runsPerWeek',
+          'kmWeek', s.answers->'kmWeek',
           'fiveK', s.answers->'fiveK',
           'races', s.answers->'races',
           'injury', s.answers->'injury',

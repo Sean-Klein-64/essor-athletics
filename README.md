@@ -2,7 +2,8 @@
 
 The run club app for CrossFit Essor (Bayonne). iPhone and Android from one codebase.
 
-- **Sign-up questionnaire** — the run club questionnaire is the first-run flow; the answers suggest a level, the runner confirms it.
+- **Sign-up questionnaire** — the run club questionnaire is the first-run flow; the answers suggest a level, the runner confirms it. It also asks the average km/week over the last 3 months (`kmWeek`), which sets the runner's starting volume.
+- **Ma semaine, sized for the runner** — Levels 1–3's week around Friday is built from their own 3-month volume (not their level), stepping +5 % a week with a lighter week 4 and a +25 % cap; it holds instead of stepping up when the last two logged sessions felt hard or last Friday was missed. Someone new to running is capped at 3 runs with no strides. Paces from their VMA zones. `js/lib/week.js`.
 - **Sessions** — every Friday session, shown to each runner for their level (Level 3/2/1) with every rep turned into a time or distance from their VMA.
 - **Séance faite** — after a session the runner logs how it went: average pace on the main set, feel (1–5), a short note. All optional; the tick alone still counts. Shown back to them on the session, and to the coaches.
 - **Débuter A/B/C** — the three walk-run programmes from the Level System page, built in. The app keeps each beginner's place, checks the "ready?" rules before moving on, and the end-of-level test moves them up.

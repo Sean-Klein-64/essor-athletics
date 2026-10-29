@@ -8,26 +8,43 @@ import Glyph from "../components/Glyph";
 import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
-import { weekPlan, guessRuns, RUNS_OPTIONS, RULES } from "../lib/week";
+import { weekPlan, guessRuns, RUNS_OPTIONS, RULES, volumeLine } from "../lib/week";
+import useSessions from "../lib/store";
+import { todayKey } from "../lib/plan";
+import onboarding from "../lib/onboarding";
 import { zoneHeartRate, zoneById } from "../lib/paces";
 
 /*
-  Levels 1–3: the rest of the running week around Friday's club session.
-  Pick how many runs; the app lays out the days, durations and paces.
+  Levels 1–3: the rest of the running week around Friday's club session,
+  sized for this runner: their 3-month volume as the base, the cycle week
+  and their logs for the progression (js/lib/week.js). Pick how many runs;
+  the app lays out the days, durations and paces.
 */
 
 const WeekScreen = ({ navigation, route }) => {
   const { theme, preferences, setPreference } = useContext(UserContext);
   const { colors, typography } = theme;
   const runs = guessRuns(preferences);
-  const plan = weekPlan(preferences);
+  const { sessions } = useSessions();
+  const { days: plan, volume } = weekPlan(preferences, { sessions, today: todayKey() });
+  const kmAnswer = onboarding.find((q) => q.field === "kmWeek")?.options.find((o) => o.id === preferences.kmWeek)?.name;
   const todayIndex = (new Date().getDay() + 6) % 7;
   const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
   return (
     <SlideScreenContainer title="Ma semaine" type="back" navigation={navigation} route={route} ignoreKeyboard>
       <ScrollView style={{ width: "100%" }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[typography.finePrint, styles.intro]}>Le vendredi, c'est le club. Le reste de la semaine, voilà quoi courir autour — à ton rythme, à tes allures.</Text>
+        <Text style={[typography.finePrint, styles.intro]}>Le vendredi, c'est le club. Le reste de la semaine, voilà quoi courir autour — à ton volume, à tes allures.</Text>
+
+        <View style={[styles.volume, { backgroundColor: volume.hold ? colors.accentSoft : colors.card, borderColor: volume.hold ? colors.accentText : colors.border }]}>
+          <Text style={[typography.heading, typography.bold, volume.hold && { color: colors.accentText }]}>{volumeLine(volume)}</Text>
+          {!!volume.reason && <Text style={[typography.finePrint, { fontSize: 14, lineHeight: 18, color: colors.accentText, opacity: 1 }]}>{volume.reason}</Text>}
+          <Pressable onPress={() => navigation.navigate("Question", { field: "kmWeek" })} small>
+            <Text style={[typography.finePrint, { fontSize: 13, color: colors.accentText, opacity: 1 }]}>
+              {kmAnswer ? `Base : ${kmAnswer} par semaine ces 3 derniers mois · modifier` : "Dis-nous ton volume des 3 derniers mois pour ajuster la base"}
+            </Text>
+          </Pressable>
+        </View>
 
         <View style={styles.section}>
           <SectionLabel>Sorties par semaine, vendredi compris</SectionLabel>
@@ -97,6 +114,7 @@ const WeekScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   content: { padding: 20, paddingTop: 4, gap: 18, paddingBottom: 50 },
   intro: { fontSize: 14, lineHeight: 18 },
+  volume: { borderWidth: 1, borderRadius: 18, padding: 14, gap: 6 },
   section: { gap: 10 },
   chips: { flexDirection: "row", gap: 8 },
   chip: { width: 48, height: 40, borderRadius: 20, borderWidth: 1, alignItems: "center", justifyContent: "center" },
