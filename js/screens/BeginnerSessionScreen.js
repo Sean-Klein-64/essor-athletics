@@ -15,8 +15,9 @@ import { describeStep } from "../lib/plan";
 import { levelById } from "../lib/levels";
 
 /*
-  One Débuter session: the walk-run laid out step by step, then the
-  "ready for the next one?" rules. Marking it done moves the runner to
+  One Débuter session: the walk-run laid out step by step, a button to run
+  it with the guided timer (BeginnerTimer), then the "ready for the next
+  one?" rules. Marking it done moves the runner to
   the next session; passing the test moves them up a level.
 */
 
@@ -74,6 +75,19 @@ const BeginnerSessionScreen = ({ navigation, route }) => {
           {!!session.note && <Text style={[typography.finePrint, styles.summary]}>{session.note}</Text>}
         </View>
 
+        {mine && !isDone && (
+          <Pressable onPress={() => navigation.navigate("BeginnerTimer", { level: levelId, index: session.index })}>
+            <View style={[styles.timer, { backgroundColor: colors.accent }]}>
+              <Glyph name="play" size={18} color="white" />
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.heading, typography.bold, { color: "white" }]}>Lancer la séance guidée</Text>
+                <Text style={[typography.finePrint, { color: "rgba(255,255,255,0.85)", opacity: 1, fontSize: 13 }]}>Un compte à rebours et une vibration à chaque changement</Text>
+              </View>
+              <Glyph name="right" size={16} color="white" />
+            </View>
+          </Pressable>
+        )}
+
         {parts.map((part) => (
           <View key={part.key} style={styles.section}>
             <SectionLabel>{part.label}</SectionLabel>
@@ -122,6 +136,7 @@ const styles = StyleSheet.create({
   summary: { fontSize: 15, lineHeight: 20 },
   section: { gap: 8 },
   card: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 4 },
+  timer: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14 },
   rule: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
   check: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
   hint: { textAlign: "center", fontSize: 14 },
