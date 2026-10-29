@@ -114,6 +114,8 @@ export const toAthlete = (row) => {
     hrMax: row.vma?.hr_max || null,
     bests: pickBests(a.bests || {}, p.records || {}),
     sessionsDone: reported ? Object.keys(p.done || {}).length : null,
+    done: p.done || {}, // { sessionId: "2026-11-06" }
+    logs: p.logs || {}, // { sessionId: { at, pace, feel, note } } — js/lib/log.js
     raceGoal: p.raceGoal || null,
     myRace: p.raceGoal?.myRace || null,
     objectives: p.raceGoal?.objectives || [],
