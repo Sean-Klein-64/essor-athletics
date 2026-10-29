@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/log"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/log"; export * from "../js/lib/timer"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -394,6 +394,42 @@ check("progress report carries the logs", () => {
 });
 check("done count includes a bare tick and a log", () => {
   assert.deepStrictEqual(m.doneCount([{ done: { a: "x" } }, { logs: { a: {} } }, {}], "a"), { done: 2, total: 3 });
+});
+
+console.log("Guided timer");
+check("a walk-run flattens into warm-up, repeats and cool-down", () => {
+  const plan = m.sessionPlan({ sets: 5, run: 1, walk: 1 });
+  const t = m.timeline(plan);
+  assert.strictEqual(t.length, 1 + 10 + 1);
+  assert.deepStrictEqual(t.slice(0, 2).map((i) => [i.kind, i.seconds, i.phase]), [["walk", 300, "warmup"], ["run", 60, "main"]]);
+  assert.strictEqual(m.totalOf(t), 300 + 600 + 300);
+  assert.strictEqual(m.setLabel(t[3]), "2/5");
+  assert.strictEqual(m.setLabel(t[0]), "");
+});
+check("a continuous run is one main interval", () => {
+  const t = m.timeline(m.sessionPlan({ sets: 1, run: 15, walk: 0 }));
+  assert.strictEqual(t.length, 3);
+  assert.strictEqual(t[1].seconds, 900);
+});
+check("half minutes survive", () => {
+  const t = m.timeline(m.sessionPlan({ sets: 2, run: 0.5, walk: 1 }));
+  assert.strictEqual(t[1].seconds, 30);
+});
+check("position: inside, at a boundary, past the end", () => {
+  const t = m.timeline(m.sessionPlan({ sets: 2, run: 1, walk: 1 }));
+  assert.deepStrictEqual([m.positionAt(t, 10).index, m.positionAt(t, 10).remaining], [0, 290]);
+  assert.strictEqual(m.positionAt(t, 300).index, 1); // first run starts exactly at 5'
+  assert.strictEqual(m.positionAt(t, 359).remaining, 1);
+  const end = m.positionAt(t, 10000);
+  assert.strictEqual(end.done, true);
+  assert.strictEqual(end.remaining, 0);
+});
+check("next label and countdown read in French", () => {
+  const t = m.timeline(m.sessionPlan({ sets: 2, run: 1, walk: 1 }));
+  assert.strictEqual(m.nextLabel(t, 0), "Ensuite : 1' course");
+  assert.strictEqual(m.nextLabel(t, t.length - 1), "Ensuite : fin de séance");
+  assert.strictEqual(m.formatCountdown(65), "1:05");
+  assert.strictEqual(m.formatCountdown(0.2), "0:01");
 });
 
 (async () => {
