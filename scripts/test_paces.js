@@ -516,7 +516,7 @@ check("the coach reads where a Débuter runner is", () => {
 });
 check("the progress report carries the Débuter place", () => {
   const r = m.progressReport({ level: "beginnerB", programme: { beginnerB: 5 }, programmeLog: { beginnerB: [{ index: 4, at: "2026-11-06" }] } });
-  assert.deepStrictEqual(r.programme, { index: 5, lastAt: "2026-11-06", return: null });
+  assert.deepStrictEqual(r.programme, { index: 5, lastAt: "2026-11-06", recent: ["2026-11-06"], perWeek: 3, return: null });
   assert.strictEqual(m.progressReport({ level: "level1" }).programme, null);
 });
 
@@ -639,6 +639,26 @@ check("the summary counts the group", () => {
   ];
   const s = m.beginnerSummary(list, "2026-11-20");
   assert.deepStrictEqual([s.total, s.active, s.quiet, s.tests, s.byLevel.beginnerA, s.byLevel.beginnerC], [3, 2, 1, 1, 2, 1]);
+});
+
+check("progress to 30', consistency dots, weeks to 30' and the nudge", () => {
+  const a = m.toAthlete({ id: 1, name: "Mehdi Boudjenane", phone: "06 12 34 56 78", level: "beginnerB", answers: {}, progress: { at: "2026-11-20", programme: { index: 4, lastAt: "2026-11-09", perWeek: 3, recent: ["2026-11-02", "2026-11-04", "2026-11-07", "2026-11-09"], return: null } } });
+  const pr = m.beginnerProgress(a);
+  assert.deepStrictEqual([pr.minutes, pr.target], [8, 30]); // Débuter B session 5 = 3×(8'/1')
+  const c = m.beginnerConsistency(a, "2026-11-20");
+  assert.deepStrictEqual(c.weeks, [2, 2, 0]); // 02–06 → 2, 07–13 → 2, 14–20 → 0
+  assert.ok(c.label.startsWith("1,3 séance"));
+  assert.ok(m.weeksToThirty(a, "2026-11-20") >= 20);
+  const n = m.nudgeMessage(a, "2026-11-20");
+  assert.strictEqual(n.phone, "0612345678");
+  assert.ok(n.body.startsWith("Salut Mehdi ! Ça fait 11 jours"));
+  assert.ok(n.body.endsWith("Sean"));
+  assert.strictEqual(m.beginnerProgress(m.toAthlete({ id: 2, level: "level1", answers: {}, progress: {} })), null);
+});
+check("the report carries recent dates and the 2/3 rhythm", () => {
+  const r = m.progressReport({ level: "beginnerA", beginnerSessions: 2, programme: { beginnerA: 2 }, programmeLog: { beginnerA: [{ index: 0, at: "2026-11-02" }, { index: 1, at: "2026-11-05" }] } });
+  assert.deepStrictEqual(r.programme.recent, ["2026-11-02", "2026-11-05"]);
+  assert.strictEqual(r.programme.perWeek, 2);
 });
 
 (async () => {

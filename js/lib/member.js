@@ -97,13 +97,15 @@ export const syncMember = async (ctx, phone, firstName, { first = false } = {}) 
   on the phone. Read in the Coach Session Hub.
   Fails quietly — it's a report, nothing on the phone depends on it.
 */
-/* Débuter only: { index, lastAt, return: { days, action, accepted, at } | null } */
+/* Débuter only: { index, lastAt, recent: [dates], perWeek: 2 | 3, return: { days, action, accepted, at } | null } */
 const beginnerReport = (p) => {
   if (!PROGRAMMES[p.level]) return null;
   const log = p.programmeLog?.[p.level] || [];
   return {
     index: p.programme?.[p.level] ?? 0,
     lastAt: log.length ? log[log.length - 1].at : null,
+    recent: log.slice(-12).map((e) => e.at), // the last sessions' dates — consistency, for the coach
+    perWeek: p.beginnerSessions === 2 ? 2 : 3,
     return: p.programmeReturn?.[p.level] || null,
   };
 };

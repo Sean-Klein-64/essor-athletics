@@ -67,6 +67,7 @@ begin
       select jsonb_build_object(
         'id', s.id,
         'name', s.name,
+        'phone', s.phone,
         'level', s.level,
         'start_week', s.start_week,
         'answers', jsonb_build_object(

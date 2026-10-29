@@ -106,6 +106,7 @@ export const toAthlete = (row) => {
   return {
     id: row.id,
     name: row.name || "",
+    phone: row.phone || null,
     level: row.level || null,
     startWeek: row.start_week || null,
     vma: vma?.value ?? null,
@@ -329,7 +330,7 @@ export const quietBeginners = (athletes, today, after = 7) =>
 export const beginnerTonight = (athlete) => {
   const p = athlete.programme;
   if (!p || !PROGRAMMES[athlete.level]) return null;
-  const list = programmeSessions(athlete.level, 3);
+  const list = programmeSessions(athlete.level, p.perWeek === 2 ? 2 : 3);
   const s = list.find((x) => x.index >= Math.min(p.index, 17)) || list[list.length - 1];
   return s ? { label: sessionLabel(s), week: s.week, index: s.index, test: !!s.test, minutes: s.sets * s.run } : null;
 };
@@ -366,5 +367,66 @@ export const beginnerSummary = (athletes, today) => {
     tests: statuses.filter((s) => s === "test").length,
     byLevel: Object.fromEntries(Object.keys(PROGRAMMES).map((id) => [id, list.filter((a) => a.level === id).length])),
   };
+};
+
+/*
+  The one number for a beginner: how long they run without stopping right
+  now, against the 30' that ends Débuter C. From their next session's
+  longest run block. { minutes, target: 30, pct } — null off the programmes.
+*/
+export const BEGINNER_TARGET = 30;
+export const beginnerProgress = (athlete) => {
+  const p = athlete.programme;
+  if (!p || !PROGRAMMES[athlete.level]) return null;
+  const list = programmeSessions(athlete.level, p.perWeek === 2 ? 2 : 3);
+  const s = list.find((x) => x.index >= Math.min(p.index, 17)) || list[list.length - 1];
+  const minutes = s ? s.run : 0; // the run block of the session they're on (1' … 30')
+  return { minutes, target: BEGINNER_TARGET, pct: Math.min(1, minutes / BEGINNER_TARGET) };
+};
+
+/*
+  Consistency over the last 3 weeks from the dates the phone reported:
+  { perWeek: 2.3, weeks: [n, n, n] (oldest first), label }
+*/
+export const beginnerConsistency = (athlete, today) => {
+  const recent = athlete.programme?.recent || [];
+  const weeks = [0, 0, 0];
+  recent.forEach((at) => {
+    const d = daysAgo(at, today);
+    if (d === null || d < 0 || d >= 21) return;
+    weeks[2 - Math.floor(d / 7)] += 1;
+  });
+  const total = weeks.reduce((t, n) => t + n, 0);
+  const perWeek = Math.round((total / 3) * 10) / 10;
+  const wanted = athlete.programme?.perWeek || 3;
+  const label = total === 0 ? "aucune séance sur 3 semaines" : `${perWeek.toString().replace(".", ",")} séance${perWeek >= 2 ? "s" : ""}/semaine sur 3 semaines (objectif ${wanted})`;
+  return { perWeek, weeks, wanted, label };
+};
+
+/*
+  At their current rhythm, how many weeks to the end of Débuter C (30'
+  continuous). Sessions left across the remaining programmes ÷ sessions
+  per week actually done (floor 1). null without a rhythm yet.
+*/
+export const weeksToThirty = (athlete, today) => {
+  const p = athlete.programme;
+  if (!p || !PROGRAMMES[athlete.level]) return null;
+  const order = ["beginnerA", "beginnerB", "beginnerC"];
+  const perWeek = p.perWeek === 2 ? 2 : 3;
+  const here = order.indexOf(athlete.level);
+  const left = programmeSessions(athlete.level, perWeek).filter((s) => s.index >= Math.min(p.index, 17)).length
+    + order.slice(here + 1).reduce((t, id) => t + programmeSessions(id, perWeek).length, 0);
+  const rhythm = beginnerConsistency(athlete, today).perWeek;
+  if (!rhythm) return null;
+  return Math.ceil(left / Math.max(1, rhythm));
+};
+
+/* The nudge, in Sean's voice — short, relaxed, French. { body, phone } — the screen builds the sms: link (iOS and Android differ). */
+export const nudgeMessage = (athlete, today) => {
+  const first = (athlete.name || "").trim().split(" ")[0] || "";
+  const days = daysAgo(athlete.programme?.lastAt, today);
+  const tonight = beginnerTonight(athlete);
+  const body = `Salut ${first} ! ${days ? `Ça fait ${days} jours sans séance de ton côté, ` : ""}tout va bien ? ${tonight ? `La prochaine c'est ${tonight.label}, tranquille. ` : ""}Si tu as besoin d'adapter, dis-moi. Sean`;
+  return { body, phone: athlete.phone ? String(athlete.phone).replace(/\s+/g, "") : null };
 };
 

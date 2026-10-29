@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Linking, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import SlideScreenContainer from "../components/SlideScreenContainer";
@@ -8,7 +8,7 @@ import Glyph from "../components/Glyph";
 import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
-import { fetchRoster, beginnerStatus, beginnerSummary, beginnerTonight } from "../lib/coach";
+import { fetchRoster, beginnerStatus, beginnerSummary, beginnerTonight, beginnerProgress, beginnerConsistency, weeksToThirty, nudgeMessage } from "../lib/coach";
 import { PROGRAMMES } from "../lib/beginner";
 import { levelById } from "../lib/levels";
 import { todayKey } from "../lib/plan";
@@ -16,9 +16,11 @@ import { todayKey } from "../lib/plan";
 /*
   Débutants — how the beginners are doing, for the coach. The group in
   numbers up top (how many, active this week, gone quiet, ready for a
-  test), then every Débuter runner by programme: where they are (session
-  N/18, their next walk-run), their status, and the injury flag. Quiet
-  ones first — those are the ones to message. Tap a runner → CoachAthlete.
+  test), then every Débuter runner by programme: the one number that
+  matters (how long they run without stopping, towards 30'), their next
+  walk-run, three weeks of consistency as dots, the weeks to 30' at their
+  rhythm, their status and the injury flag. Quiet ones first, with a
+  one-tap SMS in Sean's voice. Tap a runner → CoachAthlete.
 */
 
 const ORDER = { quiet: 0, back: 1, test: 2, new: 3, on: 4 };
@@ -66,7 +68,7 @@ const CoachBeginnersScreen = ({ navigation, route }) => {
       name: PROGRAMMES[id].name,
       athletes: list
         .filter((a) => a.level === id)
-        .map((a) => ({ a, status: beginnerStatus(a, today), tonight: beginnerTonight(a) }))
+        .map((a) => ({ a, status: beginnerStatus(a, today), tonight: beginnerTonight(a), progress: beginnerProgress(a), consistency: beginnerConsistency(a, today), eta: weeksToThirty(a, today) }))
         .sort((x, y) => ORDER[x.status.id] - ORDER[y.status.id] || x.a.name.localeCompare(y.a.name, "fr")),
     }))
     .filter((g) => g.athletes.length);
@@ -94,6 +96,11 @@ const CoachBeginnersScreen = ({ navigation, route }) => {
               {stat(summary.quiet, summary.quiet > 1 ? "silencieux" : "silencieux")}
               {stat(summary.tests, summary.tests > 1 ? "tests à passer" : "test à passer")}
             </View>
+            {!!list.length && (
+              <Text style={[typography.finePrint, { fontSize: 13 }]}>
+                En moyenne {Math.round(list.map((a) => beginnerProgress(a)?.minutes || 0).reduce((t, n) => t + n, 0) / list.length)}{"'"} de course sans arrêt · objectif 30{"'"} pour tout le monde
+              </Text>
+            )}
             <Text style={[typography.finePrint, { fontSize: 13 }]}>
               {Object.entries(summary.byLevel)
                 .filter(([, n]) => n)
@@ -110,9 +117,14 @@ const CoachBeginnersScreen = ({ navigation, route }) => {
         {groups.map((g) => (
           <View key={g.id} style={styles.section}>
             <SectionLabel>{g.name}</SectionLabel>
-            {g.athletes.map(({ a, status, tonight }) => {
+            {g.athletes.map(({ a, status, tonight, progress, consistency, eta }) => {
               const quiet = status.id === "quiet";
               const flag = a.injury === "yes";
+              const sms = () => {
+                const { body, phone } = nudgeMessage(a, today);
+                if (!phone) return;
+                Linking.openURL(`sms:${phone}${Platform.OS === "ios" ? "&" : "?"}body=${encodeURIComponent(body)}`).catch(() => {});
+              };
               return (
                 <Pressable key={a.id} onPress={() => navigation.navigate("CoachAthlete", { athlete: a })}>
                   <View style={[styles.card, { backgroundColor: colors.card, borderColor: quiet ? colors.accentText : colors.border }]}>
@@ -131,7 +143,42 @@ const CoachBeginnersScreen = ({ navigation, route }) => {
                       </View>
                       <Glyph name="right" size={16} color={colors.text} />
                     </View>
-                    <Text style={[typography.finePrint, { fontSize: 14, color: quiet ? colors.accentText : colors.text, opacity: quiet ? 1 : 0.7 }]}>{status.text}</Text>
+                    {!!progress && (
+                      <View style={styles.progressRow}>
+                        <View style={[styles.bar, { backgroundColor: colors.background }]}>
+                          <View style={[styles.fill, { width: `${Math.max(4, Math.round(progress.pct * 100))}%`, backgroundColor: colors.accent }]} />
+                        </View>
+                        <Text style={[typography.heading, typography.mono, typography.bold, { fontSize: 15 }]}>
+                          {progress.minutes}{"'"}
+                          <Text style={[typography.finePrint, { fontSize: 12 }]}> / 30{"'"} sans arrêt</Text>
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.meta}>
+                      <View style={styles.weeks} accessibilityLabel={consistency.label}>
+                        {consistency.weeks.map((n, i) => (
+                          <View key={i} style={styles.week}>
+                            {[0, 1, 2].map((k) => (
+                              <View key={k} style={[styles.dot, { backgroundColor: k < n ? colors.accent : colors.border, opacity: k < consistency.wanted ? 1 : 0.35 }]} />
+                            ))}
+                          </View>
+                        ))}
+                      </View>
+                      <Text style={[typography.finePrint, { fontSize: 12, flex: 1 }]} numberOfLines={1}>
+                        {consistency.label}
+                        {eta ? ` · 30' dans ≈ ${eta} sem.` : ""}
+                      </Text>
+                    </View>
+                    <View style={styles.statusRow}>
+                      <Text style={[typography.finePrint, { fontSize: 14, flex: 1, color: quiet ? colors.accentText : colors.text, opacity: quiet ? 1 : 0.7 }]}>{status.text}</Text>
+                      {quiet && !!a.phone && (
+                        <Pressable onPress={sms} small hitSlop={6}>
+                          <View style={[styles.sms, { backgroundColor: colors.accent }]}>
+                            <Text style={[typography.heading, typography.bold, { fontSize: 13, color: "white" }]}>SMS</Text>
+                          </View>
+                        </Pressable>
+                      )}
+                    </View>
                   </View>
                 </Pressable>
               );
@@ -155,6 +202,15 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 20, padding: 14, gap: 8 },
   top: { flexDirection: "row", alignItems: "center", gap: 12 },
   initial: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  progressRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  bar: { flex: 1, height: 8, borderRadius: 4, overflow: "hidden" },
+  fill: { height: 8, borderRadius: 4 },
+  meta: { flexDirection: "row", alignItems: "center", gap: 10 },
+  weeks: { flexDirection: "row", gap: 6 },
+  week: { flexDirection: "row", gap: 2 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  statusRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  sms: { height: 30, paddingHorizontal: 12, borderRadius: 15, justifyContent: "center" },
   empty: { textAlign: "center", fontSize: 14, paddingVertical: 12 },
 });
 
