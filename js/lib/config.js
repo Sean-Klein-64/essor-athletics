@@ -44,3 +44,13 @@ export const BOOKING = {
   time: "16h30",
   place: "Piste de la Floride",
 };
+
+/*
+  Where the club talks and shares its runs. Fill these in — the "Le groupe"
+  card on Home shows a button for each link that's set, and nothing when
+  both are empty.
+*/
+export const COMMUNITY = {
+  whatsapp: "", // the group's invite link, e.g. "https://chat.whatsapp.com/XXXXXXXX"
+  strava: "", // the Strava club page, e.g. "https://www.strava.com/clubs/essor-athletics"
+};

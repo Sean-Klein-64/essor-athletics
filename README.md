@@ -6,6 +6,8 @@ The run club app for CrossFit Essor (Bayonne). iPhone and Android from one codeb
 - **Sessions** — every Friday session, shown to each runner for their level (Level 3/2/1) with every rep turned into a time or distance from their VMA.
 - **Séance faite** — after a session the runner logs how it went: average pace on the main set, feel (1–5), a short note. All optional; the tick alone still counts. Shown back to them on the session, and to the coaches.
 - **Débuter A/B/C** — the three walk-run programmes from the Level System page, built in. The app keeps each beginner's place, checks the "ready?" rules before moving on, and the end-of-level test moves them up.
+- **Sorties du club — "Je viens"** — the Tuesday 7h00 (Sean) and Saturday 10h00 (Arthur) group runs for the week ahead, on Home: one tap to say you're coming, and the first names of who else is. The coach view sees the full list. Rows live in Supabase's `attendance` table (schema.sql §1), one per phone per outing. Pattern and wording in `js/lib/outings.js`.
+- **Le groupe** — buttons to the WhatsApp group and the Strava club (`COMMUNITY` in `js/lib/config.js`; a link left empty isn't shown).
 - **Séance guidée** — a Débuter session run from the phone: one big countdown per walk/run interval, what comes next, a vibration at every switch and at the end. No watch, no GPS. Keeps the screen awake while it runs.
 - **VMA and zones** — VMA typed in or from the 6-minute test (metres ÷ 100); the Pfitzinger zones from Sean's Running Progression Plan as % VMA (and bpm once a max HR is added).
 - **Records** — 5 km, 10 km, semi, marathon: every time logged, best one marked.
