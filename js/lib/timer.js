@@ -75,3 +75,35 @@ export const formatCountdown = (seconds) => {
   const s = Math.max(0, Math.ceil(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
+
+/*
+  Test day: during the test's long run block, a check-in every 5' —
+  "Tu peux encore parler ?". The moments, in seconds from the session
+  start, strictly inside the block (not at its start, not at its end).
+*/
+export const TALK_CHECK_EVERY = 300;
+export const talkChecks = (intervals, every = TALK_CHECK_EVERY) => {
+  const out = [];
+  let start = 0;
+  intervals.forEach((i) => {
+    if (i.kind === "run" && i.phase === "main" && i.seconds > every) {
+      for (let t = every; t < i.seconds; t += every) out.push(start + t);
+    }
+    start += i.seconds;
+  });
+  return out;
+};
+
+/* The check that elapsed just crossed (the last one ≤ elapsed and > previous), or null */
+export const crossedCheck = (checks, previousElapsed, elapsed) => checks.find((c) => c > previousElapsed && c <= elapsed) ?? null;
+
+/* "5'" / "10'" — how far into the run block a check is */
+export const checkLabel = (intervals, checkAt) => {
+  let start = 0;
+  for (const i of intervals) {
+    if (checkAt < start + i.seconds) return formatDuration(checkAt - start);
+    start += i.seconds;
+  }
+  return "";
+};
+
