@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -15,6 +15,7 @@ import { planFor, describeStep, formatDay, totalLabel, todayKey } from "../lib/p
 import useSessions from "../lib/store";
 import levels, { levelById } from "../lib/levels";
 import { logLine } from "../lib/log";
+import { fetchMyNotes, fetchAttendees, attendeesLabel } from "../lib/notes";
 
 /*
   One session in full, for the runner's level: warm-up, main set and
@@ -22,15 +23,36 @@ import { logLine } from "../lib/log";
   VMA. The level chips let you peek at another level's version.
   Below: booking in Wodify, and "Séance faite" → the log sheet (pace, feel,
   a note — SessionLog) or, for the VMA test, "Enregistrer mon test". Once
-  done, the button shows what was logged; tap it to edit.
+  done, the button shows what was logged; tap it to edit. A past session
+  also shows the coach's word on it, if there is one, and who else was there.
 */
 
 const SessionScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { theme, preferences } = useContext(UserContext);
+  const { theme, preferences, setPreference } = useContext(UserContext);
   const { colors, typography } = theme;
   const session = useSessions().byId(route.params?.id);
   const [levelId, setLevelId] = useState(preferences.level);
+  const [there, setThere] = useState(null); // first names of who logged it
+
+  // the coach's word and who was there — refreshed each time the page opens
+  const sessionId = session?.id;
+  const past = !!session && session.date <= todayKey(); // today counts: the note often lands the same evening
+  const member = preferences.member;
+  useEffect(() => {
+    if (!sessionId || !past) return undefined;
+    let alive = true;
+    fetchMyNotes(member)
+      .then((notes) => alive && setPreference("coachNotes", notes))
+      .catch(() => {});
+    fetchAttendees(sessionId)
+      .then((names) => alive && setThere(names))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setPreference is stable enough; member/session are what matter
+  }, [sessionId, past, member?.phone]);
 
   if (!session) return null;
 
@@ -39,6 +61,8 @@ const SessionScreen = ({ navigation, route }) => {
   const isPast = session.date < todayKey();
   const done = !!preferences.done?.[session.id];
   const log = preferences.log?.[session.id];
+  const coachNote = preferences.coachNotes?.[session.id];
+  const thereLabel = attendeesLabel(there || [], preferences.name);
   const isMine = levelId === preferences.level;
 
   const parts = [
@@ -117,6 +141,25 @@ const SessionScreen = ({ navigation, route }) => {
 
         {!isPast && <BookingCard session={session} />}
 
+        {!!coachNote?.note && (
+          <View style={[styles.coachNote, { backgroundColor: colors.accentSoft, borderColor: colors.accentText }]}>
+            <Text style={[typography.finePrint, { fontSize: 12, letterSpacing: 0.8, textTransform: "uppercase", color: colors.accentText, opacity: 1 }]}>
+              Mot de {coachNote.coach || "ton coach"}
+            </Text>
+            <Text style={[typography.heading, { color: colors.accentText, lineHeight: 22 }]}>{coachNote.note}</Text>
+          </View>
+        )}
+
+        {past && !!thereLabel && (
+          <View style={styles.there}>
+            <Glyph name="people" size={14} color={colors.text} />
+            <Text style={[typography.finePrint, { fontSize: 14, flex: 1 }]}>
+              {done ? "Avec toi ce jour-là : " : "Ils étaient là : "}
+              {thereLabel}
+            </Text>
+          </View>
+        )}
+
         {session.kind === "test" ? (
           <Button onPress={() => navigation.navigate("Vma", { mode: "test" })}>Enregistrer mon test</Button>
         ) : (
@@ -163,6 +206,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
+  coachNote: { borderWidth: 1, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14, gap: 4 },
+  there: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 4 },
   whoCard: { paddingVertical: 14, gap: 4 },
   names: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   name: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 },

@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/log"; export * from "../js/lib/timer"; export * from "../js/lib/outings"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/log"; export * from "../js/lib/timer"; export * from "../js/lib/outings"; export * from "../js/lib/notes"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -460,6 +460,15 @@ check("who's coming: me first, others by name, label in French", () => {
   assert.strictEqual(m.comingLabel(m.comingList(rows.slice(0, 1), "o", "me")), "Toi, pour l'instant");
   const many = [...rows, { session_id: "o", device_id: "e", name: "Ana" }, { session_id: "o", device_id: "f", name: "Bo" }];
   assert.strictEqual(m.comingLabel(m.comingList(many, "o", "zz")), "Ana, Bo, Kamel et 2 autres");
+});
+
+console.log("Mot du coach / Ils étaient là");
+check("attendees read in French and leave me out", () => {
+  assert.strictEqual(m.attendeesLabel(["Kamel", "Mel", "Théo"], "Sean Klein"), "Kamel, Mel et Théo");
+  assert.strictEqual(m.attendeesLabel(["Kamel", "Mel", "Sean"], "Sean Klein"), "Kamel et Mel");
+  assert.strictEqual(m.attendeesLabel(["Ana", "Bo", "Kamel", "Mel", "Zoé"]), "Ana, Bo et 3 autres");
+  assert.strictEqual(m.attendeesLabel(["Sean"], "Sean"), "");
+  assert.strictEqual(m.attendeesLabel([]), "");
 });
 
 (async () => {
