@@ -1,5 +1,5 @@
-import React, { useContext } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import React, { useContext, useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import SlideScreenContainer from "../components/SlideScreenContainer";
@@ -11,13 +11,17 @@ import useSessions from "../lib/store";
 import { levelById } from "../lib/levels";
 import { vmaDateLabel, goalLabel, myRaceLabel, objectivesLabel, bestRows, trainingPaces, injuryLabel, sessionTargets, isClubLevel } from "../lib/coach";
 import { logRows, feelById } from "../lib/log";
+import { fetchAllNotes, saveCoachNote } from "../lib/notes";
+import Pressable from "../components/Pressable";
+import haptics from "../utils/haptics";
 import { formatPace } from "../lib/paces";
 import { formatShortDate } from "../lib/plan";
 
 /*
   One runner, for the coach: level and VMA up top, then what today's session
   asks of them, every session they've logged (pace against its target, feel,
-  their note), their bests, goal race, injury notes from the questionnaire,
+  their note — and a line from you back to them, saved to Supabase and shown
+  on their session page), their bests, goal race, injury notes from the questionnaire,
   and their training paces. "—" wherever we don't know yet.
   Opened from CoachSession with { athlete, sessionId }.
 */
@@ -42,12 +46,55 @@ const CoachAthleteScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const {
     theme: { colors, typography },
+    preferences,
   } = useContext(UserContext);
   const athlete = route.params?.athlete;
   const store = useSessions();
   const session = store.byId(route.params?.sessionId);
+
+  // the coach's notes on this runner: { sessionId: { note, coach, at } }, then edits in progress
+  const [notes, setNotes] = useState({});
+  const [drafts, setDrafts] = useState({});
+  const [saving, setSaving] = useState(null);
+  const [setup, setSetup] = useState(false);
+  const athleteId = athlete?.id;
+  useEffect(() => {
+    if (!athleteId) return undefined;
+    let alive = true;
+    fetchAllNotes()
+      .then((all) => alive && setNotes(all[athleteId] || {}))
+      .catch((e) => alive && e.message === "setup" && setSetup(true));
+    return () => {
+      alive = false;
+    };
+  }, [athleteId]);
+
   if (!athlete) return null;
   const logs = logRows(athlete, store.sessions);
+  const firstName = (athlete.name || "").trim().split(" ")[0];
+
+  const save = async (sessionId) => {
+    const text = (drafts[sessionId] ?? notes[sessionId]?.note ?? "").trim();
+    setSaving(sessionId);
+    try {
+      await saveCoachNote(athlete.id, sessionId, text, preferences.name);
+      setNotes((n) => {
+        const next = { ...n };
+        if (text) next[sessionId] = { note: text, coach: preferences.name, at: new Date().toISOString() };
+        else delete next[sessionId];
+        return next;
+      });
+      setDrafts((d) => {
+        const next = { ...d };
+        delete next[sessionId];
+        return next;
+      });
+      haptics.success();
+    } catch {
+      haptics.error();
+    }
+    setSaving(null);
+  };
 
   const club = isClubLevel(athlete.level);
   const targets = session ? sessionTargets(session, athlete.level, athlete.vma) : [];
@@ -127,6 +174,29 @@ const CoachAthleteScreen = ({ navigation, route }) => {
                     </View>
                   </View>
                   {!!l.note && <Text style={[typography.finePrint, { fontSize: 14, lineHeight: 19, opacity: 0.8 }]}>« {l.note} »</Text>}
+                  {!setup && (
+                    <View style={styles.noteRow}>
+                      <TextInput
+                        style={[styles.noteInput, typography.finePrint, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border, opacity: 1 }]}
+                        value={drafts[l.sessionId] ?? notes[l.sessionId]?.note ?? ""}
+                        onChangeText={(t) => setDrafts((d) => ({ ...d, [l.sessionId]: t }))}
+                        placeholder={`Un mot pour ${firstName || "lui"}…`}
+                        placeholderTextColor="grey"
+                        maxLength={280}
+                        multiline
+                      />
+                      {drafts[l.sessionId] !== undefined && drafts[l.sessionId] !== (notes[l.sessionId]?.note ?? "") && (
+                        <Pressable onPress={() => save(l.sessionId)} disabled={saving === l.sessionId} small>
+                          <View style={[styles.send, { backgroundColor: colors.accent, opacity: saving === l.sessionId ? 0.6 : 1 }]}>
+                            <Glyph name="check" size={16} color="white" strokeWidth={2.6} />
+                          </View>
+                        </Pressable>
+                      )}
+                    </View>
+                  )}
+                  {!!notes[l.sessionId] && drafts[l.sessionId] === undefined && (
+                    <Text style={[typography.finePrint, { fontSize: 12 }]}>Envoyé · {notes[l.sessionId].coach || "coach"} — visible sur sa séance</Text>
+                  )}
                 </View>
               ))}
             </Card>
@@ -182,6 +252,9 @@ const styles = StyleSheet.create({
   section: { gap: 8 },
   row: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56, paddingVertical: 10 },
   logRow: { paddingVertical: 12, gap: 6 },
+  noteRow: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginTop: 4 },
+  noteInput: { flex: 1, borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, lineHeight: 19, minHeight: 40 },
+  send: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   logTop: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   value: { fontSize: 16, opacity: 0.85, maxWidth: "55%" },
   empty: { fontSize: 14, textAlign: "center", paddingVertical: 14 },

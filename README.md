@@ -7,6 +7,8 @@ The run club app for CrossFit Essor (Bayonne). iPhone and Android from one codeb
 - **Séance faite** — after a session the runner logs how it went: average pace on the main set, feel (1–5), a short note. All optional; the tick alone still counts. Shown back to them on the session, and to the coaches.
 - **Débuter A/B/C** — the three walk-run programmes from the Level System page, built in. The app keeps each beginner's place, checks the "ready?" rules before moving on, and the end-of-level test moves them up.
 - **Sorties du club — "Je viens"** — the Tuesday 7h00 (Sean) and Saturday 10h00 (Arthur) group runs for the week ahead, on Home: one tap to say you're coming, and the first names of who else is. The coach view sees the full list. Rows live in Supabase's `attendance` table (schema.sql §1), one per phone per outing. Pattern and wording in `js/lib/outings.js`.
+- **Mot du coach** — in the hub, a coach writes one line under a runner's logged session; it appears on that session's page in the runner's app ("Mot de Mel"). Kept in `coach_notes` (supabase/notes.sql).
+- **Ils étaient là** — a past session shows the first names of everyone who logged it.
 - **Le groupe** — buttons to the WhatsApp group and the Strava club (`COMMUNITY` in `js/lib/config.js`; a link left empty isn't shown).
 - **Séance guidée** — a Débuter session run from the phone: one big countdown per walk/run interval, what comes next, a vibration at every switch and at the end. No watch, no GPS. Keeps the screen awake while it runs.
 - **VMA and zones** — VMA typed in or from the 6-minute test (metres ÷ 100); the Pfitzinger zones from Sean's Running Progression Plan as % VMA (and bpm once a max HR is added).
@@ -140,6 +142,7 @@ node scripts/test_paces.js
 
 In the coach view, tapping a session opens its hub: the session (date, time, Floride, structure, how many have logged it), then every runner expected, grouped by level, with their VMA and the times that session asks of them — and once they've logged it, what actually happened: their pace against the session's target ("+0:08 /km"), how it felt, their note. Tap a runner for their page (level, VMA and test date, every session logged with pace vs target, bests, goal race, injury notes from the questionnaire, training paces).
 
+- Run `supabase/notes.sql` once (after coach.sql) for the coach notes and "Ils étaient là".
 - Run `supabase/coach.sql` once in Supabase → SQL Editor (run it again after pulling this version — `member_progress()` now keeps the logs). It adds `coach_athletes(code)` (the roster, gated by the coach code stored in `coach_settings`) and `member_progress()` (members' phones report sessions done and their logs, race goal, bests and VMA at launch and when they change).
 - Who's in the list is decided in one place: `getSessionAttendees()` in `js/lib/coach.js`. Today it's everyone with `app_access`; Wodify bookings plug in there later.
 - Lint: `npx expo lint` (ESLint config in `eslint.config.js`). Pure helpers are covered by `node scripts/test_paces.js`.
