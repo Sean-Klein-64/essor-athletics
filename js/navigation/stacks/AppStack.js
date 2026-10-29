@@ -15,6 +15,7 @@ import CoachCodeScreen from "../../screens/CoachCodeScreen";
 import SessionEditorScreen from "../../screens/SessionEditorScreen";
 import CoachSessionScreen from "../../screens/CoachSessionScreen";
 import CoachAthleteScreen from "../../screens/CoachAthleteScreen";
+import CoachBeginnersScreen from "../../screens/CoachBeginnersScreen";
 import MyWeekScreen from "../../screens/MyWeekScreen";
 import GoalScreen from "../../screens/GoalScreen";
 import WeekScreen from "../../screens/WeekScreen";
@@ -41,6 +42,7 @@ const AppNavigator = createStackNavigator();
     SessionEditor    coach: write / edit a club session ({ id })
     CoachSession     coach: the session hub — who's coming, their paces ({ id })
     CoachAthlete     coach: one runner in full ({ athlete, sessionId })
+    CoachBeginners   coach: how the Débuter runners are doing
     MyWeek           coach: Sean's own week
     Goal             pick your race and goal time for the group goal
     Week             Levels 1–3: the other runs of the week around Friday
@@ -64,6 +66,7 @@ const AppStack = () => (
     <AppNavigator.Screen name="SessionEditor" component={SessionEditorScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="CoachSession" component={CoachSessionScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="CoachAthlete" component={CoachAthleteScreen} />
+    <AppNavigator.Screen name="CoachBeginners" component={CoachBeginnersScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="MyWeek" component={MyWeekScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="Goal" component={GoalScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="Week" component={WeekScreen} options={verticalSlideModal} />

@@ -12,7 +12,7 @@ import useSessions from "../lib/store";
 import { formatDay, totalLabel, todayKey } from "../lib/plan";
 import { BOOKING } from "../lib/config";
 import { levelById } from "../lib/levels";
-import { getSessionAttendees, groupByLevel, sessionTargets, sessionStructure, formatVma, isClubLevel, beginnerLine } from "../lib/coach";
+import { getSessionAttendees, groupByLevel, sessionTargets, sessionStructure, formatVma, isClubLevel, beginnerLine, beginnerTonight } from "../lib/coach";
 import { logFor, logLine, targetPace, paceGap, doneCount } from "../lib/log";
 
 /*
@@ -65,9 +65,25 @@ const AthleteCard = ({ athlete, session, onPress, colors, typography }) => {
           <Glyph name="right" size={16} color={colors.text} />
         </View>
 
-        {!club && !!beginnerLine(athlete, todayKey()) && (
-          <Text style={[typography.finePrint, { fontSize: 13 }]}>{beginnerLine(athlete, todayKey())}</Text>
-        )}
+        {!club && (() => {
+          const tonight = beginnerTonight(athlete);
+          return (
+            <View style={styles.targets}>
+              {tonight ? (
+                <View style={[styles.target, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                  <Text style={[typography.finePrint, styles.targetLabel]} numberOfLines={1}>
+                    Ce soir · semaine {tonight.week}{tonight.test ? " · test" : ""}
+                  </Text>
+                  <Text style={[typography.heading, typography.mono, typography.bold, { fontSize: 20 }]}>{tonight.label}</Text>
+                  <Text style={[typography.finePrint, { fontSize: 13 }]}>{tonight.minutes}{"'"} course</Text>
+                </View>
+              ) : (
+                <Text style={[typography.finePrint, { fontSize: 13, color: colors.accentText, opacity: 1 }]}>Programme Débuter — pas encore de séance marquée dans l{"'"}app</Text>
+              )}
+              {!!beginnerLine(athlete, todayKey()) && <Text style={[typography.finePrint, { fontSize: 13 }]}>{beginnerLine(athlete, todayKey())}</Text>}
+            </View>
+          );
+        })()}
 
         {done && (
           <View style={[styles.log, { backgroundColor: colors.accentSoft }]}>

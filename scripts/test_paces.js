@@ -612,6 +612,35 @@ check("the club start time falls back to the placeholder until published", () =>
   assert.strictEqual(st.time, "10:00");
 });
 
+console.log("Débutants — the coach's view");
+check("tonight's walk-run comes from the runner's place in the programme", () => {
+  const a = m.toAthlete({ id: 1, level: "beginnerA", answers: {}, progress: { at: "2026-11-20", programme: { index: 4, lastAt: "2026-11-18", return: null } } });
+  const t = m.beginnerTonight(a);
+  assert.deepStrictEqual([t.label, t.week, t.minutes, t.test], ["10×(1'/1')", 2, 10, false]);
+  const end = m.toAthlete({ id: 2, level: "beginnerA", answers: {}, progress: { at: "2026-11-20", programme: { index: 17, lastAt: "2026-11-18", return: null } } });
+  assert.strictEqual(m.beginnerTonight(end).test, true);
+  assert.strictEqual(m.beginnerTonight(m.toAthlete({ id: 3, level: "level2", answers: {}, progress: {} })), null);
+});
+check("status: quiet after 7 days, back after a gap, test when next, new without a session", () => {
+  const mk = (programme) => m.toAthlete({ id: 1, level: "beginnerB", answers: {}, progress: { at: "2026-11-20", programme } });
+  assert.strictEqual(m.beginnerStatus(mk({ index: 3, lastAt: "2026-11-05", return: null }), "2026-11-20").id, "quiet");
+  assert.strictEqual(m.beginnerStatus(mk({ index: 3, lastAt: "2026-11-18", return: { days: 12, action: "repeat", accepted: true, at: "2026-11-18" } }), "2026-11-20").id, "back");
+  assert.strictEqual(m.beginnerStatus(mk({ index: 17, lastAt: "2026-11-18", return: null }), "2026-11-20").id, "test");
+  assert.strictEqual(m.beginnerStatus(mk({ index: 3, lastAt: "2026-11-18", return: null }), "2026-11-20").id, "on");
+  assert.strictEqual(m.beginnerStatus(m.toAthlete({ id: 9, level: "beginnerB", answers: {}, progress: {} }), "2026-11-20").id, "new");
+});
+check("the summary counts the group", () => {
+  const mk = (level, programme) => m.toAthlete({ id: level + Math.random(), level, answers: {}, progress: { at: "2026-11-20", programme } });
+  const list = [
+    mk("beginnerA", { index: 2, lastAt: "2026-11-18" }),
+    mk("beginnerA", { index: 2, lastAt: "2026-11-01" }),
+    mk("beginnerC", { index: 17, lastAt: "2026-11-19" }),
+    m.toAthlete({ id: "l", level: "level1", answers: {}, progress: {} }),
+  ];
+  const s = m.beginnerSummary(list, "2026-11-20");
+  assert.deepStrictEqual([s.total, s.active, s.quiet, s.tests, s.byLevel.beginnerA, s.byLevel.beginnerC], [3, 2, 1, 1, 2, 1]);
+});
+
 (async () => {
   for (const [name, fn] of asyncChecks) {
     try { await fn(); passed++; } catch (e) { console.error(`✗ ${name}`); throw e; }
