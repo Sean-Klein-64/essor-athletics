@@ -114,6 +114,7 @@ export const toAthlete = (row) => {
     hrMax: row.vma?.hr_max || null,
     bests: pickBests(a.bests || {}, p.records || {}),
     sessionsDone: reported ? Object.keys(p.done || {}).length : null,
+    programme: p.programme || null, // Débuter: { index, lastAt, return } — see beginnerReport in js/lib/member.js
     done: p.done || {}, // { sessionId: "2026-11-06" }
     logs: p.logs || {}, // { sessionId: { at, pace, feel, note } } — js/lib/log.js
     raceGoal: p.raceGoal || null,
@@ -283,3 +284,38 @@ export const injuryLabel = (athlete) => {
   if (athlete.injury === "no") return "Aucune douleur signalée";
   return "—";
 };
+
+/* ── Débuter runners ─────────────────────────────────────────────────── */
+
+const daysAgo = (key, today) => {
+  if (!key) return null;
+  const [y1, m1, d1] = key.split("-").map(Number);
+  const [y2, m2, d2] = today.split("-").map(Number);
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
+};
+
+/*
+  "Séance 7/18 · dernière il y a 12 j · a reculé d'une semaine" — where a
+  Débuter runner is, for the hub card. "" for club levels or before the
+  phone has reported.
+*/
+export const beginnerLine = (athlete, today) => {
+  const p = athlete.programme;
+  if (!p || isClubLevel(athlete.level)) return "";
+  const parts = [`Séance ${Math.min(p.index, 17) + 1}/18`];
+  const days = daysAgo(p.lastAt, today);
+  if (days === null) parts.push("pas encore de séance marquée");
+  else if (days === 0) parts.push("dernière aujourd'hui");
+  else parts.push(`dernière il y a ${days} j`);
+  const r = p.return;
+  if (r && daysAgo(r.at, today) <= 14) {
+    const what = { repeat: "a refait la dernière", back: "a reculé d'une semaine", restart: "a repris le niveau du début" }[r.action];
+    parts.push(r.accepted ? `${what} après ${r.days} j` : `a continué malgré ${r.days} j sans séance`);
+  }
+  return parts.join(" · ");
+};
+
+/* Débuter runners who haven't marked a session for over a week — the coach's nudge list */
+export const quietBeginners = (athletes, today, after = 7) =>
+  athletes.filter((a) => a.programme && !isClubLevel(a.level) && a.programme.lastAt && daysAgo(a.programme.lastAt, today) > after);
+

@@ -9,10 +9,10 @@ import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
 import useSessions from "../lib/store";
-import { formatDay, totalLabel } from "../lib/plan";
+import { formatDay, totalLabel, todayKey } from "../lib/plan";
 import { BOOKING } from "../lib/config";
 import { levelById } from "../lib/levels";
-import { getSessionAttendees, groupByLevel, sessionTargets, sessionStructure, formatVma, isClubLevel } from "../lib/coach";
+import { getSessionAttendees, groupByLevel, sessionTargets, sessionStructure, formatVma, isClubLevel, beginnerLine } from "../lib/coach";
 import { logFor, logLine, targetPace, paceGap, doneCount } from "../lib/log";
 
 /*
@@ -64,6 +64,10 @@ const AthleteCard = ({ athlete, session, onPress, colors, typography }) => {
           )}
           <Glyph name="right" size={16} color={colors.text} />
         </View>
+
+        {!club && !!beginnerLine(athlete, todayKey()) && (
+          <Text style={[typography.finePrint, { fontSize: 13 }]}>{beginnerLine(athlete, todayKey())}</Text>
+        )}
 
         {done && (
           <View style={[styles.log, { backgroundColor: colors.accentSoft }]}>

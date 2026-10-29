@@ -11,6 +11,7 @@ The run club app for CrossFit Essor (Bayonne). iPhone and Android from one codeb
 - **Ils étaient là** — a past session shows the first names of everyone who logged it.
 - **Le groupe ce cycle** — one card on Home: runners in the club, sessions logged (by how many), VMA tests recorded, and who moved up a level since the cycle began. `club_pulse()` in supabase/club.sql; first names only.
 - **Le groupe** — buttons to the WhatsApp group and the Strava club (`COMMUNITY` in `js/lib/config.js`; a link left empty isn't shown).
+- **Coming back after a gap (Débuter)** — the programme waits for a missed session, but not for a missed fortnight. From the days since the last session marked done: ≤ 7 nothing · 8–14 repeat the last session · 15–28 back a week · > 28 restart the level. Proposed on Home as a card the runner accepts ("D'accord") or declines ("J'ai couru de mon côté"); the coach sees the answer in the hub (`GAP_RULES` in `js/lib/beginner.js`).
 - **Séance guidée** — a Débuter session run from the phone: one big countdown per walk/run interval, what comes next, a vibration at every switch and at the end. No watch, no GPS. Keeps the screen awake while it runs.
 - **VMA and zones** — VMA typed in or from the 6-minute test (metres ÷ 100); the Pfitzinger zones from Sean's Running Progression Plan as % VMA (and bpm once a max HR is added).
 - **Records** — 5 km, 10 km, semi, marathon: every time logged, best one marked.
