@@ -98,6 +98,7 @@ export const syncMember = async (ctx, phone, firstName, { first = false } = {}) 
   Fails quietly — it's a report, nothing on the phone depends on it.
 */
 export const progressReport = (p) => ({
+  level: p.level || null, // the level on the phone — moves when a Débuter test is passed in the app
   done: p.done || {},
   logs: p.log || {}, // how each session went — js/lib/log.js
   raceGoal: goalsReport(p),

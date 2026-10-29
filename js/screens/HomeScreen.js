@@ -15,6 +15,7 @@ import { isBeginner, nextSession, sessionLabel, runMinutes, PROGRAMMES } from ".
 import { RaceCountdown, RaceWeekCard } from "../components/RaceCountdown";
 import OutingsCard from "../components/OutingsCard";
 import GroupCard from "../components/GroupCard";
+import ClubPulseCard from "../components/ClubPulseCard";
 import { countdownRace } from "../lib/objectives";
 import { openWodify } from "../lib/wodify";
 import { bookingState } from "../lib/booking";
@@ -269,6 +270,8 @@ const HomeScreen = ({ navigation }) => {
             ))}
           </View>
         )}
+
+        <ClubPulseCard />
 
         <GroupCard />
 
