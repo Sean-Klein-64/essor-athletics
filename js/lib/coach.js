@@ -107,7 +107,9 @@ export const toAthlete = (row) => {
     id: row.id,
     name: row.name || "",
     phone: row.phone || null,
-    level: row.level || null,
+    level: p.level || row.level || null, // the phone's level wins once it reports (a Débuter test passed in the app)
+    questionnaireLevel: row.level || null,
+    justPassed: !!p.level && !!row.level && p.level !== row.level, // until Sean updates signups.level
     startWeek: row.start_week || null,
     vma: vma?.value ?? null,
     vmaDate: vma?.date ?? null,
@@ -345,6 +347,9 @@ export const beginnerTonight = (athlete) => {
 */
 export const beginnerStatus = (athlete, today) => {
   const p = athlete.programme;
+  if (athlete.justPassed && p && daysAgo(p.lastAt, today) !== null && daysAgo(p.lastAt, today) <= 14) {
+    return { id: "passed", text: `Vient de passer en ${levelById(athlete.level).name} — un mot ?` };
+  }
   if (!p) return { id: "new", text: "Pas encore de séance marquée dans l'app" };
   const days = daysAgo(p.lastAt, today);
   if (days === null) return { id: "new", text: "Pas encore de séance marquée dans l'app" };
@@ -362,7 +367,8 @@ export const beginnerSummary = (athletes, today) => {
   const statuses = list.map((a) => beginnerStatus(a, today).id);
   return {
     total: list.length,
-    active: statuses.filter((s) => s === "on" || s === "back" || s === "test").length,
+    active: statuses.filter((s) => s === "on" || s === "back" || s === "test" || s === "passed").length,
+    passed: statuses.filter((s) => s === "passed").length,
     quiet: statuses.filter((s) => s === "quiet").length,
     tests: statuses.filter((s) => s === "test").length,
     byLevel: Object.fromEntries(Object.keys(PROGRAMMES).map((id) => [id, list.filter((a) => a.level === id).length])),
@@ -424,6 +430,13 @@ export const weeksToThirty = (athlete, today) => {
 /* The nudge, in Sean's voice — short, relaxed, French. { body, phone } — the screen builds the sms: link (iOS and Android differ). */
 export const nudgeMessage = (athlete, today) => {
   const first = (athlete.name || "").trim().split(" ")[0] || "";
+  if (athlete.justPassed) {
+    const next = levelById(athlete.level);
+    const body = next.id === "level3"
+      ? `${first} ! 30 minutes sans t'arrêter — c'est fait. Vendredi tu fais la séance avec tout le monde, à ton allure. Bravo. Sean`
+      : `${first} ! Test réussi, tu passes en ${next.name}. Le programme suivant est dans l'app, on continue tranquille. Bravo. Sean`;
+    return { body, phone: athlete.phone ? String(athlete.phone).replace(/\s+/g, "") : null };
+  }
   const days = daysAgo(athlete.programme?.lastAt, today);
   const tonight = beginnerTonight(athlete);
   const body = `Salut ${first} ! ${days ? `Ça fait ${days} jours sans séance de ton côté, ` : ""}tout va bien ? ${tonight ? `La prochaine c'est ${tonight.label}, tranquille. ` : ""}Si tu as besoin d'adapter, dis-moi. Sean`;

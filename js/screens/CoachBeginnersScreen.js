@@ -23,7 +23,7 @@ import { todayKey } from "../lib/plan";
   one-tap SMS in Sean's voice. Tap a runner → CoachAthlete.
 */
 
-const ORDER = { quiet: 0, back: 1, test: 2, new: 3, on: 4 };
+const ORDER = { passed: 0, quiet: 1, back: 2, test: 3, new: 4, on: 5 };
 
 const CoachBeginnersScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
@@ -119,6 +119,7 @@ const CoachBeginnersScreen = ({ navigation, route }) => {
             <SectionLabel>{g.name}</SectionLabel>
             {g.athletes.map(({ a, status, tonight, progress, consistency, eta }) => {
               const quiet = status.id === "quiet";
+              const celebrate = status.id === "passed";
               const flag = a.injury === "yes";
               const sms = () => {
                 const { body, phone } = nudgeMessage(a, today);
@@ -127,7 +128,7 @@ const CoachBeginnersScreen = ({ navigation, route }) => {
               };
               return (
                 <Pressable key={a.id} onPress={() => navigation.navigate("CoachAthlete", { athlete: a })}>
-                  <View style={[styles.card, { backgroundColor: colors.card, borderColor: quiet ? colors.accentText : colors.border }]}>
+                  <View style={[styles.card, { backgroundColor: colors.card, borderColor: quiet || celebrate ? colors.accentText : colors.border }]}>
                     <View style={styles.top}>
                       <View style={[styles.initial, { backgroundColor: quiet ? colors.accentSoft : colors.background }]}>
                         <Text style={[typography.heading, typography.bold, { color: quiet ? colors.accentText : colors.text }]}>{(a.name.trim()[0] || "?").toUpperCase()}</Text>
@@ -170,11 +171,11 @@ const CoachBeginnersScreen = ({ navigation, route }) => {
                       </Text>
                     </View>
                     <View style={styles.statusRow}>
-                      <Text style={[typography.finePrint, { fontSize: 14, flex: 1, color: quiet ? colors.accentText : colors.text, opacity: quiet ? 1 : 0.7 }]}>{status.text}</Text>
-                      {quiet && !!a.phone && (
+                      <Text style={[typography.finePrint, { fontSize: 14, flex: 1, color: quiet || celebrate ? colors.accentText : colors.text, opacity: quiet || celebrate ? 1 : 0.7 }]}>{status.text}</Text>
+                      {(quiet || celebrate) && !!a.phone && (
                         <Pressable onPress={sms} small hitSlop={6}>
                           <View style={[styles.sms, { backgroundColor: colors.accent }]}>
-                            <Text style={[typography.heading, typography.bold, { fontSize: 13, color: "white" }]}>SMS</Text>
+                            <Text style={[typography.heading, typography.bold, { fontSize: 13, color: "white" }]}>{celebrate ? "Bravo 🎉" : "SMS"}</Text>
                           </View>
                         </Pressable>
                       )}

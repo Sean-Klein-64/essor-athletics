@@ -684,6 +684,26 @@ check("with nothing logged the chosen rhythm counts; the test itself reads as ne
   assert.strictEqual(m.testCountdown({ level: "level2" }, "2026-11-20"), null);
 });
 
+console.log("Test day");
+check("talk checks fall every 5' inside the test's run block only", () => {
+  const t = m.timeline(m.sessionPlan({ sets: 1, run: 20, walk: 0, test: true }));
+  assert.deepStrictEqual(m.talkChecks(t), [600, 900, 1200]); // warm-up 300 + 5', 10', 15' into the 20' block
+  assert.strictEqual(m.checkLabel(t, 900), "10'");
+  assert.strictEqual(m.crossedCheck([600, 900], 590, 601), 600);
+  assert.strictEqual(m.crossedCheck([600, 900], 601, 650), null);
+  assert.deepStrictEqual(m.talkChecks(m.timeline(m.sessionPlan({ sets: 5, run: 1, walk: 1 }))), []);
+});
+check("the coach sees a passed test: new group, status, congratulation", () => {
+  const a = m.toAthlete({ id: 1, name: "Mehdi B", phone: "0612345678", level: "beginnerC", answers: {}, progress: { at: "2026-11-20", level: "level3", programme: { index: 0, lastAt: "2026-11-20", recent: ["2026-11-20"], perWeek: 3, return: null } } });
+  assert.strictEqual(a.level, "level3");
+  assert.strictEqual(a.justPassed, true);
+  const b = m.toAthlete({ id: 2, name: "Ana", level: "beginnerA", answers: {}, progress: { at: "2026-11-20", level: "beginnerB", programme: { index: 0, lastAt: "2026-11-20", recent: [], perWeek: 3, return: null } } });
+  assert.strictEqual(m.beginnerStatus(b, "2026-11-20").id, "passed");
+  assert.ok(m.nudgeMessage(b, "2026-11-20").body.includes("tu passes en Débuter B"));
+  assert.ok(m.nudgeMessage(a, "2026-11-20").body.includes("30 minutes"));
+  assert.strictEqual(m.beginnerSummary([b], "2026-11-20").passed, 1);
+});
+
 (async () => {
   for (const [name, fn] of asyncChecks) {
     try { await fn(); passed++; } catch (e) { console.error(`✗ ${name}`); throw e; }
