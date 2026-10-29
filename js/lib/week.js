@@ -79,6 +79,26 @@ export const volumeFactor = (week) => {
   return Math.min(1 + stepsUp * PROGRESSION.step, 1 + PROGRESSION.cap);
 };
 
+/* ── Taper ───────────────────────────────────────────────────────────── */
+
+/*
+  The last two weeks before the race: less volume, the legs kept lively.
+    8–14 days out  "taper"  −30 %, long run capped at 40'
+    ≤ 7 days out   "race"   −50 %, long run capped at 30' (a "sortie" the Sunday before)
+  Strides stay; nothing new. { phase, factor, longCap, note } or null.
+*/
+export const TAPER = {
+  taper: { factor: 0.7, longCap: 40, note: "Affûtage : −30 % de volume, lignes droites gardées, rien de nouveau." },
+  race: { factor: 0.5, longCap: 30, note: "Semaine de course : −50 %, jambes vives, dors et bois bien. La forme est déjà là." },
+};
+
+export const taperFor = (daysToRace) => {
+  if (daysToRace === null || daysToRace === undefined || daysToRace < 0) return null;
+  if (daysToRace <= 7) return { phase: "race", ...TAPER.race };
+  if (daysToRace <= 14) return { phase: "taper", ...TAPER.taper };
+  return null;
+};
+
 /* ── Experience gates ────────────────────────────────────────────────── */
 
 const isNewToRunning = (p) => p.runsPerWeek === "never" || p.runsPerWeek === "once" || p.kmWeek === "0" || p.kmWeek === "under10";
@@ -108,12 +128,16 @@ const SLOTS = {
   it adds up to: { days, volume: { km, minutes, week, factor, hold, reason, base } }.
   `sessions` and `today` size the cycle week; without them it's week 1.
 */
-export const weekPlan = (preferences, { sessions = [], today = null } = {}) => {
+export const weekPlan = (preferences, { sessions = [], today = null, daysToRace = null } = {}) => {
   const wanted = Math.min(5, Math.max(1, guessRuns(preferences)));
   const runs = isNewToRunning(preferences) ? Math.min(wanted, 3) : wanted;
   const week = today ? cycleWeek(sessions, today) : 1;
-  const { hold, reason } = today ? holdCheck(preferences, sessions, today) : { hold: false, reason: "" };
-  const factor = hold ? volumeFactor(Math.max(1, week - 1)) : volumeFactor(week);
+  const taper = taperFor(daysToRace);
+  const check = today && !taper ? holdCheck(preferences, sessions, today) : { hold: false, reason: "" };
+  const hold = check.hold;
+  const reason = taper ? taper.note : check.reason;
+  const cycleFactor = hold ? volumeFactor(Math.max(1, week - 1)) : volumeFactor(week);
+  const factor = taper ? cycleFactor * taper.factor : cycleFactor;
 
   const base = baseKm(preferences);
   const pace = easyPaceSeconds(preferences.vma);
@@ -125,7 +149,8 @@ export const weekPlan = (preferences, { sessions = [], today = null } = {}) => {
   const longShare = slots.length > 1 ? 0.35 : 1;
   const soloDays = slots.map((s) => {
     const share = s.kind === "long" ? longShare : (1 - (slots.some((x) => x.kind === "long") ? longShare : 0)) / Math.max(1, slots.filter((x) => x.kind !== "long").length);
-    const minutes = round5(soloMinutes * share);
+    let minutes = round5(soloMinutes * share);
+    if (taper && s.kind === "long") minutes = Math.min(minutes, taper.longCap);
     const zone = zoneById(s.zone);
     return { ...s, minutes, zoneName: zone.name, pace: preferences.vma ? zonePace(preferences.vma, zone.vma) : null, hr: null };
   });
@@ -134,12 +159,13 @@ export const weekPlan = (preferences, { sessions = [], today = null } = {}) => {
   const days = [...soloDays, { ...FRIDAY }].sort((a, b) => order.indexOf(a.day) - order.indexOf(b.day));
   const minutes = soloDays.reduce((t, d) => t + d.minutes, 0) + FRIDAY_MINUTES;
   const km = Math.round((minutes * 60) / pace);
-  return { days, volume: { km, minutes, week, factor, hold, reason, base } };
+  return { days, volume: { km, minutes, week, factor, hold, reason, base, taper: taper?.phase || null } };
 };
 
-/* "≈ 32 km cette semaine · semaine 3 du cycle · +10 %" */
-export const volumeLine = ({ km, week, factor, hold }) => {
+/* "≈ 32 km cette semaine · semaine 3 du cycle · +10 %" / "≈ 16 km · semaine de course · −50 %" */
+export const volumeLine = ({ km, week, factor, hold, taper }) => {
   const pct = Math.round((factor - 1) * 100);
+  if (taper) return `≈ ${km} km · ${taper === "race" ? "semaine de course" : "semaine d'affûtage"} · ${pct > 0 ? "+" : "−"}${Math.abs(pct)} %`;
   const change = hold ? "volume maintenu" : pct === 0 ? "volume de départ" : `${pct > 0 ? "+" : "−"}${Math.abs(pct)} %`;
   return `≈ ${km} km cette semaine · semaine ${week} du cycle · ${change}`;
 };

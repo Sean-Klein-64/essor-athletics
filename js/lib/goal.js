@@ -19,6 +19,11 @@ const goal = {
   ],
   blurb: "L'objectif de tout le groupe pour finir l'année. Chacun à son allure, tous sur la même ligne.",
   register: "http://www.courseduboutdelan.com/fr/", // inscriptions pas encore ouvertes au 22/10/2026
+  // Start times, "HH:MM", per distance id — null until the organiser publishes them (the Jour J
+  // walk-through then counts back from a placeholder and says so)
+  start: { "10k": null, "5k": null },
+  startPlaceholder: "10:00",
+  meet: "Devant la salle, puis on marche ensemble au départ", // where the club meets on race morning
   // The countdown photo. The app searches Wikimedia Commons with photoQuery;
   // a coach's own photo wins: photo: require("../../assets/goal/bayonne.jpg")
   photoQuery: "Bayonne Nive quais",

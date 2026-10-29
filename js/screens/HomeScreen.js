@@ -221,8 +221,9 @@ const HomeScreen = ({ navigation }) => {
               sessions={sessions}
               onOpen={() => navigation.navigate("Objectives")}
               onLogTime={(id) => navigation.navigate("Record", { id })}
+              onPlan={() => navigation.navigate("RacePlan")}
             />
-            <RaceWeekCard race={race} />
+            <RaceWeekCard race={race} onPlan={() => navigation.navigate("RacePlan")} />
           </View>
         )}
 

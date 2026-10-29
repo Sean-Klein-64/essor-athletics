@@ -54,7 +54,7 @@ const targetFor = (race, vma) => {
   return vmaSeconds ? `${distanceName(race.metres)} · ta VMA dit ${formatClock(vmaSeconds)}` : distanceName(race.metres);
 };
 
-export const RaceCountdown = ({ race, sessions, onOpen, onLogTime }) => {
+export const RaceCountdown = ({ race, sessions, onOpen, onLogTime, onPlan }) => {
   const { theme, preferences, setPreference } = useContext(UserContext);
   const { colors, typography } = theme;
   const key = raceKey(race);
@@ -110,9 +110,18 @@ export const RaceCountdown = ({ race, sessions, onOpen, onLogTime }) => {
             </Pressable>
           </View>
         ) : (
-          <Text style={[typography.finePrint, styles.target]} numberOfLines={2}>
-            {targetFor(race, preferences.vma)}
-          </Text>
+          <View style={styles.targetRow}>
+            <Text style={[typography.finePrint, styles.target, { flex: 1 }]} numberOfLines={2}>
+              {targetFor(race, preferences.vma)}
+            </Text>
+            {!!onPlan && !!race.metres && (
+              <Pressable onPress={onPlan} small hitSlop={6}>
+                <View style={[styles.afterButton, { backgroundColor: "white", height: 34 }]}>
+                  <Text style={[typography.heading, typography.bold, { fontSize: 14, color: colors.accent }]}>{phase === "raceday" ? "Jour J" : "Mon plan"}</Text>
+                </View>
+              </Pressable>
+            )}
+          </View>
         )}
 
         {!!dots.length && phase !== "after" && (
@@ -144,7 +153,7 @@ export const RaceCountdown = ({ race, sessions, onOpen, onLogTime }) => {
 };
 
 /* Race week: the taper note and a checklist ticked on this phone */
-export const RaceWeekCard = ({ race }) => {
+export const RaceWeekCard = ({ race, onPlan }) => {
   const { theme, preferences, setPreference } = useContext(UserContext);
   const { colors, typography } = theme;
   if (!race || racePhase(race.days) !== "raceweek") return null;
@@ -162,6 +171,11 @@ export const RaceWeekCard = ({ race }) => {
     <View style={[styles.week, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <Text style={typography.heading}>Cette semaine</Text>
       <Text style={[typography.finePrint, { fontSize: 14, lineHeight: 19 }]}>{TAPER_NOTE}</Text>
+      {!!onPlan && (
+        <Pressable onPress={onPlan} small>
+          <Text style={[typography.heading, { color: colors.accentText, fontSize: 15 }]}>Mon plan de course et le déroulé du jour J →</Text>
+        </Pressable>
+      )}
       <Text style={[typography.finePrint, typography.bold, { fontSize: 13, marginTop: 4 }]}>
         Avant le départ · {done}/{RACE_CHECKLIST.length}
       </Text>
@@ -193,6 +207,7 @@ const styles = StyleSheet.create({
   title: { fontFamily: "Archivo-BlackItalic", fontSize: 24, lineHeight: 28, letterSpacing: -0.5, color: "white" },
   sub: { color: "white", opacity: 0.85, fontSize: 14 },
   target: { color: "white", opacity: 0.95, fontSize: 14 },
+  targetRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   dots: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
   dot: { flex: 1, height: 6, borderRadius: 3, maxWidth: 40 },
   dotOn: { backgroundColor: "white" },

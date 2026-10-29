@@ -12,6 +12,7 @@ import { weekPlan, guessRuns, RUNS_OPTIONS, RULES, volumeLine } from "../lib/wee
 import useSessions from "../lib/store";
 import { todayKey } from "../lib/plan";
 import onboarding from "../lib/onboarding";
+import { countdownRace } from "../lib/objectives";
 import { zoneHeartRate, zoneById } from "../lib/paces";
 
 /*
@@ -26,7 +27,8 @@ const WeekScreen = ({ navigation, route }) => {
   const { colors, typography } = theme;
   const runs = guessRuns(preferences);
   const { sessions } = useSessions();
-  const { days: plan, volume } = weekPlan(preferences, { sessions, today: todayKey() });
+  const race = countdownRace(preferences, todayKey());
+  const { days: plan, volume } = weekPlan(preferences, { sessions, today: todayKey(), daysToRace: race?.days ?? null });
   const kmAnswer = onboarding.find((q) => q.field === "kmWeek")?.options.find((o) => o.id === preferences.kmWeek)?.name;
   const todayIndex = (new Date().getDay() + 6) % 7;
   const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
