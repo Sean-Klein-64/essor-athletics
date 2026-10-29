@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Planning coachs · Essor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@1,900&family=DM+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #0A0A0A; --fg: #FAFAF8; --card: #161616; --line: #262626; --muted: #9AA7A1;
+  --accent-soft: rgba(124,196,162,0.12); --mint: #7CC4A2; --bad: #E07A5F; --bad-soft: rgba(224,122,95,0.14); --warn: #E8B44B;
+  --display: 'Archivo', 'Arial Black', Arial, sans-serif; --body: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body { font-family: var(--body); font-size: 17px; line-height: 1.45; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 20px 16px 80px; }
+.brand { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 34px; letter-spacing: -1px; line-height: 0.95; }
+.brand span { display: block; font-family: var(--body); font-style: normal; font-weight: 500; font-size: 12px; letter-spacing: 3px; color: var(--mint); margin-top: 6px; }
+h1 { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 30px; line-height: 1.02; letter-spacing: -0.8px; margin: 22px 0 6px; }
+h2 { font-size: 13px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); margin: 28px 0 10px; font-weight: 600; }
+.muted { color: var(--muted); font-size: 15px; }
+.small { font-size: 13px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; margin-bottom: 10px; }
+.status { display: flex; align-items: center; gap: 10px; border-radius: 14px; padding: 10px 14px; font-size: 15px; background: var(--accent-soft); color: var(--fg); border: 1px solid rgba(124,196,162,0.35); margin-top: 16px; }
+.status.err { background: var(--bad-soft); border-color: rgba(224,122,95,0.4); }
+.status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); flex: none; }
+.status.err .dot { background: var(--bad); }
+.sess { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.sess:first-of-type { border-top: 0; padding-top: 4px; }
+.when { min-width: 86px; }
+.when b { display: block; font-size: 15px; }
+.when span { font-size: 13px; color: var(--muted); }
+.what { flex: 1; }
+.what b { display: block; font-size: 16px; }
+.what span { font-size: 13px; color: var(--muted); }
+.tag { display: inline-block; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #222; color: var(--muted); margin-left: 6px; vertical-align: middle; }
+.tag.pt { background: #2a2a2a; }
+button.tgl { font: inherit; font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 7px 12px; cursor: pointer; white-space: nowrap; }
+button.tgl[aria-pressed="true"] { background: var(--bad-soft); color: var(--bad); border-color: rgba(224,122,95,0.5); }
+.sess.off .what b, .sess.off .when b { text-decoration: line-through; color: var(--muted); }
+.swap { border-color: rgba(232,180,75,0.45); }
+.swap .why { font-size: 14px; color: var(--muted); margin: 6px 0 10px; }
+.swap .from { color: var(--warn); font-weight: 500; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 4px; }
+.seg button { font: inherit; font-size: 15px; border: 0; border-radius: 10px; padding: 10px 8px; background: transparent; color: var(--muted); cursor: pointer; }
+.seg button.ok[aria-pressed="true"] { background: var(--accent-soft); color: var(--fg); box-shadow: inset 0 0 0 1px var(--mint); }
+.seg button.no[aria-pressed="true"] { background: var(--bad-soft); color: var(--fg); box-shadow: inset 0 0 0 1px var(--bad); }
+textarea { width: 100%; font: inherit; font-size: 15px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-top: 8px; resize: vertical; min-height: 44px; }
+.btn { font: inherit; font-size: 17px; font-weight: 500; border: 0; border-radius: 26px; height: 52px; padding: 0 20px; background: var(--mint); color: #0A0A0A; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; text-decoration: none; margin-top: 18px; }
+.btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); margin-top: 10px; }
+.btn:disabled { background: var(--line); color: var(--muted); cursor: default; }
+.done { border-color: rgba(124,196,162,0.45); }
+.hidden { display: none !important; }
+.week-note { font-size: 13px; color: var(--warn); margin: -4px 0 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 8px 6px; border-top: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 500; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; border-top: 0; }
+.pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; }
+.pill.ok { background: var(--accent-soft); color: var(--mint); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.wait { background: #222; color: var(--muted); }
+footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">essor<span>PLANNING COACHS</span></div>
+  <div id="app"><p class="muted" style="margin-top:24px">Chargement…</p></div>
+  <footer>Les échanges passent toujours par Sean, pour que le planning et Wodify restent alignés. Une question : réponds au mail ou envoie un SMS.</footer>
+</div>
+<script src="data.js"></script>
+<script>
+/* ── Supabase (same project as the run club). Data goes through the planning_* functions in supabase/planning.sql. ── */
+const SUPABASE_URL = "https://rqomypmgbjigukvztjxz.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_LnDYfyrKMTOunfAH29ZFTQ_CY3GtJE5";
+async function rpc(fn, args) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(args)
+  });
+  if (!r.ok) { const t = await r.text(); throw new Error(t.slice(0, 200) || r.status); }
+  const txt = await r.text(); return txt ? JSON.parse(txt) : null;
+}
+
+const P = window.PLANNING;
+const q = new URLSearchParams(location.search);
+const coach = (q.get("c") || "").toLowerCase();
+const code = q.get("k") || "";
+const app = document.getElementById("app");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const DAYS = { Lundi: "lun.", Mardi: "mar.", Mercredi: "mer.", Jeudi: "jeu.", Vendredi: "ven.", Samedi: "sam." };
+const fmtDate = iso => { const d = new Date(iso + "T12:00:00"); return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}`; };
+const weekLabel = (wk, sessions) => {
+  const ds = sessions.filter(s => s.wk === wk).map(s => s.date).sort();
+  if (!ds.length) return `Semaine ${wk}`;
+  return `Semaine ${wk} · ${fmtDate(ds[0])} → ${fmtDate(ds[ds.length - 1])}`;
+};
+
+let answers = {};   // session_key -> {answer, comment}
+let saving = 0;
+
+function statusBar(text, err) {
+  const el = document.getElementById("status");
+  if (!el) return;
+  el.className = "status" + (err ? " err" : "");
+  el.innerHTML = `<span class="dot"></span><span>${esc(text)}</span>`;
+}
+
+async function save(key, answer, comment) {
+  answers[key] = { answer, comment: comment ?? answers[key]?.comment ?? "" };
+  saving++; statusBar("Enregistrement…");
+  try {
+    await rpc("planning_answer", { p_coach: coach, p_code: code, p_month: P.month, p_session: key, p_answer: answer, p_comment: answers[key].comment || null });
+    saving--; if (!saving) statusBar(summary());
+  } catch (e) {
+    saving--; statusBar("Pas enregistré — vérifie ta connexion et réessaie.", true); console.error(e);
+  }
+}
+
+function summary() {
+  const me = P.coaches[coach];
+  const indispo = me.sessions.filter(s => !me.swaps.includes(s.key) && answers[s.key]?.answer === "indispo").length;
+  const swapsLeft = me.swaps.filter(k => !answers[k]?.answer).length;
+  if (answers._confirmed?.answer === "confirmed") return `Merci, c'est confirmé ✓${indispo ? ` (${indispo} indispo signalée${indispo > 1 ? "s" : ""})` : ""}`;
+  const parts = [];
+  if (swapsLeft) parts.push(`${swapsLeft} demande${swapsLeft > 1 ? "s" : ""} à répondre`);
+  if (indispo) parts.push(`${indispo} indispo signalée${indispo > 1 ? "s" : ""}`);
+  parts.push("tout est enregistré au fur et à mesure");
+  return parts.join(" · ");
+}
+
+function renderCoach() {
+  const me = P.coaches[coach];
+  const swaps = me.sessions.filter(s => me.swaps.includes(s.key));
+  const weeks = [...new Set(me.sessions.map(s => s.wk))].sort((a, b) => a - b);
+  const hours = me.sessions.reduce((t, s) => { const [h1, m1] = s.s.split(":").map(Number), [h2, m2] = s.e.split(":").map(Number); return t + (h2 * 60 + m2 - h1 * 60 - m1) / 60; }, 0);
+  let html = `<h1>${esc(P.label)} — ${esc(me.name)}</h1>
+  <p class="muted">${me.sessions.length} séance${me.sessions.length > 1 ? "s" : ""} · ${String(hours).replace(".", ",")} h. Vérifie tout, puis confirme en bas. Réponse sous 48 h, merci.</p>
+  <div id="status" class="status"><span class="dot"></span><span>…</span></div>`;
+
+  if (swaps.length) {
+    html += `<h2>Ce qu'on te demande de prendre</h2>`;
+    for (const s of swaps) {
+      const a = answers[s.key]?.answer;
+      html += `<div class="card swap" data-key="${esc(s.key)}">
+        <div class="when"><b>${DAYS[s.day]} ${fmtDate(s.date)} · ${esc(s.s)}–${esc(s.e)}</b></div>
+        <div class="what"><b>${esc(s.cl)}</b></div>
+        <div class="why"><span class="from">À la place de ${esc(s.from[0] + s.from.slice(1).toLowerCase())}</span> — ${esc(s.why)}</div>
+        <div class="seg">
+          <button class="ok" aria-pressed="${a === "ok"}" data-ans="ok">OK, je prends</button>
+          <button class="no" aria-pressed="${a === "pas_possible"}" data-ans="pas_possible">Pas possible</button>
+        </div>
+        <textarea placeholder="Un mot si besoin (facultatif)" data-comment="${esc(s.key)}">${esc(answers[s.key]?.comment || "")}</textarea>
+      </div>`;
+    }
+  }
+
+  html += `<h2>Ton planning</h2><p class="muted small" style="margin:-4px 0 12px">Une séance que tu ne peux pas assurer ? Appuie sur « Indispo ».</p>`;
+  for (const wk of weeks) {
+    const list = me.sessions.filter(s => s.wk === wk);
+    html += `<div class="card"><div class="muted small" style="margin-bottom:6px">${esc(weekLabel(wk, me.sessions))}</div>`;
+    const notes = [...new Set(list.map(s => P.notes[s.date]).filter(Boolean))];
+    for (const n of notes) html += `<div class="week-note">${esc(n)}</div>`;
+    for (const s of list) {
+      const isSwap = me.swaps.includes(s.key);
+      const off = answers[s.key]?.answer === "indispo";
+      html += `<div class="sess${off ? " off" : ""}" data-key="${esc(s.key)}">
+        <div class="when"><b>${DAYS[s.day]} ${fmtDate(s.date)}</b><span>${esc(s.s)}–${esc(s.e)}</span></div>
+        <div class="what"><b>${esc(s.cl)}${s.typ === "1:1" ? `<span class="tag pt">1:1</span>` : ""}${isSwap ? `<span class="tag">demande</span>` : ""}</b></div>
+        ${isSwap ? `<span class="small muted">voir plus haut</span>` : `<button class="tgl" aria-pressed="${off}" data-indispo="${esc(s.key)}">${off ? "Indispo ✕" : "Indispo"}</button>`}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  const confirmed = answers._confirmed?.answer === "confirmed";
+  html += `<button class="btn" id="confirm" ${confirmed ? "disabled" : ""}>${confirmed ? "Planning confirmé ✓" : "J'ai tout vérifié, je confirme"}</button>`;
+  if (me.file) html += `<a class="btn ghost" href="files/${esc(me.file)}" download>Télécharger mon planning (Excel)</a>`;
+  app.innerHTML = html;
+  statusBar(summary());
+
+  app.querySelectorAll("[data-indispo]").forEach(b => b.addEventListener("click", () => {
+    const key = b.dataset.indispo; const now = answers[key]?.answer === "indispo";
+    save(key, now ? null : "indispo").then(() => { answers._confirmed = { answer: null }; renderCoach(); });
+    answers[key] = { ...(answers[key] || {}), answer: now ? null : "indispo" }; renderCoach();
+  }));
+  app.querySelectorAll(".swap .seg button").forEach(b => b.addEventListener("click", () => {
+    const key = b.closest(".swap").dataset.key;
+    answers[key] = { ...(answers[key] || {}), answer: b.dataset.ans }; renderCoach(); save(key, b.dataset.ans);
+  }));
+  app.querySelectorAll("textarea[data-comment]").forEach(t => t.addEventListener("change", () => {
+    const key = t.dataset.comment; save(key, answers[key]?.answer ?? null, t.value.trim());
+  }));
+  const c = document.getElementById("confirm");
+  if (c) c.addEventListener("click", async () => {
+    const me = P.coaches[coach];
+    const left = me.swaps.filter(k => !answers[k]?.answer);
+    if (left.length && !confirm(`Il reste ${left.length} demande${left.length > 1 ? "s" : ""} sans réponse plus haut. Confirmer quand même ?`)) return;
+    c.disabled = true; c.textContent = "Envoi…";
+    await save("_confirmed", "confirmed", "");
+    renderCoach();
+  });
+}
+
+function renderAdmin(rows) {
+  const by = {};
+  for (const r of rows) (by[r.coach] ||= {})[r.session_key] = r;
+  let html = `<h1>${esc(P.label)} — vue Sean</h1><p class="muted">Réponses des coachs. Un tap chez eux = une ligne ici, en direct.</p>`;
+  for (const [id, me] of Object.entries(P.coaches)) {
+    const a = by[id] || {};
+    const confirmed = a._confirmed?.answer === "confirmed";
+    const indispo = me.sessions.filter(s => a[s.key]?.answer === "indispo");
+    const swapRows = me.sessions.filter(s => me.swaps.includes(s.key));
+    const answeredSwaps = swapRows.filter(s => a[s.key]?.answer);
+    const touched = Object.keys(a).length > 0;
+    html += `<div class="card ${confirmed ? "done" : ""}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <b>${esc(me.name)}</b>
+        <span class="pill ${confirmed ? "ok" : touched ? "wait" : "wait"}">${confirmed ? "Confirmé ✓" : touched ? "En cours" : "Pas encore ouvert"}</span>
+      </div>
+      <div class="small muted" style="margin:4px 0 8px">${me.sessions.length} séances · ${indispo.length} indispo · ${answeredSwaps.length}/${swapRows.length} demandes répondues</div>`;
+    if (indispo.length || swapRows.length) {
+      html += `<table><tr><th>Séance</th><th>Réponse</th><th>Commentaire</th></tr>`;
+      for (const s of swapRows) {
+        const r = a[s.key]; const ans = r?.answer;
+        html += `<tr><td>${DAYS[s.day]} ${fmtDate(s.date)} ${esc(s.s)} ${esc(s.cl)}<br><span class="muted small">demande</span></td>
+          <td>${ans === "ok" ? `<span class="pill ok">OK</span>` : ans === "pas_possible" ? `<span class="pill bad">Pas possible</span>` : `<span class="pill wait">—</span>`}</td>
+          <td class="small">${esc(r?.comment || "")}</td></tr>`;
+      }
+      for (const s of indispo) {
+        html += `<tr><td>${DAYS[s.day]} ${fmtDate(s.date)} ${esc(s.s)} ${esc(s.cl)}</td><td><span class="pill bad">Indispo</span></td><td class="small">${esc(a[s.key]?.comment || "")}</td></tr>`;
+      }
+      html += `</table>`;
+    }
+    html += `</div>`;
+  }
+  html += `<button class="btn ghost" onclick="location.reload()">Actualiser</button>`;
+  app.innerHTML = html;
+}
+
+(async () => {
+  if (!coach || !code) { app.innerHTML = `<h1>Lien incomplet</h1><p class="muted">Utilise le lien que Sean t'a envoyé.</p>`; return; }
+  try {
+    if (coach === "sean") { renderAdmin(await rpc("planning_all", { p_code: code, p_month: P.month })); return; }
+    if (!P.coaches[coach]) throw new Error("unknown coach");
+    const rows = await rpc("planning_mine", { p_coach: coach, p_code: code, p_month: P.month });
+    for (const r of rows) answers[r.session_key] = { answer: r.answer, comment: r.comment || "" };
+    renderCoach();
+  } catch (e) {
+    console.error(e);
+    app.innerHTML = `<h1>Lien non reconnu</h1><p class="muted">Ce lien ne marche pas (ou la connexion a échoué). Demande à Sean de te le renvoyer.</p>`;
+  }
+})();
+</script>
+</body>
+</html>
