@@ -1,3 +1,5 @@
+import { levelById } from "./levels";
+
 /*
   The three Débuter programmes, from "Essor Athletics — The Level System"
   (Notion). Walk-run plans that build up to 30' of continuous running.
@@ -174,3 +176,52 @@ export const gapPlan = (preferences, levelId, today) => {
 
 /* Where the step back lands, in words: "semaine 3, séance 2" */
 export const indexLabel = (index) => `semaine ${Math.floor(index / 3) + 1}, séance ${(index % 3) + 1}`;
+
+/* ── Mon test — the beginner's countdown ────────────────────────────────
+
+  Levels 1–3 count down to the race; a Débuter runner counts down to the
+  end-of-level test. From where they are and how often they actually run:
+    { test, sessionsLeft, weeks, rhythm, minutesNow, target: 30, pct, next, unlock }
+  rhythm = sessions/week over the last 3 weeks from programmeLog (falls
+  back to the 2 or 3 they chose when nothing is logged yet).
+*/
+export const testCountdown = (preferences, today) => {
+  const levelId = preferences.level;
+  if (!PROGRAMMES[levelId]) return null;
+  const perWeek = perWeekOf(preferences);
+  const list = programmeSessions(levelId, perWeek);
+  const at = currentIndex(preferences, levelId);
+  const test = list.find((s) => s.test);
+  const left = list.filter((s) => s.index >= at && s.index <= test.index);
+  const now = list.find((s) => s.index >= at) || list[list.length - 1];
+
+  const log = preferences.programmeLog?.[levelId] || [];
+  const recent = log.filter((e) => {
+    const [y1, m1, d1] = e.at.split("-").map(Number);
+    const [y2, m2, d2] = today.split("-").map(Number);
+    const days = Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
+    return days >= 0 && days < 21;
+  }).length;
+  const rhythm = recent ? Math.round((recent / 3) * 10) / 10 : perWeek;
+  const weeks = Math.max(0, Math.ceil(left.length / Math.max(1, rhythm)));
+
+  return {
+    test: { label: sessionLabel(test), minutes: test.run, next: test.next },
+    isTestNext: now.index === test.index,
+    sessionsLeft: left.length,
+    weeks,
+    rhythm,
+    minutesNow: now.run,
+    target: 30,
+    pct: Math.min(1, now.run / 30),
+    unlock: levelById(test.next).name,
+    levelName: PROGRAMMES[levelId].name,
+  };
+};
+
+/* "Encore 11 séances · ≈ 4 semaines à ce rythme" / "Le test, c'est la prochaine" */
+export const testCountdownLine = (c) => {
+  if (!c) return "";
+  if (c.isTestNext) return "Le test, c'est ta prochaine séance";
+  return `Encore ${c.sessionsLeft} séance${c.sessionsLeft > 1 ? "s" : ""} · ≈ ${c.weeks} semaine${c.weeks > 1 ? "s" : ""} à ton rythme`;
+};

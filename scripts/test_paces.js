@@ -661,6 +661,29 @@ check("the report carries recent dates and the 2/3 rhythm", () => {
   assert.strictEqual(r.programme.perWeek, 2);
 });
 
+console.log("Mon test — the beginner's countdown");
+check("sessions left to the test, weeks at the logged rhythm, the bar to 30'", () => {
+  const p = { level: "beginnerB", programme: { beginnerB: 7 }, programmeLog: { beginnerB: [{ index: 4, at: "2026-11-09" }, { index: 5, at: "2026-11-12" }, { index: 6, at: "2026-11-16" }] } };
+  const c = m.testCountdown(p, "2026-11-20");
+  assert.strictEqual(c.sessionsLeft, 11); // indexes 7..17
+  assert.strictEqual(c.rhythm, 1);
+  assert.strictEqual(c.weeks, 11);
+  assert.deepStrictEqual([c.test.label, c.test.minutes, c.unlock], ["20' continu", 20, "Débuter C"]);
+  assert.strictEqual(c.minutesNow, 10); // session index 7 of Débuter B = 3×(10'/1')
+  assert.strictEqual(m.testCountdownLine(c), "Encore 11 séances · ≈ 11 semaines à ton rythme");
+});
+check("with nothing logged the chosen rhythm counts; the test itself reads as next", () => {
+  const c = m.testCountdown({ level: "beginnerA", programme: { beginnerA: 0 }, beginnerSessions: 2 }, "2026-11-20");
+  assert.strictEqual(c.rhythm, 2);
+  assert.strictEqual(c.sessionsLeft, 12); // 2 a week: 6 weeks × 2
+  assert.strictEqual(c.weeks, 6);
+  const last = m.testCountdown({ level: "beginnerC", programme: { beginnerC: 17 } }, "2026-11-20");
+  assert.strictEqual(last.isTestNext, true);
+  assert.strictEqual(m.testCountdownLine(last), "Le test, c'est ta prochaine séance");
+  assert.strictEqual(last.unlock, "Level 3");
+  assert.strictEqual(m.testCountdown({ level: "level2" }, "2026-11-20"), null);
+});
+
 (async () => {
   for (const [name, fn] of asyncChecks) {
     try { await fn(); passed++; } catch (e) { console.error(`✗ ${name}`); throw e; }
