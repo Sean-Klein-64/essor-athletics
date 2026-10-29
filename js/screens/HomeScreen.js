@@ -17,6 +17,7 @@ import OutingsCard from "../components/OutingsCard";
 import GroupCard from "../components/GroupCard";
 import ClubPulseCard from "../components/ClubPulseCard";
 import ComebackCard from "../components/ComebackCard";
+import TestCountdown from "../components/TestCountdown";
 import { countdownRace } from "../lib/objectives";
 import { openWodify } from "../lib/wodify";
 import { bookingState } from "../lib/booking";
@@ -224,6 +225,12 @@ const HomeScreen = ({ navigation }) => {
               onPlan={() => navigation.navigate("RacePlan")}
             />
             <RaceWeekCard race={race} onPlan={() => navigation.navigate("RacePlan")} />
+          </View>
+        )}
+
+        {beginner && (
+          <View style={styles.section}>
+            <TestCountdown onOpen={() => navigation.navigate("Programme")} />
           </View>
         )}
 
