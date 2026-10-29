@@ -97,8 +97,20 @@ export const syncMember = async (ctx, phone, firstName, { first = false } = {}) 
   on the phone. Read in the Coach Session Hub.
   Fails quietly — it's a report, nothing on the phone depends on it.
 */
+/* Débuter only: { index, lastAt, return: { days, action, accepted, at } | null } */
+const beginnerReport = (p) => {
+  if (!PROGRAMMES[p.level]) return null;
+  const log = p.programmeLog?.[p.level] || [];
+  return {
+    index: p.programme?.[p.level] ?? 0,
+    lastAt: log.length ? log[log.length - 1].at : null,
+    return: p.programmeReturn?.[p.level] || null,
+  };
+};
+
 export const progressReport = (p) => ({
   level: p.level || null, // the level on the phone — moves when a Débuter test is passed in the app
+  programme: beginnerReport(p), // Débuter: where they are, when they last ran, how a gap was handled
   done: p.done || {},
   logs: p.log || {}, // how each session went — js/lib/log.js
   raceGoal: goalsReport(p),

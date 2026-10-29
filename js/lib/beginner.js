@@ -111,3 +111,66 @@ export const READY_RULES = [
   "Rien ne faisait mal le lendemain matin",
   "Tu as fini la séance sans raccourcir une course",
 ];
+
+/* ── Coming back after a gap ─────────────────────────────────────────────
+
+  The programme waits for you — that's right for a missed session, wrong
+  for a missed fortnight. Tendons lose tolerance faster than lungs, so
+  after a gap the runner steps back before moving on. The rule, from the
+  days since the last session they marked done:
+
+    ≤ 7 days    nothing — carry on (a missed session is just done next time)
+    8–14 days   repeat the last session done before going on
+    15–28 days  go back one week (3 sessions)
+    > 28 days   restart the level from week 1
+
+  Dates come from preferences.programmeLog[levelId] = [{ index, at }],
+  appended each time a Débuter session is marked done. The step back is
+  proposed, not imposed: the runner confirms (or says they kept running
+  on their own), and the coach sees it in the hub.
+*/
+
+export const GAP_RULES = [
+  { maxDays: 7, action: "none" },
+  { maxDays: 14, action: "repeat" },
+  { maxDays: 28, action: "back" },
+  { maxDays: Infinity, action: "restart" },
+];
+
+const daysBetween = (fromKey, toKey) => {
+  const [y1, m1, d1] = fromKey.split("-").map(Number);
+  const [y2, m2, d2] = toKey.split("-").map(Number);
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
+};
+
+/* The last Débuter session marked done on this level: { index, at } or null */
+export const lastDone = (preferences, levelId) => {
+  const log = preferences.programmeLog?.[levelId] || [];
+  return log.length ? log[log.length - 1] : null;
+};
+
+/*
+  What to do on coming back: { days, action, from, to, title, text } or null
+  when there is nothing to propose (no session logged yet, gap ≤ 7 days, or
+  the step back was already handled for this return).
+*/
+export const gapPlan = (preferences, levelId, today) => {
+  const last = lastDone(preferences, levelId);
+  if (!last?.at) return null;
+  const days = daysBetween(last.at, today);
+  const action = GAP_RULES.find((r) => days <= r.maxDays).action;
+  if (action === "none") return null;
+  const handled = preferences.programmeReturn?.[levelId];
+  if (handled && handled.lastAt === last.at) return null; // already answered for this gap
+  const from = currentIndex(preferences, levelId);
+  const to = action === "repeat" ? Math.max(0, last.index) : action === "back" ? Math.max(0, from - 3) : 0;
+  const texts = {
+    repeat: { title: `${days} jours sans séance`, text: "On refait la dernière séance avant d'avancer. Même allure, tu dois pouvoir parler." },
+    back: { title: `${days} jours sans séance`, text: "On recule d'une semaine dans le programme. Les tendons oublient plus vite que le souffle — c'est la règle, pas une punition." },
+    restart: { title: `${days} jours sans séance`, text: `On repart du début de ${PROGRAMMES[levelId]?.name || "ton niveau"}, tranquillement. Tu remonteras vite.` },
+  };
+  return { days, action, from, to, ...texts[action] };
+};
+
+/* Where the step back lands, in words: "semaine 3, séance 2" */
+export const indexLabel = (index) => `semaine ${Math.floor(index / 3) + 1}, séance ${(index % 3) + 1}`;

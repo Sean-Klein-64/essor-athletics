@@ -487,6 +487,39 @@ check("the progress report carries the phone's level", () => {
   assert.strictEqual(m.progressReport({ level: "level3" }).level, "level3");
 });
 
+console.log("Débuter — coming back after a gap");
+check("a missed session changes nothing; a fortnight repeats; a month goes back a week; longer restarts", () => {
+  const base = { level: "beginnerB", programme: { beginnerB: 7 }, programmeLog: { beginnerB: [{ index: 6, at: "2026-11-01" }] } };
+  assert.strictEqual(m.gapPlan(base, "beginnerB", "2026-11-05"), null);
+  assert.strictEqual(m.gapPlan(base, "beginnerB", "2026-11-08"), null); // exactly 7 days
+  const rep = m.gapPlan(base, "beginnerB", "2026-11-11");
+  assert.deepStrictEqual([rep.action, rep.from, rep.to, rep.days], ["repeat", 7, 6, 10]);
+  const back = m.gapPlan(base, "beginnerB", "2026-11-21");
+  assert.deepStrictEqual([back.action, back.to], ["back", 4]);
+  const restart = m.gapPlan(base, "beginnerB", "2026-12-05");
+  assert.deepStrictEqual([restart.action, restart.to], ["restart", 0]);
+  assert.strictEqual(m.gapPlan({ level: "beginnerB", programme: { beginnerB: 3 } }, "beginnerB", "2026-12-05"), null); // nothing logged yet
+});
+check("a gap already answered is not proposed twice; back never goes below zero", () => {
+  const p = { level: "beginnerA", programme: { beginnerA: 2 }, programmeLog: { beginnerA: [{ index: 1, at: "2026-11-01" }] } };
+  assert.strictEqual(m.gapPlan(p, "beginnerA", "2026-11-21").to, 0);
+  const answered = { ...p, programmeReturn: { beginnerA: { lastAt: "2026-11-01", accepted: false } } };
+  assert.strictEqual(m.gapPlan(answered, "beginnerA", "2026-11-21"), null);
+  assert.strictEqual(m.indexLabel(7), "semaine 3, séance 2");
+});
+check("the coach reads where a Débuter runner is", () => {
+  const a = m.toAthlete({ id: 1, level: "beginnerC", answers: {}, progress: { at: "2026-11-20", programme: { index: 8, lastAt: "2026-11-08", return: { days: 12, action: "repeat", accepted: true, at: "2026-11-20" } } } });
+  assert.strictEqual(m.beginnerLine(a, "2026-11-20"), "Séance 9/18 · dernière il y a 12 j · a refait la dernière après 12 j");
+  assert.strictEqual(m.beginnerLine({ level: "level2", programme: null }, "2026-11-20"), "");
+  assert.strictEqual(m.quietBeginners([a], "2026-11-20").length, 1);
+  assert.strictEqual(m.quietBeginners([a], "2026-11-10").length, 0);
+});
+check("the progress report carries the Débuter place", () => {
+  const r = m.progressReport({ level: "beginnerB", programme: { beginnerB: 5 }, programmeLog: { beginnerB: [{ index: 4, at: "2026-11-06" }] } });
+  assert.deepStrictEqual(r.programme, { index: 5, lastAt: "2026-11-06", return: null });
+  assert.strictEqual(m.progressReport({ level: "level1" }).programme, null);
+});
+
 (async () => {
   for (const [name, fn] of asyncChecks) {
     try { await fn(); passed++; } catch (e) { console.error(`✗ ${name}`); throw e; }

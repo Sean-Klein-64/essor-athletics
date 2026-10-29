@@ -41,6 +41,7 @@ begin
 
   update public.signups set progress = jsonb_build_object(
     'level',    p_progress->'level',
+    'programme', p_progress->'programme',
     'done',     coalesce(p_progress->'done', '{}'::jsonb),
     'logs',     coalesce(p_progress->'logs', '{}'::jsonb),
     'raceGoal', p_progress->'raceGoal',

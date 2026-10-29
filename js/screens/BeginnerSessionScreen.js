@@ -11,7 +11,7 @@ import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
 import { PROGRAMMES, programmeSessions, sessionLabel, sessionPlan, currentIndex, runMinutes, READY_RULES, perWeekOf } from "../lib/beginner";
-import { describeStep } from "../lib/plan";
+import { describeStep, todayKey } from "../lib/plan";
 import { levelById } from "../lib/levels";
 
 /*
@@ -40,14 +40,13 @@ const BeginnerSessionScreen = ({ navigation, route }) => {
 
   const markDone = async () => {
     const programme = { ...(preferences.programme || {}) };
-    if (session.test) {
-      programme[levelId] = session.index + 1;
-      await setPreference("programme", programme);
-      await setPreference("level", session.next);
-    } else {
-      programme[levelId] = session.index + 1;
-      await setPreference("programme", programme);
-    }
+    programme[levelId] = session.index + 1;
+    await setPreference("programme", programme);
+    // when it was done — the gap rule (js/lib/beginner.js) reads this on the way back
+    const log = { ...(preferences.programmeLog || {}) };
+    log[levelId] = [...(log[levelId] || []), { index: session.index, at: todayKey() }];
+    await setPreference("programmeLog", log);
+    if (session.test) await setPreference("level", session.next);
     navigation.goBack();
   };
 
