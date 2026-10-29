@@ -13,12 +13,14 @@ import { formatDay, totalLabel } from "../lib/plan";
 import { BOOKING } from "../lib/config";
 import { levelById } from "../lib/levels";
 import { getSessionAttendees, groupByLevel, sessionTargets, sessionStructure, formatVma, isClubLevel } from "../lib/coach";
+import { logFor, logLine, targetPace, paceGap, doneCount } from "../lib/log";
 
 /*
   Coach Session Hub — one Friday, seen from the track.
   The session up top (date, time, place, what's planned — tap to open the
   structure), then everyone expected, grouped by level, each with their VMA
-  and the times that session asks of them. Tap a runner → CoachAthlete.
+  and the times that session asks of them — and, once they've logged it,
+  how it went (pace against the target, feel). Tap a runner → CoachAthlete.
   Who's in the list comes from getSessionAttendees() (js/lib/coach.js).
 */
 
@@ -33,6 +35,9 @@ const AthleteCard = ({ athlete, session, onPress, colors, typography }) => {
   const targets = sessionTargets(session, athlete.level, athlete.vma);
   const club = isClubLevel(athlete.level);
   const flag = athlete.injury === "yes";
+  const log = logFor(athlete.logs, session.id);
+  const done = !!log || !!athlete.done?.[session.id];
+  const gap = log ? paceGap(log.pace, targetPace(session, athlete.level, athlete.vma)) : null;
   return (
     <Pressable onPress={onPress}>
       <View style={[styles.athlete, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -52,8 +57,27 @@ const AthleteCard = ({ athlete, session, onPress, colors, typography }) => {
               {flag ? " · ⚠︎ douleur" : ""}
             </Text>
           </View>
+          {done && (
+            <View style={[styles.doneDot, { backgroundColor: colors.accent }]}>
+              <Glyph name="check" size={13} color="white" strokeWidth={2.6} />
+            </View>
+          )}
           <Glyph name="right" size={16} color={colors.text} />
         </View>
+
+        {done && (
+          <View style={[styles.log, { backgroundColor: colors.accentSoft }]}>
+            <Text style={[typography.finePrint, typography.bold, { color: colors.accentText, opacity: 1, fontSize: 14 }]} numberOfLines={1}>
+              {logLine(log)}
+              {gap ? <Text style={{ fontWeight: "400" }}>  ·  {gap.label}</Text> : null}
+            </Text>
+            {!!log?.note && (
+              <Text style={[typography.finePrint, { color: colors.accentText, opacity: 0.85, fontSize: 13 }]} numberOfLines={2}>
+                « {log.note} »
+              </Text>
+            )}
+          </View>
+        )}
 
         {club && (
           <View style={styles.targets}>
@@ -128,6 +152,7 @@ const CoachSessionScreen = ({ navigation, route }) => {
   const groups = groupByLevel(athletes || []);
   const shown = filter ? groups.filter((g) => g.id === filter) : groups;
   const total = (athletes || []).length;
+  const logged = doneCount(athletes || [], session.id);
 
   return (
     <SlideScreenContainer title="Séance coach" type="back" navigation={navigation} route={route} ignoreKeyboard>
@@ -146,6 +171,11 @@ const CoachSessionScreen = ({ navigation, route }) => {
             <Pill icon="bolt" colors={colors} typography={typography}>{BOOKING.time}</Pill>
             <Pill colors={colors} typography={typography}>{BOOKING.place}</Pill>
             <Pill colors={colors} typography={typography}>{totalLabel(session, "level2")}</Pill>
+            {athletes !== null && logged.done > 0 && (
+              <Pill icon="check" colors={colors} typography={typography}>
+                {logged.done} / {logged.total} faite{logged.done > 1 ? "s" : ""}
+              </Pill>
+            )}
           </View>
 
           <Pressable onPress={toggle} animation={false}>
@@ -268,6 +298,8 @@ const styles = StyleSheet.create({
   groupHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 4 },
   athlete: { borderWidth: 1, borderRadius: 20, padding: 14, gap: 12 },
   athleteTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  doneDot: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+  log: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, gap: 2 },
   initial: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   targets: { gap: 6 },
   target: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, height: 44 },

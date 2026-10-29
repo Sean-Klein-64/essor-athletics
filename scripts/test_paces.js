@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/log"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -350,6 +350,50 @@ check("Wodify: app first, then store, then website", () => {
   assert.ok(ios.includes("itms-apps://apps.apple.com/app/id1563729830"));
   assert.ok(ios[ios.length - 1].includes("app.wodify.com"));
   assert.ok(m.wodifyTargets("android").some((t) => t.url.startsWith("market://")));
+});
+
+console.log("Session logs");
+check("a pace reads with : or ' and ignores /km", () => {
+  assert.strictEqual(m.parsePace("4:12"), 252);
+  assert.strictEqual(m.parsePace("4'12 /km"), 252);
+  assert.strictEqual(m.parsePace("0:30"), null); // nobody runs 30 s/km
+  assert.strictEqual(m.parsePace("abc"), null);
+});
+check("the target pace of 5 × 1000 m at 90 % of VMA 15 is 4:27 /km", () => {
+  const session = { id: "t", levels: { level1: [{ repeat: 5, steps: [{ run: 1000, vma: 90 }], rest: { walk: "2:00" } }] } };
+  assert.strictEqual(m.formatPace(m.targetPace(session, "level1", 15)), "4:27 /km");
+  assert.strictEqual(m.targetPace(session, "level1", null), null);
+  assert.strictEqual(m.targetPace(session, "beginnerA", 15), null);
+});
+check("a timed rep counts for the distance the VMA predicts", () => {
+  const session = { id: "t", levels: { level2: [{ repeat: 4, steps: [{ run: "0:30", vma: 105 }] }] } };
+  assert.strictEqual(m.formatPace(m.targetPace(session, "level2", 16)), m.formatPace(m.paceFromSpeed(m.speedAt(16, 105))));
+});
+check("pace gap reads +/− and 'à l'allure' within 3 s", () => {
+  assert.strictEqual(m.paceGap(260, 252).label, "+0:08 /km");
+  assert.strictEqual(m.paceGap(245, 252).label, "−0:07 /km");
+  assert.strictEqual(m.paceGap(254, 252).label, "à l'allure");
+  assert.strictEqual(m.paceGap(null, 252), null);
+});
+check("a log reads in one line", () => {
+  assert.strictEqual(m.logLine({ pace: 252, feel: 4 }), "4:12 /km · Dur");
+  assert.strictEqual(m.logLine({ feel: 2 }), "Tranquille");
+  assert.strictEqual(m.logLine({}), "Faite");
+});
+check("the coach's log rows carry the target and sort newest first", () => {
+  const sessions = [
+    { id: "a", title: "A", date: "2026-11-06", levels: { level1: [{ run: 1000, vma: 90 }] } },
+    { id: "b", title: "B", date: "2026-11-13", levels: { level1: [{ run: 1000, vma: 90 }] } },
+  ];
+  const rows = m.logRows({ level: "level1", vma: 15, logs: { a: { pace: 275, feel: 5 }, b: { pace: 266 } } }, sessions);
+  assert.deepStrictEqual(rows.map((r) => r.sessionId), ["b", "a"]);
+  assert.strictEqual(rows[1].gap.label, "+0:08 /km");
+});
+check("progress report carries the logs", () => {
+  assert.deepStrictEqual(m.progressReport({ done: { a: "2026-11-06" }, log: { a: { pace: 252 } } }).logs, { a: { pace: 252 } });
+});
+check("done count includes a bare tick and a log", () => {
+  assert.deepStrictEqual(m.doneCount([{ done: { a: "x" } }, { logs: { a: {} } }, {}], "a"), { done: 2, total: 3 });
 });
 
 (async () => {

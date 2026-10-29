@@ -14,19 +14,20 @@ import UserContext from "../variables/context";
 import { planFor, describeStep, formatDay, totalLabel, todayKey } from "../lib/plan";
 import useSessions from "../lib/store";
 import levels, { levelById } from "../lib/levels";
-import { reportProgress } from "../lib/member";
+import { logLine } from "../lib/log";
 
 /*
   One session in full, for the runner's level: warm-up, main set and
   cool-down, every rep already turned into a time or distance from their
   VMA. The level chips let you peek at another level's version.
-  Below: booking in Wodify, and "Séance faite" (or, for the VMA
-  test, "Enregistrer mon test").
+  Below: booking in Wodify, and "Séance faite" → the log sheet (pace, feel,
+  a note — SessionLog) or, for the VMA test, "Enregistrer mon test". Once
+  done, the button shows what was logged; tap it to edit.
 */
 
 const SessionScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { theme, preferences, setPreference } = useContext(UserContext);
+  const { theme, preferences } = useContext(UserContext);
   const { colors, typography } = theme;
   const session = useSessions().byId(route.params?.id);
   const [levelId, setLevelId] = useState(preferences.level);
@@ -37,15 +38,8 @@ const SessionScreen = ({ navigation, route }) => {
   const plan = planFor(session, levelId);
   const isPast = session.date < todayKey();
   const done = !!preferences.done?.[session.id];
+  const log = preferences.log?.[session.id];
   const isMine = levelId === preferences.level;
-
-  const toggleDone = () => {
-    const map = { ...(preferences.done || {}) };
-    if (done) delete map[session.id];
-    else map[session.id] = todayKey();
-    setPreference("done", map);
-    reportProgress({ ...preferences, done: map }); // the coaches see it in the hub
-  };
 
   const parts = [
     { key: "warmup", label: "Échauffement", steps: plan.warmup },
@@ -127,11 +121,11 @@ const SessionScreen = ({ navigation, route }) => {
           <Button onPress={() => navigation.navigate("Vma", { mode: "test" })}>Enregistrer mon test</Button>
         ) : (
           <Button
-            onPress={toggleDone}
+            onPress={() => navigation.navigate("SessionLog", { id: session.id })}
             style={done ? { backgroundColor: colors.border } : null}
             textColor={done ? colors.text : undefined}
           >
-            {done ? "Séance faite ✓" : "Séance faite"}
+            {done ? `Faite ✓${log && logLine(log) !== "Faite" ? ` · ${logLine(log)}` : ""}` : "Séance faite"}
           </Button>
         )}
       </ScrollView>

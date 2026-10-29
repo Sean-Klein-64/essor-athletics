@@ -3,6 +3,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 
 import MainScreen from "../../screens/MainScreen";
 import SessionScreen from "../../screens/SessionScreen";
+import SessionLogScreen from "../../screens/SessionLogScreen";
 import ProfileScreen from "../../screens/ProfileScreen";
 import VmaScreen from "../../screens/VmaScreen";
 import RecordScreen from "../../screens/RecordScreen";
@@ -26,6 +27,7 @@ const AppNavigator = createStackNavigator();
   The app once sign-up is done.
     Home             member view (next session…) or coach view (MainScreen)
     Session          one club session for your level ({ id })
+    SessionLog       "Séance faite": pace, feel, a note for the coaches ({ id })
     Profile          VMA, zones, records, name / level / FC max / coach / theme
     Vma              set the VMA, typed or from the 6' test ({ mode: "test" })
     Record           one distance's times ({ id: "10k" })
@@ -46,6 +48,7 @@ const AppStack = () => (
   <AppNavigator.Navigator screenOptions={horizontalSlide}>
     <AppNavigator.Screen name="Home" component={MainScreen} />
     <AppNavigator.Screen name="Session" component={SessionScreen} options={verticalSlideModal} />
+    <AppNavigator.Screen name="SessionLog" component={SessionLogScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="Profile" component={ProfileScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="Vma" component={VmaScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="Record" component={RecordScreen} options={verticalSlideModal} />

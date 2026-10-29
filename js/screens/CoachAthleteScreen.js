@@ -10,11 +10,15 @@ import UserContext from "../variables/context";
 import useSessions from "../lib/store";
 import { levelById } from "../lib/levels";
 import { vmaDateLabel, goalLabel, myRaceLabel, objectivesLabel, bestRows, trainingPaces, injuryLabel, sessionTargets, isClubLevel } from "../lib/coach";
+import { logRows, feelById } from "../lib/log";
+import { formatPace } from "../lib/paces";
+import { formatShortDate } from "../lib/plan";
 
 /*
   One runner, for the coach: level and VMA up top, then what today's session
-  asks of them, their bests, sessions done, goal race, injury notes from the
-  questionnaire, and their training paces. "—" wherever we don't know yet.
+  asks of them, every session they've logged (pace against its target, feel,
+  their note), their bests, goal race, injury notes from the questionnaire,
+  and their training paces. "—" wherever we don't know yet.
   Opened from CoachSession with { athlete, sessionId }.
 */
 
@@ -40,8 +44,10 @@ const CoachAthleteScreen = ({ navigation, route }) => {
     theme: { colors, typography },
   } = useContext(UserContext);
   const athlete = route.params?.athlete;
-  const session = useSessions().byId(route.params?.sessionId);
+  const store = useSessions();
+  const session = store.byId(route.params?.sessionId);
   if (!athlete) return null;
+  const logs = logRows(athlete, store.sessions);
 
   const club = isClubLevel(athlete.level);
   const targets = session ? sessionTargets(session, athlete.level, athlete.vma) : [];
@@ -95,6 +101,38 @@ const CoachAthleteScreen = ({ navigation, route }) => {
           </View>
         )}
 
+        {!!logs.length && (
+          <View style={styles.section}>
+            <SectionLabel>Séances faites</SectionLabel>
+            <Card colors={colors}>
+              {logs.map((l, i) => (
+                <View key={l.sessionId} style={[styles.logRow, i < logs.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
+                  <View style={styles.logTop}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={typography.heading} numberOfLines={1}>{l.title}</Text>
+                      <Text style={[typography.finePrint, { fontSize: 13 }]}>
+                        {l.date ? formatShortDate(l.date) : ""}
+                        {l.feel ? ` · ${feelById(l.feel)?.name} (${l.feel}/5)` : ""}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={[typography.heading, typography.mono, { fontSize: 16 }]}>{l.pace ? formatPace(l.pace) : "—"}</Text>
+                      {!!l.gap && (
+                        <Text style={[typography.finePrint, { fontSize: 13, color: l.gap.seconds > 3 ? colors.accentText : colors.text, opacity: 1 }]}>
+                          {l.gap.label}
+                          {l.target ? ` · cible ${formatPace(l.target)}` : ""}
+                        </Text>
+                      )}
+                      {!l.gap && !!l.target && <Text style={[typography.finePrint, { fontSize: 13 }]}>cible {formatPace(l.target)}</Text>}
+                    </View>
+                  </View>
+                  {!!l.note && <Text style={[typography.finePrint, { fontSize: 14, lineHeight: 19, opacity: 0.8 }]}>« {l.note} »</Text>}
+                </View>
+              ))}
+            </Card>
+          </View>
+        )}
+
         <View style={styles.section}>
           <SectionLabel>Parcours</SectionLabel>
           <Card colors={colors}>
@@ -143,6 +181,8 @@ const styles = StyleSheet.create({
   flag: { flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14 },
   section: { gap: 8 },
   row: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56, paddingVertical: 10 },
+  logRow: { paddingVertical: 12, gap: 6 },
+  logTop: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   value: { fontSize: 16, opacity: 0.85, maxWidth: "55%" },
   empty: { fontSize: 14, textAlign: "center", paddingVertical: 14 },
   hint: { textAlign: "center", fontSize: 13 },
