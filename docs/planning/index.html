@@ -88,6 +88,11 @@ th { color: var(--muted); font-weight: 500; font-size: 12px; letter-spacing: 1px
 .sheet .close { float: right; font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 4px 8px; }
 .legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 10px; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
+.chip[data-coach] { color: #0A0A0A; }
+.chip[data-coach] small { color: rgba(0,0,0,0.65); }
+.chip[data-coach].off { text-decoration: line-through; opacity: 0.55; }
+.chip[data-coach].mark::after { content: attr(data-mark); float: right; font-size: 9px; font-weight: 700; }
+.day.many { min-height: 100px; }
 footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
 </style>
 </head>
@@ -311,7 +316,9 @@ function renderSheet(me, key) {
 function renderAdmin(rows) {
   const by = {};
   for (const r of rows) (by[r.coach] ||= {})[r.session_key] = r;
-  let html = `<h1>${esc(P.label)} — vue Sean</h1><p class="muted">Réponses des coachs. Un tap chez eux = une ligne ici, en direct.</p>`;
+  let html = `<h1>${esc(P.label)} — vue Sean</h1><p class="muted">Réponses des coachs. Un tap chez eux = une ligne ici, en direct.</p>
+  <div class="views"><button data-view="list" aria-pressed="${view === "list"}">Réponses</button><button data-view="cal" aria-pressed="${view === "cal"}">Calendrier</button></div>`;
+  if (view === "cal") { html += renderAdminCalendar(by); html += `<button class="btn ghost" onclick="location.reload()">Actualiser</button>`; app.innerHTML = html; wireViews(renderAdmin, rows); return; }
   for (const [id, me] of Object.entries(P.coaches)) {
     const a = by[id] || {};
     const confirmed = a._confirmed?.answer === "confirmed";
@@ -342,6 +349,56 @@ function renderAdmin(rows) {
   }
   html += `<button class="btn ghost" onclick="location.reload()">Actualiser</button>`;
   app.innerHTML = html;
+  wireViews(renderAdmin, rows);
+}
+
+function wireViews(fn, arg) {
+  app.querySelectorAll(".views button").forEach(b => b.addEventListener("click", () => {
+    view = b.dataset.view; try { localStorage.setItem("planning_view", view); } catch (e) {} fn(arg);
+  }));
+}
+
+const COACH_COLORS = { SEAN: "#5BB8E8", INES: "#CC66CC", LILOU: "#92C36E", THOMAS: "#C9B94A", JOFFREY: "#A6A6A6", MEL: "#7FD1C2", ARTHUR: "#C9B3E6", ROMAIN: "#E8A44B", "NEEDS COVER": "#FF4D4D" };
+const SHORT = { SEAN: "Sean", INES: "Inès", LILOU: "Lilou", THOMAS: "Thomas", JOFFREY: "Joffrey", MEL: "Mel", ARTHUR: "Arthur", "NEEDS COVER": "À couvrir" };
+
+function renderAdminCalendar(by) {
+  // answers keyed by coach id -> session_key
+  const idOf = c => c.toLowerCase().replace("è", "e");
+  const byDate = {};
+  for (const s of P.all) (byDate[s.date] ||= []).push(s);
+  const dates = P.all.map(s => s.date).sort();
+  const first = new Date(dates[0] + "T12:00:00"), last = new Date(dates[dates.length - 1] + "T12:00:00");
+  const months = []; let m = new Date(first.getFullYear(), first.getMonth(), 1);
+  while (m <= last) { months.push(new Date(m)); m = new Date(m.getFullYear(), m.getMonth() + 1, 1); }
+  const today = new Date().toISOString().slice(0, 10);
+  const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+  let html = `<div class="cal"><p class="muted small" style="margin:12px 0 0">Toutes les séances de la salle, couleur = coach. Barré = le coach a dit indispo ou pas possible · ✓ = demande acceptée · ? = demande sans réponse.</p>`;
+  for (const mo of months) {
+    html += `<div class="month">${MONTHS[mo.getMonth()]} ${mo.getFullYear()}</div><div class="grid">`;
+    for (const d of ["L", "M", "M", "J", "V", "S", "D"]) html += `<div class="dow">${d}</div>`;
+    const startPad = (mo.getDay() + 6) % 7;
+    for (let i = 0; i < startPad; i++) html += `<div class="day empty"></div>`;
+    const days = new Date(mo.getFullYear(), mo.getMonth() + 1, 0).getDate();
+    for (let d = 1; d <= days; d++) {
+      const iso = `${mo.getFullYear()}-${String(mo.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const inRange = iso >= dates[0] && iso <= dates[dates.length - 1];
+      const list = byDate[iso] || [];
+      html += `<div class="day${inRange ? "" : " pad"}${iso === today ? " today" : ""}${list.length > 5 ? " many" : ""}"><div class="n">${d}</div>`;
+      for (const s of list) {
+        const cid = idOf(s.coach); const key = `${s.date}_${s.s.replace(":", "")}_${s.cl.replace(/ /g, "-")}`;
+        const a = (by[cid] || {})[key]?.answer; const isSwap = (P.coaches[cid]?.swaps || []).includes(key);
+        let cls = "chip", mark = "";
+        if (a === "indispo" || a === "pas_possible") cls += " off";
+        else if (isSwap && a === "ok") { cls += " mark"; mark = "✓"; }
+        else if (isSwap) { cls += " mark"; mark = "?"; }
+        html += `<div class="${cls}" data-coach="${esc(s.coach)}" data-mark="${mark}" style="background:${COACH_COLORS[s.coach] || "#888"}" title="${esc(s.cl)} ${esc(s.s)} — ${esc(SHORT[s.coach] || s.coach)}">${esc(s.cl)}<small>${esc(s.s)} · ${esc(SHORT[s.coach] || s.coach)}</small></div>`;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  html += `<div class="legend">` + Object.entries(COACH_COLORS).filter(([c]) => c !== "ROMAIN").map(([c, col]) => `<span><i style="background:${col}"></i>${esc(SHORT[c] || c)}</span>`).join("") + `</div></div>`;
+  return html;
 }
 
 (async () => {
