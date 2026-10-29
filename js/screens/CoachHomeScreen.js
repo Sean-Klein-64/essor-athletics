@@ -117,6 +117,19 @@ const CoachHomeScreen = ({ navigation }) => {
         <OutingsCard coach />
 
         <View style={styles.section}>
+          <SectionLabel>Débutants</SectionLabel>
+          <Pressable onPress={() => navigation.navigate("CoachBeginners")}>
+            <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[typography.finePrint, { fontSize: 13 }]}>Débuter A / B / C</Text>
+                <Text style={[typography.heading, typography.bold]}>Comment vont les débutants</Text>
+              </View>
+              <Glyph name="right" size={16} color={colors.text} />
+            </View>
+          </Pressable>
+        </View>
+
+        <View style={styles.section}>
           <SectionLabel>Ma semaine</SectionLabel>
           <Pressable onPress={() => navigation.navigate("MyWeek")}>
             <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>

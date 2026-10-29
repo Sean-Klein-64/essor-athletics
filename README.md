@@ -149,5 +149,6 @@ In the coach view, tapping a session opens its hub: the session (date, time, Flo
 - Run `supabase/club.sql` once (after coach.sql and vma.sql) for the "Le groupe ce cycle" card.
 - Run `supabase/notes.sql` once (after coach.sql) for the coach notes and "Ils étaient là".
 - Run `supabase/coach.sql` once in Supabase → SQL Editor (run it again after pulling this version — `member_progress()` now keeps the logs). It adds `coach_athletes(code)` (the roster, gated by the coach code stored in `coach_settings`) and `member_progress()` (members' phones report sessions done and their logs, race goal, bests and VMA at launch and when they change).
+- **Débutants** (coach home): how the beginners are doing — the group in numbers (how many, in rhythm, gone quiet > 7 days, ready for a test), then each Débuter runner by programme with their place (session N/18, next walk-run), status and injury flag, quiet ones first. On the Friday hub each Débuter card shows the exact walk-run they do tonight ("Ce soir · semaine 2 · 10×(1'/1')").
 - Who's in the list is decided in one place: `getSessionAttendees()` in `js/lib/coach.js`. Today it's everyone with `app_access`; Wodify bookings plug in there later.
 - Lint: `npx expo lint` (ESLint config in `eslint.config.js`). Pure helpers are covered by `node scripts/test_paces.js`.

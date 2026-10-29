@@ -1,5 +1,6 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY, COACH_CODE } from "./config";
 import levels, { levelById } from "./levels";
+import { programmeSessions, sessionLabel, PROGRAMMES } from "./beginner";
 import { planFor } from "./plan";
 import goal from "./goal";
 import { distanceName } from "./objectives";
@@ -319,4 +320,51 @@ export const beginnerLine = (athlete, today) => {
 /* Débuter runners who haven't marked a session for over a week — the coach's nudge list */
 export const quietBeginners = (athletes, today, after = 7) =>
   athletes.filter((a) => a.programme && !isClubLevel(a.level) && a.programme.lastAt && daysAgo(a.programme.lastAt, today) > after);
+
+/*
+  The walk-run a Débuter runner does at the club tonight: their next
+  programme session. { label: "5×(2'/1')", week, index, test } or null.
+  (3 sessions a week assumed — the phone's 2/3 choice isn't reported.)
+*/
+export const beginnerTonight = (athlete) => {
+  const p = athlete.programme;
+  if (!p || !PROGRAMMES[athlete.level]) return null;
+  const list = programmeSessions(athlete.level, 3);
+  const s = list.find((x) => x.index >= Math.min(p.index, 17)) || list[list.length - 1];
+  return s ? { label: sessionLabel(s), week: s.week, index: s.index, test: !!s.test, minutes: s.sets * s.run } : null;
+};
+
+/*
+  One line of status for the Débutants view:
+    "quiet"     no session marked for over 7 days (the nudge list)
+    "back"      came back after a gap in the last 14 days
+    "test"      their next session is the end-of-level test
+    "new"       nothing marked yet
+    "on"        training as planned
+*/
+export const beginnerStatus = (athlete, today) => {
+  const p = athlete.programme;
+  if (!p) return { id: "new", text: "Pas encore de séance marquée dans l'app" };
+  const days = daysAgo(p.lastAt, today);
+  if (days === null) return { id: "new", text: "Pas encore de séance marquée dans l'app" };
+  if (days > 7) return { id: "quiet", text: `Silence depuis ${days} jours — un message ?` };
+  const r = p.return;
+  if (r && daysAgo(r.at, today) <= 14) return { id: "back", text: r.accepted ? `De retour après ${r.days} j, a repris plus bas` : `De retour après ${r.days} j, a continué` };
+  const tonight = beginnerTonight(athlete);
+  if (tonight?.test) return { id: "test", text: `Prêt·e pour le test de fin de ${levelById(athlete.level).name}` };
+  return { id: "on", text: `Dans le rythme · dernière il y a ${days} j` };
+};
+
+/* The group in numbers: { total, active, quiet, tests, byLevel: { beginnerA: n, … } } */
+export const beginnerSummary = (athletes, today) => {
+  const list = athletes.filter((a) => PROGRAMMES[a.level]);
+  const statuses = list.map((a) => beginnerStatus(a, today).id);
+  return {
+    total: list.length,
+    active: statuses.filter((s) => s === "on" || s === "back" || s === "test").length,
+    quiet: statuses.filter((s) => s === "quiet").length,
+    tests: statuses.filter((s) => s === "test").length,
+    byLevel: Object.fromEntries(Object.keys(PROGRAMMES).map((id) => [id, list.filter((a) => a.level === id).length])),
+  };
+};
 
