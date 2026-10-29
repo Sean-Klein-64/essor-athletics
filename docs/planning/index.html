@@ -63,6 +63,31 @@ th { color: var(--muted); font-weight: 500; font-size: 12px; letter-spacing: 1px
 .pill.ok { background: var(--accent-soft); color: var(--mint); }
 .pill.bad { background: var(--bad-soft); color: var(--bad); }
 .pill.wait { background: #222; color: var(--muted); }
+.views { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 4px; margin-top: 14px; }
+.views button { font: inherit; font-size: 15px; border: 0; border-radius: 10px; padding: 9px 8px; background: transparent; color: var(--muted); cursor: pointer; }
+.views button[aria-pressed="true"] { background: var(--accent-soft); color: var(--fg); box-shadow: inset 0 0 0 1px var(--mint); }
+.cal { margin-top: 12px; }
+.cal .month { font-size: 15px; font-weight: 600; margin: 14px 0 6px; }
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.grid .dow { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); text-align: center; padding: 2px 0 4px; }
+.day { min-height: 74px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; display: flex; flex-direction: column; gap: 3px; }
+.day.empty { background: transparent; border-color: transparent; }
+.day.pad { opacity: 0.45; }
+.day .n { font-size: 12px; color: var(--muted); line-height: 1; margin-bottom: 1px; }
+.day.today .n { color: var(--mint); font-weight: 600; }
+.chip { font: inherit; font-size: 10.5px; line-height: 1.15; font-weight: 500; border: 0; border-radius: 6px; padding: 3px 4px; text-align: left; background: var(--accent-soft); color: var(--fg); cursor: pointer; overflow: hidden; }
+.chip small { display: block; font-weight: 400; color: var(--muted); font-size: 9.5px; }
+.chip.off { background: var(--bad-soft); color: var(--bad); text-decoration: line-through; }
+.chip.ask { background: rgba(232,180,75,0.18); }
+.chip.ask.ok { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--mint); }
+.chip.ask.no { background: var(--bad-soft); color: var(--bad); }
+.chip.pt { background: #262626; }
+.sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+.sheet { width: 100%; max-width: 640px; background: var(--card); border: 1px solid var(--line); border-radius: 22px 22px 0 0; padding: 18px 18px 28px; }
+.sheet h3 { font-size: 20px; margin: 0 0 2px; }
+.sheet .close { float: right; font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 4px 8px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
 footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
 </style>
 </head>
@@ -102,6 +127,8 @@ const weekLabel = (wk, sessions) => {
 };
 
 let answers = {};   // session_key -> {answer, comment}
+let view = (() => { try { return localStorage.getItem('planning_view') || 'list'; } catch (e) { return 'list'; } })();
+let openKey = null;
 let saving = 0;
 
 function statusBar(text, err) {
@@ -141,9 +168,11 @@ function renderCoach() {
   const hours = me.sessions.reduce((t, s) => { const [h1, m1] = s.s.split(":").map(Number), [h2, m2] = s.e.split(":").map(Number); return t + (h2 * 60 + m2 - h1 * 60 - m1) / 60; }, 0);
   let html = `<h1>${esc(P.label)} — ${esc(me.name)}</h1>
   <p class="muted">${me.sessions.length} séance${me.sessions.length > 1 ? "s" : ""} · ${String(hours).replace(".", ",")} h. Vérifie tout, puis confirme en bas. Réponse sous 48 h, merci.</p>
-  <div id="status" class="status"><span class="dot"></span><span>…</span></div>`;
+  <div id="status" class="status"><span class="dot"></span><span>…</span></div>
+  <div class="views"><button data-view="list" aria-pressed="${view === "list"}">Liste</button><button data-view="cal" aria-pressed="${view === "cal"}">Calendrier</button></div>`;
 
-  if (swaps.length) {
+  if (view === "cal") { html += renderCalendar(me); }
+  if (view === "list" && swaps.length) {
     html += `<h2>Ce qu'on te demande de prendre</h2>`;
     for (const s of swaps) {
       const a = answers[s.key]?.answer;
@@ -160,6 +189,7 @@ function renderCoach() {
     }
   }
 
+  if (view === "list") {
   html += `<h2>Ton planning</h2><p class="muted small" style="margin:-4px 0 12px">Une séance que tu ne peux pas assurer ? Appuie sur « Indispo ».</p>`;
   for (const wk of weeks) {
     const list = me.sessions.filter(s => s.wk === wk);
@@ -177,12 +207,34 @@ function renderCoach() {
     }
     html += `</div>`;
   }
+  }
 
   const confirmed = answers._confirmed?.answer === "confirmed";
   html += `<button class="btn" id="confirm" ${confirmed ? "disabled" : ""}>${confirmed ? "Planning confirmé ✓" : "J'ai tout vérifié, je confirme"}</button>`;
   if (me.file) html += `<a class="btn ghost" href="files/${esc(me.file)}" download>Télécharger mon planning (Excel)</a>`;
+  if (openKey) html += renderSheet(me, openKey);
   app.innerHTML = html;
   statusBar(summary());
+
+  app.querySelectorAll(".views button").forEach(b => b.addEventListener("click", () => {
+    view = b.dataset.view; try { localStorage.setItem("planning_view", view); } catch (e) {} renderCoach();
+  }));
+  app.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { openKey = b.dataset.key; renderCoach(); }));
+  const bg = app.querySelector(".sheet-bg");
+  if (bg) {
+    bg.addEventListener("click", e => { if (e.target === bg || e.target.classList.contains("close")) { openKey = null; renderCoach(); } });
+    bg.querySelectorAll("[data-sheet-indispo]").forEach(b => b.addEventListener("click", () => {
+      const key = b.dataset.sheetIndispo; const now = answers[key]?.answer === "indispo";
+      answers[key] = { ...(answers[key] || {}), answer: now ? null : "indispo" }; answers._confirmed = { answer: null };
+      save(key, now ? null : "indispo"); openKey = null; renderCoach();
+    }));
+    bg.querySelectorAll(".sheet .seg button").forEach(b => b.addEventListener("click", () => {
+      const key = b.dataset.key; answers[key] = { ...(answers[key] || {}), answer: b.dataset.ans }; save(key, b.dataset.ans); renderCoach();
+    }));
+    bg.querySelectorAll("textarea[data-sheet-comment]").forEach(t => t.addEventListener("change", () => {
+      const key = t.dataset.sheetComment; save(key, answers[key]?.answer ?? null, t.value.trim());
+    }));
+  }
 
   app.querySelectorAll("[data-indispo]").forEach(b => b.addEventListener("click", () => {
     const key = b.dataset.indispo; const now = answers[key]?.answer === "indispo";
@@ -205,6 +257,55 @@ function renderCoach() {
     await save("_confirmed", "confirmed", "");
     renderCoach();
   });
+}
+
+function renderCalendar(me) {
+  const byDate = {};
+  for (const s of me.sessions) (byDate[s.date] ||= []).push(s);
+  const dates = me.sessions.map(s => s.date).sort();
+  const first = new Date(dates[0] + "T12:00:00"), last = new Date(dates[dates.length - 1] + "T12:00:00");
+  const months = []; let m = new Date(first.getFullYear(), first.getMonth(), 1);
+  while (m <= last) { months.push(new Date(m)); m = new Date(m.getFullYear(), m.getMonth() + 1, 1); }
+  const today = new Date().toISOString().slice(0, 10);
+  const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+  let html = `<div class="cal"><p class="muted small" style="margin:12px 0 0">Appuie sur une séance pour la marquer indispo ou répondre à une demande.</p>`;
+  for (const mo of months) {
+    html += `<div class="month">${MONTHS[mo.getMonth()]} ${mo.getFullYear()}</div><div class="grid">`;
+    for (const d of ["L", "M", "M", "J", "V", "S", "D"]) html += `<div class="dow">${d}</div>`;
+    const startPad = (mo.getDay() + 6) % 7;
+    for (let i = 0; i < startPad; i++) html += `<div class="day empty"></div>`;
+    const days = new Date(mo.getFullYear(), mo.getMonth() + 1, 0).getDate();
+    for (let d = 1; d <= days; d++) {
+      const iso = `${mo.getFullYear()}-${String(mo.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const inRange = iso >= dates[0] && iso <= dates[dates.length - 1];
+      const list = byDate[iso] || [];
+      html += `<div class="day${inRange ? "" : " pad"}${iso === today ? " today" : ""}"><div class="n">${d}</div>`;
+      for (const s of list) {
+        const a = answers[s.key]?.answer; const isSwap = me.swaps.includes(s.key);
+        const cls = ["chip", s.typ === "1:1" ? "pt" : "", isSwap ? "ask" : "", isSwap && a === "ok" ? "ok" : "", isSwap && a === "pas_possible" ? "no" : "", !isSwap && a === "indispo" ? "off" : ""].filter(Boolean).join(" ");
+        html += `<button class="${cls}" data-key="${esc(s.key)}">${esc(s.cl.replace("1:1 ", ""))}<small>${esc(s.s)}</small></button>`;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  html += `<div class="legend"><span><i style="background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--mint)"></i>Tes séances</span><span><i style="background:rgba(232,180,75,0.5)"></i>Demande à répondre</span><span><i style="background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad)"></i>Indispo / pas possible</span><span><i style="background:#333"></i>1:1</span></div></div>`;
+  return html;
+}
+
+function renderSheet(me, key) {
+  const s = me.sessions.find(x => x.key === key); if (!s) return "";
+  const isSwap = me.swaps.includes(key); const a = answers[key]?.answer;
+  let inner = `<button class="close">Fermer ✕</button><h3>${esc(s.cl)}</h3><p class="muted" style="margin:0 0 12px">${esc(s.day)} ${fmtDate(s.date)} · ${esc(s.s)}–${esc(s.e)}${P.notes[s.date] ? `<br><span class="week-note">${esc(P.notes[s.date])}</span>` : ""}</p>`;
+  if (isSwap) {
+    inner += `<div class="why"><span class="from">À la place de ${esc(s.from[0] + s.from.slice(1).toLowerCase())}</span> — ${esc(s.why)}</div>
+      <div class="seg"><button class="ok" data-key="${esc(key)}" data-ans="ok" aria-pressed="${a === "ok"}">OK, je prends</button><button class="no" data-key="${esc(key)}" data-ans="pas_possible" aria-pressed="${a === "pas_possible"}">Pas possible</button></div>
+      <textarea placeholder="Un mot si besoin (facultatif)" data-sheet-comment="${esc(key)}">${esc(answers[key]?.comment || "")}</textarea>`;
+  } else {
+    inner += `<button class="btn ${a === "indispo" ? "ghost" : ""}" style="margin-top:4px;${a === "indispo" ? "" : "background:var(--bad);color:#fff"}" data-sheet-indispo="${esc(key)}">${a === "indispo" ? "Finalement je peux la faire" : "Je ne peux pas assurer cette séance"}</button>
+      <textarea placeholder="Un mot si besoin (facultatif)" data-sheet-comment="${esc(key)}">${esc(answers[key]?.comment || "")}</textarea>`;
+  }
+  return `<div class="sheet-bg"><div class="sheet swap" data-key="${esc(key)}">${inner}</div></div>`;
 }
 
 function renderAdmin(rows) {
