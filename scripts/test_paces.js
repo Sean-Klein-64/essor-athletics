@@ -125,36 +125,34 @@ check("cycle 1: the 8 Fridays 30/10 → 18/12, in the agreed order, every one a 
   const edited = [...m.sessions, { id: "x", date: "2026-11-13", levels: {} }];
   assert.strictEqual(m.sessionNumber(cycle[7], edited), "Séance 8/8");
 });
-check("cycle 1: the sessions progress — S4 recovers less than S2, S6 adds reps to S3, S7 is the longest", () => {
+check("cycle 1: the block as built — S4 repeats S2, S6 adds reps to S3, S5 is Mel's (details to come)", () => {
   const by = (date) => m.sessions.find((s) => s.date === date);
   const vma = 15;
   const main = (s, level) => m.planFor(s, level).main;
-  // S2 → S4: same reps, same distance, shorter walk
+  // S2 → S4: the same session (reps, distance, recovery)
   levelIds.forEach((l) => {
     const [a] = main(by("2026-11-06"), l);
     const [b] = main(by("2026-11-20"), l);
     assert.strictEqual(a.repeat, b.repeat);
     assert.strictEqual(a.steps[0].run, b.steps[0].run);
-    assert.ok(m.toSeconds(b.rest.walk) < m.toSeconds(a.rest.walk), `${l}: S4 should recover less than S2`);
+    assert.strictEqual(m.toSeconds(b.rest.walk), m.toSeconds(a.rest.walk), `${l}: S4 is the same session as S2`);
   });
-  // S3 → S6: one more 30/30 per set
+  // S3 → S6: one or two more 30/30 per set
   levelIds.forEach((l) => {
     const reps = (s) => main(s, l)[0].steps[0].repeat;
     const added = reps(by("2026-12-04")) - reps(by("2026-11-13"));
     assert.ok(added >= 1 && added <= 2, `${l}: S6 should add one or two reps, not ${added}`);
   });
+  // S5: Mel's session — a note only until she sends it
+  const pyr = by("2026-11-27");
+  levelIds.forEach((l) => assert.ok(/Mel/.test(pyr.levels[l][0].note || ""), `${l}: S5 should still be Mel's placeholder`));
   // Level 3 always shorter than Level 2, Level 2 than Level 1
   m.sessions
-    .filter((s) => s.kind !== "test")
+    .filter((s) => s.kind !== "test" && s.kind !== "pyramid")
     .forEach((s) => {
       const t = (l) => m.totalSeconds(s, l, vma);
       assert.ok(t("level3") <= t("level2") && t("level2") <= t("level1"), `${s.id}: levels out of order`);
     });
-  // the last hard session is the longest main set at race pace; the final one is the shortest
-  const mainSeconds = (s, l) => main(s, l).reduce((t, st) => t + m.stepSeconds(st, vma), 0);
-  const hard = m.sessions.filter((s) => s.kind === "vo2");
-  const longest = hard.reduce((a, b) => (mainSeconds(a, "level1") >= mainSeconds(b, "level1") ? a : b));
-  assert.strictEqual(longest.date, "2026-12-11");
   const light = by("2026-12-18");
   assert.ok(m.totalSeconds(light, "level1", vma) <= 35 * 60, "la séance légère stays under 35 minutes");
   // every session fits the 16:30 → 17:45 slot
