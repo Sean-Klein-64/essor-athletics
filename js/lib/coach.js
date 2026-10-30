@@ -1,7 +1,8 @@
 import { COACH_CODE } from "./config";
 import { rpc } from "./supabase";
 import levels, { levelById } from "./levels";
-import { planFor } from "./plan";
+import { planFor, formatDay } from "./plan";
+import { clubHistory, beginnerPosition, feelById } from "./history";
 import goal from "./goal";
 import { distanceName } from "./objectives";
 import onboarding from "./onboarding";
@@ -111,6 +112,11 @@ export const toAthlete = (row) => {
     hrMax: row.vma?.hr_max || null,
     bests: pickBests(a.bests || {}, p.records || {}),
     sessionsDone: reported ? Object.keys(p.done || {}).length : null,
+    done: p.done || {},
+    beginnerDone: p.beginnerDone || {},
+    programme: p.programme || {},
+    phoneLevel: p.level || null, // the level the phone is on (a Débuter test passed in the app moves it up)
+    beginnerSessions: p.beginnerSessions || null,
     raceGoal: p.raceGoal || null,
     myRace: p.raceGoal?.myRace || null,
     objectives: p.raceGoal?.objectives || [],
@@ -120,6 +126,37 @@ export const toAthlete = (row) => {
     injuryDetail: a.injuryDetail || "",
     reportedAt: dateOf(p.at),
   };
+};
+
+/* ── What a runner has done ──────────────────────────────────────────── */
+
+/* The level to show the coach: what the phone reports if it has, else the roster's */
+export const effectiveLevel = (athlete) => athlete.phoneLevel || athlete.level;
+
+/*
+  Club sessions for one runner, newest first, up to today:
+    { session, entry: { at, feel, note } | null, status: "done" | "missed" }
+*/
+export const athleteSessions = (athlete, sessions, today) => clubHistory(sessions, athlete.done, today);
+
+/* Where a Débuter runner is: beginnerPosition() from what their phone reported, or from start_week */
+export const athleteBeginner = (athlete) => {
+  const level = effectiveLevel(athlete);
+  if (!isBeginnerLevel(level)) return null;
+  const perWeek = athlete.beginnerSessions === 2 ? 2 : 3;
+  const state = athlete.programme && Object.keys(athlete.programme).length ? athlete.programme : athlete.startWeek ? { [level]: (Math.min(Math.max(athlete.startWeek, 1), 6) - 1) * 3 } : {};
+  return beginnerPosition(level, state, perWeek);
+};
+
+/* "3 / 4 séances · dernière le 13/11 (Juste bien)" — one line for a card */
+export const attendanceLine = (athlete, sessions, today) => {
+  if (!athlete.reportedAt) return "Rien reçu de son téléphone";
+  const list = athleteSessions(athlete, sessions, today);
+  const done = list.filter((x) => x.status === "done");
+  if (!list.length) return "Première séance à venir";
+  const last = done[0];
+  const feel = last?.entry?.feel ? ` (${feelById(last.entry.feel)?.name})` : "";
+  return `${done.length} / ${list.length} séances${last ? ` · dernière ${formatDay(last.session.date)}${feel}` : ""}`;
 };
 
 /* ── Grouping ────────────────────────────────────────────────────────── */
@@ -142,6 +179,7 @@ export const groupByLevel = (athletes) => {
 };
 
 export const isClubLevel = (id) => levels.some((l) => l.id === id && l.group === "club");
+export const isBeginnerLevel = (id) => levels.some((l) => l.id === id && l.group === "beginner");
 
 /* ── What a session asks of one runner ───────────────────────────────── */
 

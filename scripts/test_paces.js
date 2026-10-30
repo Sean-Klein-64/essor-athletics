@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export * from "../js/lib/history"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -396,6 +396,53 @@ check("goals reach the coach inside raceGoal", () => {
   assert.strictEqual(m.myRaceLabel(a), "Marathon de Rome · 21/03/2027 · Marathon en 3:30:00");
   assert.strictEqual(m.objectivesLabel(a), "Sub 25");
 });
+console.log("\nMes séances");
+check("done entries: old date string and new object read the same way", () => {
+  assert.deepStrictEqual(m.doneEntry({ a: "2026-11-06" }, "a"), { at: "2026-11-06" });
+  assert.deepStrictEqual(m.doneEntry({ a: { at: "2026-11-06", feel: "hard", note: "dur" } }, "a"), { at: "2026-11-06", feel: "hard", note: "dur" });
+  assert.strictEqual(m.doneEntry({}, "a"), null);
+  const d1 = m.withDone({}, "a", { at: "2026-11-06" });
+  const d2 = m.withDone(d1, "a", { feel: "right" });
+  assert.deepStrictEqual(m.doneEntry(d2, "a"), { at: "2026-11-06", feel: "right", note: "" });
+  assert.deepStrictEqual(m.withDone(d2, "a", null), {});
+});
+check("club history and stats count the past Fridays only", () => {
+  const done = { "2026-10-30-test-vma": "2026-10-30", "2026-11-13-30-30": { at: "2026-11-13", feel: "easy" } };
+  const h = m.clubHistory(m.sessions, done, "2026-11-20");
+  assert.deepStrictEqual(h.map((x) => x.status), ["done", "missed", "done"]);
+  assert.strictEqual(h[0].session.date, "2026-11-13");
+  const st = m.clubStats(m.sessions, done, "2026-11-20");
+  assert.deepStrictEqual(st, { done: 2, past: 3, total: 8, streak: 1 });
+  assert.strictEqual(m.clubStats(m.sessions, {}, "2026-10-30").past, 0);
+});
+check("Débuter: position from the programme index, history from the dated log", () => {
+  const pos = m.beginnerPosition("beginnerB", { beginnerB: 7 }, 3);
+  assert.strictEqual(pos.week, 3);
+  assert.strictEqual(pos.doneCount, 7);
+  assert.strictEqual(pos.total, 18);
+  assert.strictEqual(pos.next.label, "3×(10'/1')");
+  assert.strictEqual(m.beginnerLine(pos), "Débuter B · semaine 3 · prochaine : 3×(10'/1')");
+  assert.strictEqual(m.beginnerPosition("level1", {}), null);
+  const log = m.beginnerHistory({ "beginnerB:6": { at: "2026-11-03" }, "beginnerA:17": { at: "2026-10-30" }, "nope:3": { at: "x" } });
+  assert.strictEqual(log.length, 2);
+  assert.strictEqual(log[0].label, "2×(10'/1')");
+  assert.strictEqual(log[1].test, true);
+});
+check("coach: attendance line and Débuter position from a roster row", () => {
+  const row = { id: 1, name: "Léa", level: "beginnerA", start_week: 2, answers: {}, progress: { at: "2026-11-13", level: "beginnerB", programme: { beginnerB: 4 }, done: { "2026-11-13-30-30": { at: "2026-11-13", feel: "hard" } } } };
+  const a = m.toAthlete(row);
+  assert.strictEqual(m.effectiveLevel(a), "beginnerB");
+  assert.strictEqual(m.athleteBeginner(a).week, 2);
+  // no phone report yet: position from start_week
+  const b = m.toAthlete({ id: 2, name: "Tom", level: "beginnerC", start_week: 3, answers: {}, progress: {} });
+  assert.strictEqual(m.athleteBeginner(b).week, 3);
+  assert.strictEqual(m.attendanceLine(b, m.sessions, "2026-11-20"), "Rien reçu de son téléphone");
+  const c = m.toAthlete({ id: 3, name: "Zoé", level: "level2", answers: {}, progress: { at: "2026-11-13", done: { "2026-11-13-30-30": { at: "2026-11-13", feel: "right" } } } });
+  assert.strictEqual(m.attendanceLine(c, m.sessions, "2026-11-20"), "1 / 3 séances · dernière Ven. 13 nov. (Juste bien)");
+  assert.strictEqual(m.sinceLabel("2026-11-19", "2026-11-20"), "hier");
+  assert.strictEqual(m.sinceLabel("2026-11-01", "2026-11-20"), "01/11/2026");
+});
+
 check("Wodify: app first, then store, then website", () => {
   const ios = m.wodifyTargets("ios").map((t) => t.url);
   assert.ok(ios[0].startsWith("wodify"));

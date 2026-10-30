@@ -16,6 +16,9 @@ import { RaceCountdown, RaceWeekCard } from "../components/RaceCountdown";
 import { countdownRace } from "../lib/objectives";
 import { openWodify } from "../lib/wodify";
 import { bookingState } from "../lib/booking";
+import { clubStats, myBeginnerPosition } from "../lib/history";
+import { DISTANCES, best } from "../lib/records";
+import { formatClock } from "../lib/paces";
 
 /*
   Home — the next session up front (big card, with the Wodify booking right on it),
@@ -126,9 +129,24 @@ const HomeScreen = ({ navigation }) => {
   const { theme, preferences, setPreference } = useContext(UserContext);
   const { colors, typography } = theme;
   const { sessions } = useSessions();
-  const { next, upcoming, past } = splitSessions(todayKey(), sessions);
+  const { next, upcoming } = splitSessions(todayKey(), sessions);
   const level = levelById(preferences.level);
   const open = (session) => navigation.navigate("Session", { id: session.id });
+
+  // the two lines under "Mon suivi"
+  const stats = clubStats(sessions, preferences.done, todayKey());
+  const position = isBeginner(preferences.level) ? myBeginnerPosition(preferences) : null;
+  const trackLine = position
+    ? `${position.programme} · semaine ${position.week} · ${position.doneCount}/${position.total} séances`
+    : stats.past
+      ? `${stats.done}/${stats.past} ${stats.past > 1 ? "vendredis faits" : "vendredi fait"}${stats.streak > 1 ? ` · ${stats.streak} d’affilée` : ""}`
+      : "Le cycle commence — tes séances faites arriveront ici";
+  const bests = DISTANCES.map((d) => ({ d, pb: best(preferences.records, d.id) })).filter((x) => x.pb);
+  const recordsLine = bests.length
+    ? bests.map((x) => `${x.d.name} ${formatClock(x.pb.seconds)}`).join(" · ")
+    : preferences.vma
+      ? `VMA ${formatVma(preferences.vma)} · ajoute tes temps`
+      : "VMA, 5 km, 10 km, semi, marathon";
 
   // Débuter: the Friday session is the next one in their own programme
   const beginner = isBeginner(preferences.level);
@@ -272,14 +290,28 @@ const HomeScreen = ({ navigation }) => {
           </View>
         )}
 
-        {!!past.length && (
-          <View style={styles.section}>
-            <SectionLabel>Passées</SectionLabel>
-            {past.map((s) => (
-              <RowCard key={s.id} session={s} sessions={sessions} done={!!preferences.done?.[s.id]} onPress={() => open(s)} />
-            ))}
-          </View>
-        )}
+        {/* Mon suivi: what I've done, my records */}
+        <View style={styles.section}>
+          <SectionLabel>Mon suivi</SectionLabel>
+          <Pressable onPress={() => navigation.navigate("History")}>
+            <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[typography.heading, typography.bold]}>Mes séances</Text>
+                <Text style={[typography.finePrint, { fontSize: 13 }]}>{trackLine}</Text>
+              </View>
+              <Glyph name="right" size={16} color={colors.text} />
+            </View>
+          </Pressable>
+          <Pressable onPress={() => navigation.navigate("Records")}>
+            <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[typography.heading, typography.bold]}>Mes records</Text>
+                <Text style={[typography.finePrint, { fontSize: 13 }]}>{recordsLine}</Text>
+              </View>
+              <Glyph name="trophy" size={16} color={colors.accentText} />
+            </View>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );

@@ -11,7 +11,9 @@ import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
 import { PROGRAMMES, programmeSessions, sessionLabel, sessionPlan, currentIndex, runMinutes, READY_RULES, perWeekOf } from "../lib/beginner";
-import { describeStep } from "../lib/plan";
+import { beginnerKey } from "../lib/history";
+import { reportProgress } from "../lib/member";
+import { describeStep, todayKey } from "../lib/plan";
 import { levelById } from "../lib/levels";
 
 /*
@@ -38,15 +40,16 @@ const BeginnerSessionScreen = ({ navigation, route }) => {
   const allChecked = checks.length === READY_RULES.length;
 
   const markDone = async () => {
-    const programme = { ...(preferences.programme || {}) };
+    const programme = { ...(preferences.programme || {}), [levelId]: session.index + 1 };
+    const beginnerDone = { ...(preferences.beginnerDone || {}), [beginnerKey(levelId, session.index)]: { at: todayKey() } };
+    await setPreference("programme", programme);
+    await setPreference("beginnerDone", beginnerDone);
+    const next = { ...preferences, programme, beginnerDone };
     if (session.test) {
-      programme[levelId] = session.index + 1;
-      await setPreference("programme", programme);
       await setPreference("level", session.next);
-    } else {
-      programme[levelId] = session.index + 1;
-      await setPreference("programme", programme);
+      next.level = session.next;
     }
+    reportProgress(next); // the coaches see where they are
     navigation.goBack();
   };
 

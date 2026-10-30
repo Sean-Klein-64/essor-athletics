@@ -160,6 +160,8 @@ const ProfileScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <SectionLabel>Records</SectionLabel>
           <Card colors={colors}>
+            <Row title="Mes records" value="Tout voir" sub="VMA, historique, prédictions" onPress={() => navigation.navigate("Records")} {...rowProps} />
+            <Row title="Mes séances" value="Tout voir" sub="Les vendredis faits, le programme" onPress={() => navigation.navigate("History")} {...rowProps} />
             {DISTANCES.map((d, i) => {
               const pb = best(p.records, d.id);
               return (

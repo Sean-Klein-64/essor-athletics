@@ -8,9 +8,12 @@
 --     what their phone has reported. Wrong code → error, nothing returned.
 --     The code lives in coach_settings (unreadable with the public key) —
 --     change it there and in js/lib/config.js together.
---   • member_progress() is called by members' phones: sessions marked done,
---     their goal for the group race, their best times and the VMA on the
---     phone. Kept in signups.progress.
+--   • member_progress() is called by members' phones: club sessions marked
+--     done (date, how it felt, note), Débuter sessions done + place in the
+--     programme, the level the phone is on, their goal for the group race,
+--     their best times and the VMA on the phone. Kept in signups.progress.
+--     (30/10: beginnerDone / programme / level / beginnerSessions added —
+--     re-run this file once so they're kept.)
 
 create table if not exists public.coach_settings (
   key   text primary key,
@@ -39,7 +42,11 @@ begin
   if not found then return false; end if;
 
   update public.signups set progress = jsonb_build_object(
-    'done',     coalesce(p_progress->'done', '{}'::jsonb),
+    'done',         coalesce(p_progress->'done', '{}'::jsonb),
+    'beginnerDone', coalesce(p_progress->'beginnerDone', '{}'::jsonb),
+    'programme',    coalesce(p_progress->'programme', '{}'::jsonb),
+    'level',        p_progress->'level',
+    'beginnerSessions', p_progress->'beginnerSessions',
     'raceGoal', p_progress->'raceGoal',
     'records',  coalesce(p_progress->'records', '{}'::jsonb),
     'vma',      p_progress->'vma',

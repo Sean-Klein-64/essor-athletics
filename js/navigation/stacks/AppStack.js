@@ -18,6 +18,8 @@ import GoalScreen from "../../screens/GoalScreen";
 import WeekScreen from "../../screens/WeekScreen";
 import ObjectivesScreen from "../../screens/ObjectivesScreen";
 import MyRaceScreen from "../../screens/MyRaceScreen";
+import HistoryScreen from "../../screens/HistoryScreen";
+import RecordsScreen from "../../screens/RecordsScreen";
 import { horizontalSlide, verticalSlideModal } from "../screenOptions";
 
 const AppNavigator = createStackNavigator();
@@ -41,6 +43,8 @@ const AppNavigator = createStackNavigator();
     Week             Levels 1–3: the other runs of the week around Friday
     Objectives       Mes objectifs: club race, own race, smaller goals
     MyRace           the runner's own race (name, city, date, distance, goal)
+    History          Mes séances: every session done, club Fridays + Débuter, with feel and notes
+    Records          Mes records: VMA with its history, one card per distance
 */
 const AppStack = () => (
   <AppNavigator.Navigator screenOptions={horizontalSlide}>
@@ -61,6 +65,8 @@ const AppStack = () => (
     <AppNavigator.Screen name="Week" component={WeekScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="Objectives" component={ObjectivesScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="MyRace" component={MyRaceScreen} />
+    <AppNavigator.Screen name="History" component={HistoryScreen} options={verticalSlideModal} />
+    <AppNavigator.Screen name="Records" component={RecordsScreen} options={verticalSlideModal} />
   </AppNavigator.Navigator>
 );
 

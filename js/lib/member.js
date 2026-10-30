@@ -79,13 +79,19 @@ export const syncMember = async (ctx, phone, firstName, { first = false } = {}) 
 
 /*
   What the phone tells the coaches (member_progress(), supabase/coach.sql):
-  sessions marked done, their goals (group race choice + own race + smaller
-  objectives, packed into raceGoal — js/lib/objectives.js), their best
-  time per distance and the VMA on the phone. Read in the Coach Session Hub.
+  club sessions marked done (with how it felt and the note), Débuter
+  sessions done and the place in the programme, the level the phone is on,
+  their goals (group race choice + own race + smaller objectives, packed
+  into raceGoal — js/lib/objectives.js), their best time per distance and
+  the VMA on the phone. Read in the Coach Session Hub.
   Fails quietly — it's a report, nothing on the phone depends on it.
 */
 export const progressReport = (p) => ({
   done: p.done || {},
+  beginnerDone: p.beginnerDone || {},
+  programme: p.programme || {},
+  level: p.level || null,
+  beginnerSessions: p.beginnerSessions || null,
   raceGoal: goalsReport(p),
   records: Object.fromEntries(
     Object.entries(p.records || {})

@@ -6,10 +6,11 @@ The run club app for CrossFit Essor (Bayonne). iPhone and Android from one codeb
 - **Sessions** — every Friday session, shown to each runner for their level (Level 3/2/1) with every rep turned into a time or distance from their VMA.
 - **Débuter A/B/C** — the three walk-run programmes from the Level System page, built in. The app keeps each beginner's place, checks the "ready?" rules before moving on, and the end-of-level test moves them up.
 - **VMA and zones** — VMA typed in or from the 6-minute test (metres ÷ 100); the Pfitzinger zones from Sean's Running Progression Plan as % VMA (and bpm once a max HR is added).
-- **Records** — 5 km, 10 km, semi, marathon: every time logged, best one marked.
+- **Mes séances** — every Friday done (how it felt: facile / juste bien / trop dur, plus a note), the cycle's count and streak; Débuter runners see their place in the programme and every walk-run session with its date.
+- **Mes records** — the VMA with its dated history, then one card per distance (5 km, 10 km, semi, marathon): record, pace, date, what the VMA predicts; a banner when a new time beats the old one.
 - **Objectives** — the club race plus the runner's own ("Ma course": name, city, date, distance, goal time) and smaller goals they tick off. All visible to the coaches.
 - **Race countdown** — the hero card on Home: J-55, a photo of the race city (found on Wikimedia Commons, credit shown, "Autre photo" to swap), the cycle's Fridays as dots, race-week taper note + checklist, "Ajouter mon temps" after the race.
-- **Coach view** — unlocked with the coach code (`js/lib/config.js`): write and edit sessions in the app, the session hub (who's booked, their paces, each athlete's page), Sean's own week. "Vue membre" switches to what members see.
+- **Coach view** — unlocked with the coach code (`js/lib/config.js`): write and edit sessions in the app, the session hub (everyone expected with their paces; Débuter runners with where they are in the programme and their next session; on a past session, who marked it done and how it felt), each athlete's page (their Fridays with notes, their Débuter log, records, injury notes), Sean's own week. "Vue membre" switches to what members see.
 - **Members only** — a runner signs in with the phone number and first name from their questionnaire once Sean has opened their access (below). Everything else is saved on the phone; coach-written sessions, VMA from the website and the coaches' view of each runner go through a small Supabase database.
 
 ## How it's built
@@ -27,13 +28,13 @@ Expo (React Native), same base as Daily Move: Programme's components, transition
 | `js/lib/myWeek.js` | Sean's own week (coach view) |
 | `js/lib/plan.js` | Turns a session into one runner's version (their level, their VMA) |
 | `js/lib/paces.js` | VMA → speed → pace → target time |
-| `js/lib/records.js` | Record distances |
+| `js/lib/records.js`, `js/lib/history.js` | Record distances; what a runner has done (club Fridays, Débuter log, feel + note) |
 | `js/lib/objectives.js`, `js/lib/photo.js` | Own race + objectives, countdown phases; the race-city photo |
 | `js/lib/wodify.js`, `js/lib/booking.js` | Opens the Wodify app (schemes → store page → website); booking windows |
 | `js/lib/member.js`, `js/lib/coach.js` | Members-only sign-in and the launch re-check; the coaches' roster and progress reports |
 | `js/lib/week.js` | The rest of a runner's week around the Friday club session |
 | `js/lib/config.js` | Supabase keys, coach code, Wodify links and booking rules |
-| `js/screens/` | Welcome, Question (questionnaire), SignIn, Home, Session, Week, Profile, Vma, Record, Objectives, MyRace, Goal, Programme, BeginnerSession, CoachCode, CoachHome, CoachSession, CoachAthlete, SessionEditor, MyWeek |
+| `js/screens/` | Welcome, Question (questionnaire), SignIn, Home, Session, History, Records, Week, Profile, Vma, Record, Objectives, MyRace, Goal, Programme, BeginnerSession, CoachCode, CoachHome, CoachSession, CoachAthlete, SessionEditor, MyWeek |
 | `supabase/*.sql` | `schema.sql` sessions, `members.sql` sign-ups + app access, `vma.sql` the website VMA page, `coach.sql` roster + progress, `planning.sql` the coaches' planning page |
 | `docs/` | The GitHub Pages site: `index.html` sign-up questionnaire, `vma.html` my VMA, `app.html` the members' download page, `planning/` coaches' timetable |
 | `scripts/test_paces.js` | Checks the maths and that every session is written correctly |

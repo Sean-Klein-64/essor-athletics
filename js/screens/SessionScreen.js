@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -9,12 +9,14 @@ import Glyph from "../components/Glyph";
 import StepRow from "../components/StepRow";
 import SectionLabel from "../components/SectionLabel";
 import BookingCard from "../components/BookingCard";
+import Input from "../components/Input";
 import UserContext from "../variables/context";
 
 import { planFor, describeStep, formatDay, totalLabel, todayKey, sessionNumber } from "../lib/plan";
 import useSessions from "../lib/store";
 import levels, { levelById } from "../lib/levels";
 import { reportProgress } from "../lib/member";
+import { FEELS, doneEntry, withDone } from "../lib/history";
 
 /*
   One session in full, for the runner's level: warm-up, main set and
@@ -31,23 +33,36 @@ const SessionScreen = ({ navigation, route }) => {
   const { sessions, byId } = useSessions();
   const session = byId(route.params?.id);
   const [levelId, setLevelId] = useState(preferences.level);
+  const sessionId = session?.id;
+  const entry = doneEntry(preferences.done, sessionId);
+  const done = !!entry;
+  const [note, setNote] = useState(entry?.note || "");
+
+  const saveDone = (patch) => {
+    const map = withDone(preferences.done, sessionId, patch);
+    setPreference("done", map);
+    reportProgress({ ...preferences, done: map }); // the coaches see it in the hub
+  };
+
+  // the note is saved when typing stops, not on every keystroke
+  useEffect(() => {
+    if (!done || note === (entry?.note || "")) return undefined;
+    const t = setTimeout(() => saveDone({ note: note.trim() }), 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [note]);
 
   if (!session) return null;
 
   const position = sessionNumber(session, sessions);
-
   const vma = preferences.vma;
   const plan = planFor(session, levelId);
   const isPast = session.date < todayKey();
-  const done = !!preferences.done?.[session.id];
   const isMine = levelId === preferences.level;
 
   const toggleDone = () => {
-    const map = { ...(preferences.done || {}) };
-    if (done) delete map[session.id];
-    else map[session.id] = todayKey();
-    setPreference("done", map);
-    reportProgress({ ...preferences, done: map }); // the coaches see it in the hub
+    if (done) saveDone(null);
+    else saveDone({ at: todayKey() });
   };
 
   const parts = [
@@ -62,6 +77,7 @@ const SessionScreen = ({ navigation, route }) => {
         style={{ width: "100%" }}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 30 }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.intro}>
           <Text style={[styles.title, { color: colors.text }]}>{session.title}</Text>
@@ -137,6 +153,38 @@ const SessionScreen = ({ navigation, route }) => {
             {done ? "Séance faite ✓" : "Séance faite"}
           </Button>
         )}
+
+        {/* How did it go? — kept with the session, shown in Mes séances and to the coach */}
+        {done && session.kind !== "test" && (
+          <View style={[styles.card, styles.debrief, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[typography.heading, typography.bold]}>Comment c{"’"}était ?</Text>
+            <View style={styles.levels}>
+              {FEELS.map((f) => {
+                const selected = entry?.feel === f.id;
+                return (
+                  <Pressable key={f.id} onPress={() => saveDone({ feel: selected ? null : f.id })} small>
+                    <View
+                      style={[
+                        styles.levelChip,
+                        selected
+                          ? { backgroundColor: colors.accent, borderColor: colors.accent }
+                          : { backgroundColor: colors.background, borderColor: colors.border },
+                      ]}
+                    >
+                      <Text style={[typography.finePrint, typography.bold, { opacity: 1, fontSize: 14, color: selected ? "white" : colors.text }]}>
+                        {f.name}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {!!entry?.feel && (
+              <Text style={[typography.finePrint, { fontSize: 13, marginTop: -4 }]}>{FEELS.find((f) => f.id === entry.feel)?.hint}</Text>
+            )}
+            <Input placeholder="Une note pour toi (ou pour le coach)" value={note} onChangeText={setNote} compact />
+          </View>
+        )}
       </ScrollView>
     </SlideScreenContainer>
   );
@@ -144,6 +192,7 @@ const SessionScreen = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4, gap: 18 },
+  debrief: { paddingVertical: 16, gap: 12 },
   intro: { gap: 6 },
   title: {
     fontFamily: "Archivo-BlackItalic",

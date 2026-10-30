@@ -12,6 +12,7 @@ import UserContext from "../variables/context";
 import { distanceById, best, history as recordHistory } from "../lib/records";
 import { parseClock, formatClock, formatPace, racePace } from "../lib/paces";
 import { todayKey, formatShortDate } from "../lib/plan";
+import haptics from "../utils/haptics";
 
 /*
   One distance: log a new time (and when), see every time logged with the
@@ -39,6 +40,7 @@ const RecordScreen = ({ navigation, route }) => {
   const distance = distanceById(route.params?.id);
   const [time, setTime] = useState("");
   const [date, setDate] = useState(formatShortDate(todayKey()));
+  const [newPb, setNewPb] = useState(null); // seconds beaten by the time just saved
 
   if (!distance) return null;
 
@@ -49,13 +51,28 @@ const RecordScreen = ({ navigation, route }) => {
   const entries = recordHistory(preferences.records, distance.id);
 
   const save = async () => {
+    const beaten = pb && seconds < pb.seconds ? pb.seconds : pb ? null : 0;
     await saveRecord(distance.id, seconds, dateKey);
     setTime("");
+    setNewPb(beaten);
+    haptics.medium();
   };
 
   return (
     <SlideScreenContainer title={distance.name} type="back" navigation={navigation} route={route}>
       <ScrollView style={{ width: "100%" }} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        {newPb !== null && (
+          <View style={[styles.banner, { backgroundColor: colors.accent }]}>
+            <Glyph name="trophy" size={20} color="white" strokeWidth={2} />
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.heading, typography.bold, { color: "white" }]}>{newPb ? "Nouveau record !" : "Premier temps enregistré"}</Text>
+              <Text style={[typography.finePrint, { color: "rgba(255,255,255,0.85)", opacity: 1, fontSize: 13 }]}>
+                {newPb ? `${formatClock(newPb - (pb?.seconds || 0))} de mieux que l’ancien` : "Il devient ton record à battre"}
+              </Text>
+            </View>
+          </View>
+        )}
+
         <View style={styles.pb}>
           <Text style={[typography.finePrint, { fontSize: 13 }]}>RECORD</Text>
           <Text style={[styles.pbTime, { color: colors.text }]}>{pb ? formatClock(pb.seconds) : "—"}</Text>
@@ -108,6 +125,7 @@ const RecordScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   body: { padding: 20, gap: 24, paddingBottom: 60 },
   pb: { alignItems: "center", gap: 2 },
+  banner: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 14 },
   pbTime: { fontFamily: "Archivo-BlackItalic", fontSize: 52, lineHeight: 60, letterSpacing: -1 },
   label: { textAlign: "center", fontSize: 14 },
   card: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 16 },

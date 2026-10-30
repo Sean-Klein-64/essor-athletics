@@ -9,10 +9,11 @@ import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
 import useSessions from "../lib/store";
-import { formatDay, totalLabel } from "../lib/plan";
+import { formatDay, totalLabel, todayKey } from "../lib/plan";
 import { BOOKING } from "../lib/config";
 import { levelById } from "../lib/levels";
-import { getSessionAttendees, groupByLevel, sessionTargets, sessionStructure, formatVma, isClubLevel } from "../lib/coach";
+import { getSessionAttendees, groupByLevel, sessionTargets, sessionStructure, formatVma, isClubLevel, athleteBeginner, beginnerLine, attendanceLine, effectiveLevel, isBeginnerLevel } from "../lib/coach";
+import { doneEntry, FEELS } from "../lib/history";
 
 /*
   Coach Session Hub — one Friday, seen from the track.
@@ -29,10 +30,14 @@ const Pill = ({ icon, children, colors, typography }) => (
   </View>
 );
 
-const AthleteCard = ({ athlete, session, onPress, colors, typography }) => {
-  const targets = sessionTargets(session, athlete.level, athlete.vma);
-  const club = isClubLevel(athlete.level);
+const AthleteCard = ({ athlete, session, sessions, today, onPress, colors, typography }) => {
+  const level = effectiveLevel(athlete);
+  const targets = sessionTargets(session, level, athlete.vma);
+  const club = isClubLevel(level);
+  const beginner = isBeginnerLevel(level) ? athleteBeginner(athlete) : null;
   const flag = athlete.injury === "yes";
+  const past = session.date < today;
+  const entry = doneEntry(athlete.done, session.id);
   return (
     <Pressable onPress={onPress}>
       <View style={[styles.athlete, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -47,13 +52,27 @@ const AthleteCard = ({ athlete, session, onPress, colors, typography }) => {
               {athlete.name}
             </Text>
             <Text style={[typography.finePrint, { fontSize: 13 }]} numberOfLines={1}>
-              {levelById(athlete.level).name}
+              {levelById(level).name}
               {club ? ` · VMA ${formatVma(athlete.vma)}` : ""}
               {flag ? " · ⚠︎ douleur" : ""}
             </Text>
+            <Text style={[typography.finePrint, { fontSize: 13 }]} numberOfLines={2}>
+              {beginner ? beginnerLine(beginner) : attendanceLine(athlete, sessions, today)}
+            </Text>
           </View>
-          <Glyph name="right" size={16} color={colors.text} />
+          {past ? (
+            <View style={[styles.doneDot, entry ? { backgroundColor: colors.accent } : { borderWidth: 1.5, borderColor: colors.border }]}>
+              {!!entry && <Glyph name="check" size={14} color="white" strokeWidth={2.6} />}
+            </View>
+          ) : (
+            <Glyph name="right" size={16} color={colors.text} />
+          )}
         </View>
+        {past && entry?.note ? (
+          <Text style={[typography.finePrint, { fontSize: 13, fontStyle: "italic" }]} numberOfLines={2}>
+            « {entry.note} »
+          </Text>
+        ) : null}
 
         {club && (
           <View style={styles.targets}>
@@ -85,7 +104,9 @@ const CoachSessionScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { theme } = useContext(UserContext);
   const { colors, typography } = theme;
-  const session = useSessions().byId(route.params?.id);
+  const { sessions, byId } = useSessions();
+  const session = byId(route.params?.id);
+  const today = todayKey();
 
   const [athletes, setAthletes] = useState(null); // null = loading
   const [error, setError] = useState(null);
@@ -126,6 +147,14 @@ const CoachSessionScreen = ({ navigation, route }) => {
   if (!session) return null;
 
   const groups = groupByLevel(athletes || []);
+  const recap = (() => {
+    const list = athletes || [];
+    const entries = list.map((a) => doneEntry(a.done, session?.id)).filter(Boolean);
+    const feels = FEELS.map((f) => ({ f, n: entries.filter((e) => e.feel === f.id).length }))
+      .filter((x) => x.n)
+      .map((x) => `${x.n} ${x.f.name.toLowerCase()}`);
+    return { done: entries.length, total: list.length, feels };
+  })();
   const shown = filter ? groups.filter((g) => g.id === filter) : groups;
   const total = (athletes || []).length;
 
@@ -147,6 +176,16 @@ const CoachSessionScreen = ({ navigation, route }) => {
             <Pill colors={colors} typography={typography}>{BOOKING.place}</Pill>
             <Pill colors={colors} typography={typography}>{totalLabel(session, "level2")}</Pill>
           </View>
+          {session.date < today && athletes && !!athletes.length && (
+            <View style={[styles.recap, { borderTopColor: colors.border }]}>
+              <Text style={[typography.heading, typography.bold]}>
+                {recap.done}/{recap.total} l’ont marquée faite
+              </Text>
+              <Text style={[typography.finePrint, { fontSize: 13 }]}>
+                {recap.feels.length ? recap.feels.join(" · ") : "Personne n’a encore dit comment c’était"}
+              </Text>
+            </View>
+          )}
 
           <Pressable onPress={toggle} animation={false}>
             <View style={[styles.structureHead, { borderTopColor: colors.border }]}>
@@ -234,6 +273,8 @@ const CoachSessionScreen = ({ navigation, route }) => {
                   key={a.id}
                   athlete={a}
                   session={session}
+                  sessions={sessions}
+                  today={today}
                   onPress={() => navigation.navigate("CoachAthlete", { athlete: a, sessionId: session.id })}
                   colors={colors}
                   typography={typography}
@@ -248,6 +289,8 @@ const CoachSessionScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  recap: { borderTopWidth: 1, paddingTop: 12, marginTop: 4, gap: 2 },
+  doneDot: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   content: { paddingHorizontal: 20, paddingTop: 4, gap: 22 },
   hero: { borderWidth: 1, borderRadius: 24, padding: 18, gap: 6, overflow: "hidden" },
   title: { fontFamily: "Archivo-BlackItalic", fontSize: 38, lineHeight: 44, letterSpacing: -0.8 },
