@@ -1,0 +1,205 @@
+/*
+  Builds docs/debuter-a.html, debuter-b.html, debuter-c.html from js/lib/beginner.js —
+  the Débuter walk-run programmes as a page each runner can follow on their phone
+  before the app ships. Run after changing beginner.js:
+
+    node scripts/build_debuter.mjs
+*/
+import { writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { PROGRAMMES, READY_RULES } from "../js/lib/beginner.js";
+import levels from "../js/lib/levels.js";
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+const mins = (m) => (m < 1 ? `${Math.round(m * 60)}"` : `${m}'`);
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const GOAL = { beginnerA: "12' de course en 2 blocs", beginnerB: "20' sans t'arrêter", beginnerC: "30' sans t'arrêter" };
+const NEXT = { beginnerA: "Débuter B", beginnerB: "Débuter C", beginnerC: "Level 3" };
+const SLOT = ["Vendredi · au club", "Séance 2 · seul·e", "Séance 3 · seul·e"];
+const SLUG = { beginnerA: "a", beginnerB: "b", beginnerC: "c" };
+
+const label = (s) => (s.walk ? `${s.sets} × (${mins(s.run)} course / ${mins(s.walk)} marche)` : `${mins(s.run)} sans t'arrêter`);
+const total = (s) => `${s.sets * s.run}' de course au total${s.walk ? `, ${s.sets * s.walk}' de marche` : ""}`;
+
+const page = (id) => {
+  const prog = PROGRAMMES[id];
+  const lvl = levels.find((l) => l.id === id);
+  const others = Object.keys(PROGRAMMES).filter((k) => k !== id);
+  let idx = 0;
+  const weeks = prog.weeks
+    .map((week, w) => {
+      const cards = week
+        .map((s, i) => {
+          const n = idx++;
+          return `
+        <article class="sess${s.test ? " test" : ""}" data-i="${n}">
+          <div class="top"><span class="slot">${esc(SLOT[i])}</span>${s.test ? '<span class="badge">Test de fin de niveau</span>' : ""}</div>
+          <h3>${esc(label(s))}</h3>
+          <p class="muted">${esc(total(s))}${s.note ? ` · ${esc(s.note)}` : ""}</p>
+          <ol class="plan">
+            <li><b>5'</b> marche rapide</li>
+            <li><b>${esc(label(s))}</b>${s.walk ? "" : s.test ? " — c'est le test" : ""}</li>
+            <li><b>5'</b> marche, puis étirements</li>
+          </ol>
+          <button class="done" type="button" aria-pressed="false">Fait ✓</button>
+        </article>`;
+        })
+        .join("");
+      return `
+      <section class="week" data-w="${w + 1}">
+        <h2>Semaine ${w + 1}</h2>
+        <div class="cards">${cards}</div>
+      </section>`;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Essor Athletics — ${esc(prog.name)} : ton programme marche-course, séance par séance.">
+<meta property="og:title" content="Essor Athletics — ${esc(prog.name)}">
+<meta property="og:description" content="${esc(lvl.description)}. 6 semaines, 3 séances par semaine, jusqu'à ${esc(GOAL[id])}.">
+<title>${esc(prog.name)} · Essor Athletics</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@1,900&family=DM+Sans:wght@400;500;600&display=swap">
+<style>
+/* Same look as index.html / vma.html: near-black, off-white, vert sapin and mint. */
+:root { --bg:#0A0A0A; --fg:#FAFAF8; --card:#161616; --line:#262626; --muted:#9AA7A1; --accent:#1E4D3A; --accent-soft:rgba(124,196,162,0.12); --mint:#7CC4A2; --display:'Archivo','Arial Black',Arial,sans-serif; --body:'DM Sans','Helvetica Neue',Arial,sans-serif; color-scheme:dark; }
+* { box-sizing:border-box }
+html,body { margin:0; background:var(--bg); color:var(--fg); }
+body { font-family:var(--body); font-size:17px; line-height:1.45; }
+.hero { position:relative; overflow:hidden; background:linear-gradient(160deg,#12291f 0%,#0A0A0A 70%); }
+.hero .in { position:relative; z-index:1; max-width:520px; margin:0 auto; padding:28px max(16px,env(safe-area-inset-right,0px)) 22px max(16px,env(safe-area-inset-left,0px)); display:flex; flex-direction:column; gap:8px; min-height:200px; justify-content:flex-end; }
+.brand { display:flex; align-items:baseline; gap:8px; }
+.brand a { font-family:var(--display); font-style:italic; font-weight:900; font-size:46px; letter-spacing:-1.4px; line-height:.95; color:#fff; text-decoration:none; }
+.brand span { font-size:15px; color:var(--mint); letter-spacing:3px; }
+.kicker { font-size:12px; letter-spacing:1.6px; text-transform:uppercase; color:var(--muted); margin:0; }
+.hero .kicker { color:var(--mint); }
+h1 { font-family:var(--display); font-style:italic; font-weight:900; font-size:40px; line-height:1.02; letter-spacing:-1px; margin:0; }
+.wrap { max-width:520px; margin:0 auto; padding:18px max(16px,env(safe-area-inset-right,0px)) 56px max(16px,env(safe-area-inset-left,0px)); display:flex; flex-direction:column; gap:18px; }
+h2 { font-size:22px; font-weight:600; margin:0; }
+h3 { margin:0; font-size:19px; font-weight:600; line-height:1.25; }
+p { margin:0 } .muted { color:var(--muted); font-size:15px; }
+.facts { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.fact { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px; }
+.fact b { display:block; font-family:var(--display); font-style:italic; font-weight:900; font-size:22px; line-height:1; color:#fff; }
+.fact span { font-size:12px; color:var(--muted); letter-spacing:.6px; text-transform:uppercase; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:16px; display:flex; flex-direction:column; gap:10px; }
+.card ul { margin:0; padding-left:18px; color:var(--muted); font-size:15px; display:flex; flex-direction:column; gap:4px; }
+.next { background:var(--accent); border-radius:24px; padding:20px; display:flex; flex-direction:column; gap:6px; }
+.next .kicker { color:rgba(255,255,255,.75); } .next h2 { color:#fff; font-size:26px; } .next p { color:rgba(255,255,255,.9); }
+.week { display:flex; flex-direction:column; gap:10px; }
+.cards { display:flex; flex-direction:column; gap:10px; }
+.sess { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:16px; display:flex; flex-direction:column; gap:8px; }
+.sess.is-next { border-color:var(--mint); background:var(--accent-soft); }
+.sess.is-done { opacity:.55; }
+.sess .top { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+.slot { font-size:12px; letter-spacing:1.4px; text-transform:uppercase; color:var(--mint); }
+.badge { font-size:12px; background:var(--accent); color:#fff; border-radius:999px; padding:3px 10px; }
+.plan { margin:4px 0 0; padding-left:20px; color:var(--muted); font-size:15px; display:flex; flex-direction:column; gap:3px; }
+.plan b { color:var(--fg); font-weight:600; }
+.done { align-self:flex-start; margin-top:4px; font:inherit; font-size:15px; font-weight:500; border:1px solid var(--line); background:transparent; color:var(--muted); border-radius:999px; padding:8px 16px; cursor:pointer; }
+.done[aria-pressed="true"] { background:var(--mint); border-color:var(--mint); color:#0A0A0A; }
+.done:focus-visible { outline:2px solid var(--mint); outline-offset:2px; }
+.links { display:flex; gap:8px; flex-wrap:wrap; }
+.links a { color:var(--mint); font-size:15px; text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 14px; }
+footer { color:var(--muted); font-size:13px; text-align:center; }
+footer a { color:var(--mint); }
+</style>
+</head>
+<body>
+<header class="hero"><div class="in">
+  <p class="kicker">Run club · CrossFit Essor</p>
+  <div class="brand"><a href="./">essor</a><span>athletics</span></div>
+  <h1>${esc(prog.name)}</h1>
+  <p class="muted">${esc(lvl.description)}. Objectif du niveau : ${esc(GOAL[id])}, puis ${esc(NEXT[id])}.</p>
+</div></header>
+
+<main class="wrap">
+  <div class="facts">
+    <div class="fact"><b>6</b><span>semaines</span></div>
+    <div class="fact"><b>3</b><span>séances / sem.</span></div>
+    <div class="fact"><b>${esc(GOAL[id].split(" ")[0])}</b><span>à la fin</span></div>
+  </div>
+
+  <section class="next" id="next" hidden>
+    <p class="kicker">Ta prochaine séance</p>
+    <h2 id="next-title"></h2>
+    <p id="next-sub"></p>
+  </section>
+
+  <section class="card">
+    <h2>Comment ça marche</h2>
+    <ul>
+      <li><b>3 séances par semaine</b> : le vendredi au club avec nous, plus 2 seul·e, avec au moins un jour de repos entre deux.</li>
+      <li>Toujours <b>5' de marche rapide</b> avant, <b>5' de marche</b> et des étirements après.</li>
+      <li>La course se fait <b>à une allure où tu peux parler</b>. Si tu ne peux pas, ralentis — c'est le but du programme.</li>
+      <li>Tu passes à la séance suivante <b>seulement quand tu es prêt·e</b> (voir ci-dessous). Pas de calendrier à rattraper : tu gardes ta place.</li>
+      <li>La dernière séance du niveau est un <b>test</b> : réussi, tu passes en ${esc(NEXT[id])}.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Prêt·e pour la suivante ?</h2>
+    <p class="muted">Avant de passer à la séance d'après, coche les trois :</p>
+    <ul>${READY_RULES.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>
+    <p class="muted">Sinon, refais la même séance. C'est normal, et c'est prévu.</p>
+  </section>
+
+  ${weeks}
+
+  <section class="card">
+    <h2>Pas le bon niveau ?</h2>
+    <div class="links">${others.map((k) => `<a href="./debuter-${SLUG[k]}.html">${esc(PROGRAMMES[k].name)}</a>`).join("")}<a href="./vma.html">Level 3, 2, 1 — ma VMA</a></div>
+  </section>
+
+  <footer>Essor Athletics · <a href="./">le run club</a>. Tes séances cochées restent sur ce téléphone.</footer>
+</main>
+
+<script>
+(() => {
+  const KEY = "essor-debuter-${id}";
+  const cards = [...document.querySelectorAll(".sess")];
+  let done = new Set();
+  try { done = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...done])); } catch (e) {} };
+  const render = () => {
+    let next = null;
+    cards.forEach((c) => {
+      const i = Number(c.dataset.i), isDone = done.has(i);
+      c.classList.toggle("is-done", isDone);
+      c.querySelector(".done").setAttribute("aria-pressed", String(isDone));
+      c.querySelector(".done").textContent = isDone ? "Fait ✓" : "Marquer comme faite";
+      c.classList.remove("is-next");
+      if (!isDone && next === null) next = c;
+    });
+    const box = document.getElementById("next");
+    if (next) {
+      next.classList.add("is-next");
+      box.hidden = false;
+      document.getElementById("next-title").textContent = next.querySelector("h3").textContent;
+      document.getElementById("next-sub").textContent = next.closest(".week").querySelector("h2").textContent + " · " + next.querySelector(".slot").textContent;
+    } else { box.hidden = true; }
+  };
+  cards.forEach((c) => c.querySelector(".done").addEventListener("click", () => {
+    const i = Number(c.dataset.i);
+    done.has(i) ? done.delete(i) : done.add(i);
+    save(); render();
+  }));
+  render();
+})();
+</script>
+</body>
+</html>
+`;
+};
+
+for (const id of Object.keys(PROGRAMMES)) {
+  const out = join(root, "docs", `debuter-${SLUG[id]}.html`);
+  writeFileSync(out, page(id));
+  console.log("wrote", out);
+}
