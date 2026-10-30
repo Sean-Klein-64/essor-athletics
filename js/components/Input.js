@@ -92,4 +92,6 @@ const styles = StyleSheet.create({
   },
 });
 
+Input.displayName = "Input";
+
 export default Input;

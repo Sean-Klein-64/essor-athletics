@@ -8,7 +8,7 @@ import Wordmark from "../components/Wordmark";
 import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
-import { splitSessions, formatDay, totalLabel, todayKey, sessionNumber } from "../lib/plan";
+import { splitSessions, formatDay, formatShortDate, totalLabel, todayKey, sessionNumber } from "../lib/plan";
 import { levelById } from "../lib/levels";
 import useSessions from "../lib/store";
 import { isBeginner, nextSession, sessionLabel, runMinutes, PROGRAMMES } from "../lib/beginner";
@@ -16,7 +16,6 @@ import { RaceCountdown, RaceWeekCard } from "../components/RaceCountdown";
 import { countdownRace } from "../lib/objectives";
 import { openWodify } from "../lib/wodify";
 import { bookingState } from "../lib/booking";
-import { formatShortDate } from "../lib/plan";
 
 /*
   Home — the next session up front (big card, with the Wodify booking right on it),

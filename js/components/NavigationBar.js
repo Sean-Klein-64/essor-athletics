@@ -43,7 +43,7 @@ const NavigationBar = ({
         {title}
       </MarqueeText>
       {type === "close" ? (
-        <Icon icon="cross" rotation="180deg" onPress={navigation.goBack} />
+        <Icon icon="cross" onPress={navigation.goBack} />
       ) : showDoneButton ? (
         <Pressable small onPress={navigation.goBack}>
           <View style={{ width: 48, marginRight: 4 }}>

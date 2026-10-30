@@ -17,7 +17,7 @@ const MyWeekScreen = ({ navigation, route }) => {
   return (
     <SlideScreenContainer title="Ma semaine" type="back" navigation={navigation} route={route} ignoreKeyboard>
       <ScrollView style={{ width: "100%" }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[typography.finePrint, styles.intro]}>Cycle jusqu'au Marathon de Bordeaux · visible seulement en mode coach</Text>
+        <Text style={[typography.finePrint, styles.intro]}>Cycle jusqu’au Marathon de Bordeaux · visible seulement en mode coach</Text>
         {myWeek.map((d, i) => {
           const isToday = i === todayIndex;
           return (

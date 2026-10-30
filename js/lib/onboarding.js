@@ -1,6 +1,5 @@
-import levels from "./levels";
+import levels, { levelById } from "./levels";
 import { suggestLevel } from "./placement";
-import { levelById } from "./levels";
 
 /*
   The first-run questions, one per screen (QuestionScreen walks this list).

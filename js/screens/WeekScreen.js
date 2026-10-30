@@ -27,7 +27,7 @@ const WeekScreen = ({ navigation, route }) => {
   return (
     <SlideScreenContainer title="Ma semaine" type="back" navigation={navigation} route={route} ignoreKeyboard>
       <ScrollView style={{ width: "100%" }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[typography.finePrint, styles.intro]}>Le vendredi, c'est le club. Le reste de la semaine, voilà quoi courir autour — à ton rythme, à tes allures.</Text>
+        <Text style={[typography.finePrint, styles.intro]}>Le vendredi, c’est le club. Le reste de la semaine, voilà quoi courir autour — à ton rythme, à tes allures.</Text>
 
         <View style={styles.section}>
           <SectionLabel>Sorties par semaine, vendredi compris</SectionLabel>
@@ -57,7 +57,7 @@ const WeekScreen = ({ navigation, route }) => {
                     {d.day}
                     {isToday ? "  ·  aujourd'hui" : ""}
                   </Text>
-                  {!club && <Text style={[typography.finePrint, { fontSize: 13 }]}>{d.minutes}'</Text>}
+                  {!club && <Text style={[typography.finePrint, { fontSize: 13 }]}>{`${d.minutes}'`}</Text>}
                 </View>
                 <Text style={[typography.heading, typography.bold, club && { color: "white" }]}>{d.title}</Text>
                 {!club && (

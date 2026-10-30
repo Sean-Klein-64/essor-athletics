@@ -55,6 +55,8 @@ const LaunchAnimation = ({ onDone }) => {
       words.value = withDelay(400, withTiming(1, { duration: 700, easing: ease }));
     }
     screen.value = withDelay(total - 450, withTiming(0, { duration: 450, easing: Easing.linear }, (done) => done && runOnJS(finish)()));
+    // Plays once, on mount — a new onDone must not restart the clip
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const screenStyle = useAnimatedStyle(() => ({ opacity: screen.value }));

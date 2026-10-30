@@ -36,21 +36,23 @@ const Pressable = ({
   const scale = useSharedValue(1);
 
   useFocusEffect(() => {
-    scale.value = withSpring(1);
+    scale.set(withSpring(1));
   });
 
   const squash = () => {
-    scale.value = withSpring(small ? 0.75 : 0.95, {
-      damping: 2,
-      mass: 1,
-      stiffness: 75,
-      overshootClamping: true,
-    });
-    scale.value = withDelay(400, withSpring(1));
+    scale.set(
+      withSpring(small ? 0.75 : 0.95, {
+        damping: 2,
+        mass: 1,
+        stiffness: 75,
+        overshootClamping: true,
+      }),
+    );
+    scale.set(withDelay(400, withSpring(1)));
   };
 
   const release = () => {
-    scale.value = withSpring(1);
+    scale.set(withSpring(1));
   };
 
   const tap = useTapGesture({
@@ -84,7 +86,7 @@ const Pressable = ({
   const both = useExclusiveGestures(longPress, tap);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: animation ? scale.value : 1 }],
+    transform: [{ scale: animation ? scale.get() : 1 }],
   }));
 
   return (

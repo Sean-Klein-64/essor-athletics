@@ -119,6 +119,12 @@ function App() {
   const [selectedTheme, setSelectedTheme] = useState();
   const systemTheme = useColorScheme();
 
+  // Kept in a ref so two quick saves in a row don't overwrite each other
+  const latest = useRef(preferences);
+  useEffect(() => {
+    latest.current = preferences;
+  }, [preferences]);
+
   useEffect(() => {
     (async () => {
       const raw = await AsyncStorage.getItem(PREFERENCES_KEY);
@@ -127,15 +133,12 @@ function App() {
         loaded.deviceId = newDeviceId();
         await AsyncStorage.setItem(PREFERENCES_KEY, JSON.stringify(loaded));
       }
+      latest.current = loaded;
       setPreferences(loaded);
       setSelectedTheme(await AsyncStorage.getItem("theme"));
       setIsLoading(false);
     })();
   }, []);
-
-  // Kept in a ref so two quick saves in a row don't overwrite each other
-  const latest = useRef(preferences);
-  latest.current = preferences;
 
   const setPreference = async (key, value) => {
     const next = { ...latest.current, [key]: value };
@@ -196,6 +199,8 @@ function App() {
         return reportProgress(latest.current);
       })
       .catch(() => {});
+    // Runs once per launch (guarded by `synced`); the save helpers are stable enough for that
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, preferences.onboarded]);
 
   const dark = (selectedTheme || systemTheme) === "dark";

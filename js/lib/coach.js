@@ -1,4 +1,5 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY, COACH_CODE } from "./config";
+import { COACH_CODE } from "./config";
+import { rpc } from "./supabase";
 import levels, { levelById } from "./levels";
 import { planFor } from "./plan";
 import goal from "./goal";
@@ -36,18 +37,14 @@ import {
 /* ── Fetching ─────────────────────────────────────────────────────────── */
 
 export const fetchRoster = async (code = COACH_CODE) => {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/coach_athletes`, {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ p_code: code }),
-  });
-  if (res.status === 404) throw new Error("setup"); // supabase/coach.sql not run yet
-  if (!res.ok) throw new Error(`coach_athletes ${res.status}`);
-  return (await res.json()).map(toAthlete);
+  let rows;
+  try {
+    rows = await rpc("coach_athletes", { p_code: code });
+  } catch (e) {
+    if (e.status === 404) throw new Error("setup"); // supabase/coach.sql not run yet
+    throw e;
+  }
+  return rows.map(toAthlete);
 };
 
 /*

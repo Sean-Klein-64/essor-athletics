@@ -1,4 +1,4 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config";
+import { isConfigured, rpc } from "./supabase";
 import { PROGRAMMES } from "./beginner";
 import { parseClock } from "./paces";
 import { goalsReport } from "./objectives";
@@ -21,19 +21,7 @@ import { goalsReport } from "./objectives";
 
 export const SITE_URL = "https://sean-klein-64.github.io/essor-athletics/";
 
-export const fetchProfile = async (phone, firstName) => {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/member_profile`, {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ p_phone: phone, p_first: firstName }),
-  });
-  if (!res.ok) throw new Error(`member_profile ${res.status}`);
-  return res.json();
-};
+export const fetchProfile = (phone, firstName) => rpc("member_profile", { p_phone: phone, p_first: firstName });
 
 /* Where week N of a Débuter programme starts, as a programme index (3 sessions a week) */
 export const weekStartIndex = (week) => (Math.min(Math.max(week, 1), 6) - 1) * 3;
@@ -109,18 +97,10 @@ export const progressReport = (p) => ({
 
 export const reportProgress = async (preferences) => {
   const m = preferences.member;
-  if (!m?.phone || !SUPABASE_URL) return false;
+  if (!m?.phone || !isConfigured()) return false;
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/member_progress`, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ p_phone: m.phone, p_first: m.first, p_progress: progressReport(preferences) }),
-    });
-    return res.ok;
+    await rpc("member_progress", { p_phone: m.phone, p_first: m.first, p_progress: progressReport(preferences) });
+    return true;
   } catch {
     return false;
   }

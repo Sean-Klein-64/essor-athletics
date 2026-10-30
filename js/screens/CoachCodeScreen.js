@@ -57,11 +57,11 @@ const CoachCodeScreen = ({ navigation, route }) => {
               <Input placeholder="Prénom" onChangeText={setName} value={name} autoCapitalize="words" autoCorrect={false} />
             </>
           )}
-          {wrong && <Text style={[typography.finePrint, styles.wrong, { color: colors.accentText }]}>Ce n'est pas le bon code.</Text>}
+          {wrong && <Text style={[typography.finePrint, styles.wrong, { color: colors.accentText }]}>Ce n’est pas le bon code.</Text>}
         </View>
         <View style={{ width: "100%" }}>
           <Text style={[typography.finePrint, styles.tip]}>
-            Le mode coach permet d'écrire les séances et de voir ta propre semaine. Tu peux basculer en vue membre quand tu veux.
+            Le mode coach permet d’écrire les séances et de voir ta propre semaine. Tu peux basculer en vue membre quand tu veux.
           </Text>
           <Button disabled={!isValid} onPress={submit}>
             Entrer

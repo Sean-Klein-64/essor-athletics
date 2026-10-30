@@ -61,7 +61,7 @@ const BeginnerSessionScreen = ({ navigation, route }) => {
       <ScrollView style={{ width: "100%" }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={{ gap: 4 }}>
           <Text style={[typography.finePrint, { fontSize: 14 }]}>
-            {session.slotName} · {runMinutes(session)}' de course{session.test ? " · test" : ""}
+            {`${session.slotName} · ${runMinutes(session)}' de course${session.test ? " · test" : ""}`}
           </Text>
           <Text style={[styles.title, { color: colors.text }]}>{sessionLabel(session)}</Text>
           <Text style={[typography.finePrint, styles.summary]}>
@@ -103,7 +103,7 @@ const BeginnerSessionScreen = ({ navigation, route }) => {
                 );
               })}
             </View>
-            <Text style={[typography.finePrint, styles.hint]}>Pas les trois ? Refais cette séance — c'est normal, et c'est la règle.</Text>
+            <Text style={[typography.finePrint, styles.hint]}>Pas les trois ? Refais cette séance — c’est normal, et c’est la règle.</Text>
             <Button disabled={!allChecked} onPress={markDone}>
               {session.test ? `Test réussi → ${levelById(session.next).name}` : "Séance faite"}
             </Button>

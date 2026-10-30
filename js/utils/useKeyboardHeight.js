@@ -1,6 +1,12 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { Keyboard } from "react-native";
-import Animated, { useSharedValue, withSpring } from "react-native-reanimated";
+import { useSharedValue, withSpring } from "react-native-reanimated";
+
+const springConfig = {
+  damping: 20,
+  mass: 0.5,
+  stiffness: 100,
+};
 
 export default function useKeyboardHeight(
   initialValue,
@@ -8,12 +14,6 @@ export default function useKeyboardHeight(
   sticky,
 ) {
   const keyboardHeight = useSharedValue(initialValue);
-
-  const springConfig = {
-    damping: 20,
-    mass: 0.5,
-    stiffness: 100,
-  };
 
   /* Animate the view on initial render based on keyboard height */
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function useKeyboardHeight(
         : withSpring(height, springConfig);
     });
 
-    const hide = Keyboard.addListener("keyboardWillHide", (e) => {
+    const hide = Keyboard.addListener("keyboardWillHide", () => {
       if (!sticky)
         keyboardHeight.value = withSpring(initialValue, springConfig);
     });
@@ -35,7 +35,7 @@ export default function useKeyboardHeight(
       show.remove();
       hide.remove();
     };
-  }, []);
+  }, [initialValue, keyboardHeight, paddingBottom, sticky]);
 
   return keyboardHeight;
 }

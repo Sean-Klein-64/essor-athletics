@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useContext } from "react";
 import { StyleSheet, View, Text, ActivityIndicator } from "react-native";
 
 import Pressable from "./Pressable";

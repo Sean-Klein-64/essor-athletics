@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 
 import UserContext from "../variables/context";
 import builtIn from "./sessions";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config";
+import { isConfigured, rest } from "./supabase";
 
 /*
   Where the club sessions come from.
@@ -16,15 +16,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config";
   and a `save` for coaches.
 */
 
-export const isShared = () => !!(SUPABASE_URL && SUPABASE_ANON_KEY);
-
-const headers = () => ({
-  apikey: SUPABASE_ANON_KEY,
-  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-  "Content-Type": "application/json",
-});
-
-const table = `${SUPABASE_URL}/rest/v1/sessions`;
+export const isShared = isConfigured;
 
 const fromRow = (r) => ({
   id: r.id,
@@ -52,16 +44,16 @@ const toRow = (s, author) => ({
 });
 
 export const fetchRemote = async () => {
-  const res = await fetch(`${table}?select=*&order=date`, { headers: headers() });
+  const res = await rest("sessions?select=*&order=date");
   if (!res.ok) throw new Error(`sessions ${res.status}`);
   return (await res.json()).map(fromRow);
 };
 
 const upsertRemote = (s, author) =>
-  fetch(`${table}?on_conflict=id`, {
+  rest("sessions?on_conflict=id", {
     method: "POST",
-    headers: { ...headers(), Prefer: "resolution=merge-duplicates,return=minimal" },
-    body: JSON.stringify(toRow(s, author)),
+    body: toRow(s, author),
+    prefer: "resolution=merge-duplicates,return=minimal",
   });
 
 export const merge = (...layers) => {
@@ -86,8 +78,18 @@ const useSessions = () => {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    let cancelled = false;
+    if (!isShared()) return undefined;
+    fetchRemote()
+      .then((rows) => !cancelled && setRemote(rows))
+      .catch(() => {
+        /* offline: built-in + local keep working */
+      })
+      .finally(() => !cancelled && setLoaded(true));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const local = Object.values(preferences.coachSessions || {});
   const sessions = merge(builtIn, remote, local);

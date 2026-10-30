@@ -9,8 +9,8 @@ The run club app for CrossFit Essor (Bayonne). iPhone and Android from one codeb
 - **Records** — 5 km, 10 km, semi, marathon: every time logged, best one marked.
 - **Objectives** — the club race plus the runner's own ("Ma course": name, city, date, distance, goal time) and smaller goals they tick off. All visible to the coaches.
 - **Race countdown** — the hero card on Home: J-55, a photo of the race city (found on Wikimedia Commons, credit shown, "Autre photo" to swap), the cycle's Fridays as dots, race-week taper note + checklist, "Ajouter mon temps" after the race.
-- **Coach view** — unlocked with the coach code (`js/lib/config.js`): write and edit sessions in the app, see who's coming, Sean's own week. "Vue membre" switches to what members see.
-- No account yet: everything is saved on the phone. "Je viens" and coach-written sessions are shared through a small Supabase database once it's switched on (below). Until then they live on the phone that made them.
+- **Coach view** — unlocked with the coach code (`js/lib/config.js`): write and edit sessions in the app, the session hub (who's booked, their paces, each athlete's page), Sean's own week. "Vue membre" switches to what members see.
+- **Members only** — a runner signs in with the phone number and first name from their questionnaire once Sean has opened their access (below). Everything else is saved on the phone; coach-written sessions, VMA from the website and the coaches' view of each runner go through a small Supabase database.
 
 ## How it's built
 
@@ -29,10 +29,13 @@ Expo (React Native), same base as Daily Move: Programme's components, transition
 | `js/lib/paces.js` | VMA → speed → pace → target time |
 | `js/lib/records.js` | Record distances |
 | `js/lib/objectives.js`, `js/lib/photo.js` | Own race + objectives, countdown phases; the race-city photo |
-| `js/lib/wodify.js` | Opens the Wodify app (schemes → store page → website) |
-| `js/lib/attendance.js`, `js/lib/config.js` | "Je viens" and the shared list |
-| `js/screens/` | Welcome, Question (questionnaire), Home, Session, Profile, Vma, Record, Programme, BeginnerSession, CoachCode, CoachHome, SessionEditor, MyWeek |
-| `supabase/schema.sql` | The tables behind "Je viens" and coach-written sessions |
+| `js/lib/wodify.js`, `js/lib/booking.js` | Opens the Wodify app (schemes → store page → website); booking windows |
+| `js/lib/member.js`, `js/lib/coach.js` | Members-only sign-in and the launch re-check; the coaches' roster and progress reports |
+| `js/lib/week.js` | The rest of a runner's week around the Friday club session |
+| `js/lib/config.js` | Supabase keys, coach code, Wodify links and booking rules |
+| `js/screens/` | Welcome, Question (questionnaire), SignIn, Home, Session, Week, Profile, Vma, Record, Objectives, MyRace, Goal, Programme, BeginnerSession, CoachCode, CoachHome, CoachSession, CoachAthlete, SessionEditor, MyWeek |
+| `supabase/*.sql` | `schema.sql` sessions, `members.sql` sign-ups + app access, `vma.sql` the website VMA page, `coach.sql` roster + progress, `planning.sql` the coaches' planning page |
+| `docs/` | The GitHub Pages site: `index.html` sign-up questionnaire, `vma.html` my VMA, `app.html` the members' download page, `planning/` coaches' timetable |
 | `scripts/test_paces.js` | Checks the maths and that every session is written correctly |
 
 ## Writing sessions
@@ -47,9 +50,7 @@ It fails with the session and step if something's mistyped.
 
 ## Switching on the shared database
 
-1. Create a free project at https://supabase.com/dashboard (region: Paris / eu-west-3).
-2. SQL Editor → New query → paste `supabase/schema.sql` → Run.
-3. Project Settings → API: copy the Project URL and the `anon` public key into `js/lib/config.js`.
+Already done for project `essor-athletics` (keys in `js/lib/config.js`). To recreate it from scratch: create a free project at https://supabase.com/dashboard (region: Paris / eu-west-3), run each file in `supabase/` in the SQL Editor (`schema.sql` first), then copy the Project URL and the `anon` public key into `js/lib/config.js`, `docs/index.html` and `docs/vma.html`.
 
 ## Who gets in (members only)
 

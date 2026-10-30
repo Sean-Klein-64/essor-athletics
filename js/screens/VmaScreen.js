@@ -17,6 +17,26 @@ import { formatShortDate } from "../lib/plan";
   Opens on the test when route.params.mode === "test" (from the test session).
 */
 
+const Tab = ({ id, label, mode, onSelect, colors, typography }) => {
+  const selected = mode === id;
+  return (
+    <Pressable small onPress={() => onSelect(id)}>
+      <View
+        style={[
+          styles.tab,
+          selected
+            ? { backgroundColor: colors.accent, borderColor: colors.accent }
+            : { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
+        <Text style={[typography.heading, typography.bold, { fontSize: 15, color: selected ? "white" : colors.text }]}>
+          {label}
+        </Text>
+      </View>
+    </Pressable>
+  );
+};
+
 const VmaScreen = ({ navigation, route }) => {
   const {
     theme: { colors, typography },
@@ -36,30 +56,9 @@ const VmaScreen = ({ navigation, route }) => {
     navigation.goBack();
   };
 
-  const Tab = ({ id, label }) => {
-    const selected = mode === id;
-    return (
-      <Pressable
-        small
-        onPress={() => {
-          setMode(id);
-          setText("");
-        }}
-      >
-        <View
-          style={[
-            styles.tab,
-            selected
-              ? { backgroundColor: colors.accent, borderColor: colors.accent }
-              : { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <Text style={[typography.heading, typography.bold, { fontSize: 15, color: selected ? "white" : colors.text }]}>
-            {label}
-          </Text>
-        </View>
-      </Pressable>
-    );
+  const select = (id) => {
+    setMode(id);
+    setText("");
   };
 
   return (
@@ -67,8 +66,8 @@ const VmaScreen = ({ navigation, route }) => {
       <View style={styles.body}>
         <View style={{ gap: 16, width: "100%" }}>
           <View style={styles.tabs}>
-            <Tab id="typed" label="Je la connais" />
-            <Tab id="test" label="Test 6'" />
+            <Tab id="typed" label="Je la connais" mode={mode} onSelect={select} colors={colors} typography={typography} />
+            <Tab id="test" label="Test 6'" mode={mode} onSelect={select} colors={colors} typography={typography} />
           </View>
           <Text style={[typography.copy, styles.prompt]}>
             {mode === "test" ? "Combien de mètres en 6 minutes ?" : "Ta VMA en km/h"}

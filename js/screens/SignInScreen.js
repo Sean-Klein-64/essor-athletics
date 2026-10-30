@@ -34,7 +34,7 @@ const SignInScreen = ({ navigation, route }) => {
         if (!preferences.signedUp) await setPreference("signedUp", new Date().toISOString());
         await setPreference("onboarded", true); // App.js swaps to the app
       } else setState(status);
-    } catch (e) {
+    } catch {
       setState("offline");
     }
   };
@@ -80,7 +80,7 @@ const SignInScreen = ({ navigation, route }) => {
         </View>
         <View style={{ width: "100%" }}>
           <Text style={[typography.finePrint, styles.tip]}>
-            L'app est réservée aux adhérents d'Essor inscrits au Run Club. Le numéro et le prénom de ton questionnaire suffisent.
+            L’app est réservée aux adhérents d’Essor inscrits au Run Club. Le numéro et le prénom de ton questionnaire suffisent.
           </Text>
           <Button disabled={!isValid || state === "busy"} loading={state === "busy"} onPress={submit}>
             Entrer

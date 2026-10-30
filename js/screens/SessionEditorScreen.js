@@ -10,8 +10,7 @@ import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
 import useSessions from "../lib/store";
-import { describeStep } from "../lib/plan";
-import { formatShortDate } from "../lib/plan";
+import { describeStep, formatShortDate } from "../lib/plan";
 import {
   newBloc, blocsToSteps, stepsToBlocs, KINDS, slug, parseDate, STANDARD_WARMUP, STANDARD_COOLDOWN,
 } from "../lib/editor";
@@ -176,7 +175,7 @@ const SessionEditorScreen = ({ navigation, route }) => {
                 </>
               ) : (
                 <Text style={[typography.finePrint, { fontSize: 14, paddingVertical: 8 }]}>
-                  Cette séance est écrite dans un format que l'éditeur ne gère pas encore (marche, test, séries imbriquées). Elle reste telle quelle.
+                  Cette séance est écrite dans un format que l’éditeur ne gère pas encore (marche, test, séries imbriquées). Elle reste telle quelle.
                 </Text>
               )}
               <View style={[styles.preview, { borderTopColor: colors.border }]}>
@@ -198,7 +197,7 @@ const SessionEditorScreen = ({ navigation, route }) => {
         </Button>
         {!shared && (
           <Text style={[typography.finePrint, styles.hint]}>
-            La base partagée n'est pas encore activée : la séance ne sera visible que sur ce téléphone.
+            La base partagée n’est pas encore activée : la séance ne sera visible que sur ce téléphone.
           </Text>
         )}
       </ScrollView>

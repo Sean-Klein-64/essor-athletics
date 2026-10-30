@@ -83,7 +83,7 @@ const BookingCard = ({ session }) => {
       <Text style={[typography.finePrint, styles.rules]}>{bookingRules()}</Text>
       {!booked && (
         <Text style={[typography.finePrint, styles.rules]}>
-          Le cours n'apparaît pas dans Wodify ? Il faut d'abord remplir le questionnaire : Sean t'ouvre l'accès ensuite.
+          Le cours n’apparaît pas dans Wodify ? Il faut d’abord remplir le questionnaire : Sean t’ouvre l’accès ensuite.
         </Text>
       )}
     </View>

@@ -53,7 +53,7 @@ const MarqueeText = ({ children, style, numberOfLines = 1 }) => {
       false,
     );
     return () => cancelAnimation(x);
-  }, [overflows, distance]);
+  }, [overflows, distance, x]);
 
   const animated = useAnimatedStyle(() => ({
     transform: [{ translateX: x.value }],

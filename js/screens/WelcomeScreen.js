@@ -65,7 +65,7 @@ const WelcomeScreen = ({ navigation }) => {
     track.value = withTiming(1, { duration: 1400, easing: ease });
     text.value = withDelay(300, withTiming(1, { duration: 700, easing: ease }));
     button.value = withDelay(800, withTiming(1, { duration: 600, easing: ease }));
-  }, []);
+  }, [track, text, button]);
 
   const trackStyle = useAnimatedStyle(() => ({
     opacity: track.value,
