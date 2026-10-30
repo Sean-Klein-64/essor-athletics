@@ -82,21 +82,37 @@ npx expo run:ios --device
 
 Android phone: install Android Studio once, turn on USB debugging on the phone, then `npx expo run:android --device`.
 
-## Without a cable: cloud build → TestFlight
+## Getting it to members (members-only download)
+
+Anyone could download a public app; the sign-in gate is what keeps it members-only. The download itself still stays out of public view: **TestFlight** on iPhone, a **Google Play internal test** on Android. Both are built in the cloud with EAS — no Xcode needed. The members' page is `docs/app.html` → [sean-klein-64.github.io/essor-athletics/app.html](https://sean-klein-64.github.io/essor-athletics/app.html) (not linked from the site; share it in the run club WhatsApp group). Its two buttons say "Bientôt disponible" until `IOS_LINK` and `ANDROID_LINK` at the bottom of the file are filled in.
+
+### Once, from the Mac (≈ 1 h, mostly waiting)
 
 ```
-npx eas-cli@latest login
-npx eas-cli@latest build --platform ios --profile production
-npx eas-cli@latest submit --platform ios --latest
+npm install
+npx eas-cli@latest login            # Expo account (free)
+npx eas-cli@latest init             # writes extra.eas.projectId into app.json — commit it
 ```
 
-Then App Store Connect → the app → TestFlight → add yourself as an internal tester; the TestFlight app on the phone installs it. Internal testers need no Apple review. Android: `--platform android --profile preview` gives an .apk to install directly.
+**iPhone → TestFlight**
 
-## Getting it to members
+1. App Store Connect → My Apps → **+** → New App: iOS, name `essor athletics`, primary language French, bundle ID `fr.crossfitessor.athletics`, SKU `essor-athletics`. Copy the app's **Apple ID** (a number, under App Information) into `submit.production.ios.ascAppId` in `eas.json`, and your Apple ID email into `appleId`.
+2. `npx eas-cli@latest build --platform ios --profile production` — EAS creates the distribution certificate and profile itself; say yes when it asks. ≈ 15–25 min.
+3. `npx eas-cli@latest submit --platform ios --latest` — uploads to App Store Connect. `ITSAppUsesNonExemptEncryption` is already `false` in `app.json`, so TestFlight won't stop on the export-compliance question.
+4. App Store Connect → TestFlight → wait for "Ready to Test" (≈ 10–15 min) → **External Testing** → **+** group "Run Club" → add the build → **Enable Public Link**, tester limit 50. The first external build goes through a short Beta App Review (usually under a day; Sean's and Mel's accounts can test immediately as *internal* testers).
+5. Paste the public link into `IOS_LINK` in `docs/app.html`.
 
-- Build both in the cloud with EAS (`npx eas-cli@latest build --platform all`) — no Xcode needed for that.
-- iPhone: TestFlight public link to start, App Store later. Android: Play Console internal/closed testing, or share the APK directly.
-- New or changed sessions don't need a new download: `npx eas-cli@latest update` pushes them to everyone's app.
+**Android → Google Play internal test**
+
+1. Google Play Console ([play.google.com/console](https://play.google.com/console), one-off $25) → Create app: `essor athletics`, app, free, French.
+2. `npx eas-cli@latest build --platform android --profile production` — an .aab, EAS keeps the signing key. ≈ 15 min.
+3. First upload by hand (Google requires it): Play Console → Testing → **Internal testing** → Create new release → upload the .aab from the EAS build page → Save → Testers tab → create an email list "Run Club" with the runners' Gmail addresses → copy the **"Join on the web"** link. Internal testing needs no review and takes up to 100 testers.
+4. Later builds go up with `npx eas-cli@latest submit --platform android --latest` once a service-account key is in place (Play Console → Setup → API access; save the JSON as `google-play-service-account.json` at the repo root — it's git-ignored).
+5. Paste the join link into `ANDROID_LINK` in `docs/app.html`. Each new Android runner: add their Gmail to the list, they open the link, accept, install.
+
+### Each time the sessions change
+
+The app has no over-the-air updates yet (`expo-updates` isn't installed), so a change to `js/lib/sessions.js` means a new build + submit of both platforms (`npx eas-cli@latest build --platform all --profile production --auto-submit`). Testers get it in TestFlight / Play automatically. Adding `expo-updates` later turns that into `npx eas-cli@latest update`, a few seconds, no store round-trip — worth doing before Cycle 2.
 
 ## Later
 

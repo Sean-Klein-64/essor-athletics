@@ -108,6 +108,58 @@ m.sessions.forEach((s) => {
     });
   });
 });
+check("cycle 1: the 8 Fridays 30/10 → 18/12, in the agreed order, every one a Friday", () => {
+  const cycle = m.sessions.filter((s) => m.cycleOf(s.date)?.id === "cycle1");
+  assert.deepStrictEqual(
+    cycle.map((s) => s.date),
+    ["2026-10-30", "2026-11-06", "2026-11-13", "2026-11-20", "2026-11-27", "2026-12-04", "2026-12-11", "2026-12-18"],
+  );
+  cycle.forEach((s) => assert.strictEqual(new Date(`${s.date}T12:00:00`).getDay(), 5, `${s.date} is not a Friday`));
+  assert.deepStrictEqual(
+    cycle.map((s) => s.kind),
+    ["test", "vo2", "vo2", "vo2", "pyramid", "vo2", "vo2", "easy"],
+  );
+  assert.strictEqual(m.sessionNumber(cycle[2]), "Séance 3/8");
+  assert.strictEqual(m.sessionNumber({ date: "2027-01-08" }), null);
+  // a coach rewriting a Friday replaces its slot, it doesn't add a ninth
+  const edited = [...m.sessions, { id: "x", date: "2026-11-13", levels: {} }];
+  assert.strictEqual(m.sessionNumber(cycle[7], edited), "Séance 8/8");
+});
+check("cycle 1: the sessions progress — S4 recovers less than S2, S6 adds reps to S3, S7 is the longest", () => {
+  const by = (date) => m.sessions.find((s) => s.date === date);
+  const vma = 15;
+  const main = (s, level) => m.planFor(s, level).main;
+  // S2 → S4: same reps, same distance, shorter walk
+  levelIds.forEach((l) => {
+    const [a] = main(by("2026-11-06"), l);
+    const [b] = main(by("2026-11-20"), l);
+    assert.strictEqual(a.repeat, b.repeat);
+    assert.strictEqual(a.steps[0].run, b.steps[0].run);
+    assert.ok(m.toSeconds(b.rest.walk) < m.toSeconds(a.rest.walk), `${l}: S4 should recover less than S2`);
+  });
+  // S3 → S6: one more 30/30 per set
+  levelIds.forEach((l) => {
+    const reps = (s) => main(s, l)[0].steps[0].repeat;
+    const added = reps(by("2026-12-04")) - reps(by("2026-11-13"));
+    assert.ok(added >= 1 && added <= 2, `${l}: S6 should add one or two reps, not ${added}`);
+  });
+  // Level 3 always shorter than Level 2, Level 2 than Level 1
+  m.sessions
+    .filter((s) => s.kind !== "test")
+    .forEach((s) => {
+      const t = (l) => m.totalSeconds(s, l, vma);
+      assert.ok(t("level3") <= t("level2") && t("level2") <= t("level1"), `${s.id}: levels out of order`);
+    });
+  // the last hard session is the longest main set at race pace; the final one is the shortest
+  const mainSeconds = (s, l) => main(s, l).reduce((t, st) => t + m.stepSeconds(st, vma), 0);
+  const hard = m.sessions.filter((s) => s.kind === "vo2");
+  const longest = hard.reduce((a, b) => (mainSeconds(a, "level1") >= mainSeconds(b, "level1") ? a : b));
+  assert.strictEqual(longest.date, "2026-12-11");
+  const light = by("2026-12-18");
+  assert.ok(m.totalSeconds(light, "level1", vma) <= 35 * 60, "la séance légère stays under 35 minutes");
+  // every session fits the 16:30 → 17:45 slot
+  m.sessions.forEach((s) => assert.ok(m.totalSeconds(s, "level1", vma) <= 65 * 60, `${s.id}: over 65 minutes at VMA 15`));
+});
 
 console.log("Débuter");
 check("three programmes, 6 weeks × 3 sessions, tests move up A → B → C → Level 3", () => {

@@ -21,7 +21,8 @@
           "wodify",
           "wodifyapp",
           "wodifyclient"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

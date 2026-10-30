@@ -8,7 +8,7 @@ import Wordmark from "../components/Wordmark";
 import SectionLabel from "../components/SectionLabel";
 import UserContext from "../variables/context";
 
-import { splitSessions, formatDay, totalLabel, todayKey } from "../lib/plan";
+import { splitSessions, formatDay, totalLabel, todayKey, sessionNumber } from "../lib/plan";
 import { levelById } from "../lib/levels";
 import useSessions from "../lib/store";
 import { isBeginner, nextSession, sessionLabel, runMinutes, PROGRAMMES } from "../lib/beginner";
@@ -26,10 +26,13 @@ import { formatShortDate } from "../lib/plan";
 
 const formatVma = (vma) => `${String(vma).replace(".", ",")} km/h`;
 
-const NextCard = ({ session, onPress, override }) => {
+const NextCard = ({ session, onPress, override, sessions }) => {
   const { theme, preferences } = useContext(UserContext);
   const { colors, typography } = theme;
-  const kicker = override?.kicker ?? `${formatDay(session.date)} · ${totalLabel(session, preferences.level, preferences.vma)}`;
+  const position = sessionNumber(session, sessions);
+  const kicker =
+    override?.kicker ??
+    `${formatDay(session.date)}${position ? ` · ${position}` : ""} · ${totalLabel(session, preferences.level, preferences.vma)}`;
   const title = override?.title ?? session.title;
   const summary = override?.summary ?? session.summary;
 
@@ -88,14 +91,18 @@ const NextCard = ({ session, onPress, override }) => {
   );
 };
 
-const RowCard = ({ session, done, onPress }) => {
+const RowCard = ({ session, done, onPress, sessions }) => {
   const { theme, preferences } = useContext(UserContext);
   const { colors, typography } = theme;
+  const position = sessionNumber(session, sessions);
   return (
     <Pressable onPress={onPress}>
       <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[typography.finePrint, { fontSize: 13 }]}>{formatDay(session.date)}</Text>
+          <Text style={[typography.finePrint, { fontSize: 13 }]}>
+            {formatDay(session.date)}
+            {position ? ` · ${position}` : ""}
+          </Text>
           <Text style={[typography.heading, typography.bold]} numberOfLines={1}>
             {session.title}
           </Text>
@@ -244,7 +251,7 @@ const HomeScreen = ({ navigation }) => {
         {next && !beginner ? (
           <View style={styles.section}>
             <SectionLabel>Prochaine séance</SectionLabel>
-            <NextCard session={next} onPress={() => open(next)} />
+            <NextCard session={next} sessions={sessions} onPress={() => open(next)} />
             {!preferences.vma && level.group === "club" && (
               <Text style={[typography.finePrint, styles.hint]}>
                 Ajoute ta VMA et chaque fraction affichera le temps à viser.
@@ -261,7 +268,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.section}>
             <SectionLabel>À venir</SectionLabel>
             {upcoming.map((s) => (
-              <RowCard key={s.id} session={s} onPress={() => open(s)} />
+              <RowCard key={s.id} session={s} sessions={sessions} onPress={() => open(s)} />
             ))}
           </View>
         )}
@@ -270,7 +277,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.section}>
             <SectionLabel>Passées</SectionLabel>
             {past.map((s) => (
-              <RowCard key={s.id} session={s} done={!!preferences.done?.[s.id]} onPress={() => open(s)} />
+              <RowCard key={s.id} session={s} sessions={sessions} done={!!preferences.done?.[s.id]} onPress={() => open(s)} />
             ))}
           </View>
         )}

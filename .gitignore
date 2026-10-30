@@ -41,3 +41,6 @@ yarn-error.*
 /android
 .generator.bundle.js
 dist-web/
+
+# Google Play service account key (eas submit) — never commit it
+google-play-service-account.json

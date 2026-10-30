@@ -11,7 +11,7 @@ import SectionLabel from "../components/SectionLabel";
 import BookingCard from "../components/BookingCard";
 import UserContext from "../variables/context";
 
-import { planFor, describeStep, formatDay, totalLabel, todayKey } from "../lib/plan";
+import { planFor, describeStep, formatDay, totalLabel, todayKey, sessionNumber } from "../lib/plan";
 import useSessions from "../lib/store";
 import levels, { levelById } from "../lib/levels";
 import { reportProgress } from "../lib/member";
@@ -28,10 +28,13 @@ const SessionScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { theme, preferences, setPreference } = useContext(UserContext);
   const { colors, typography } = theme;
-  const session = useSessions().byId(route.params?.id);
+  const { sessions, byId } = useSessions();
+  const session = byId(route.params?.id);
   const [levelId, setLevelId] = useState(preferences.level);
 
   if (!session) return null;
+
+  const position = sessionNumber(session, sessions);
 
   const vma = preferences.vma;
   const plan = planFor(session, levelId);
@@ -54,7 +57,7 @@ const SessionScreen = ({ navigation, route }) => {
   ].filter((p) => p.steps.length);
 
   return (
-    <SlideScreenContainer title={formatDay(session.date)} type="back" navigation={navigation} route={route} ignoreKeyboard>
+    <SlideScreenContainer title={`${formatDay(session.date)}${position ? ` · ${position}` : ""}`} type="back" navigation={navigation} route={route} ignoreKeyboard>
       <ScrollView
         style={{ width: "100%" }}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 30 }]}

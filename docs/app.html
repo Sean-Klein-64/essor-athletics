@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Essor Athletics — l'app du run club, pour les adhérents.">
+<meta property="og:title" content="Essor Athletics — l'app">
+<meta property="og:description" content="Tes séances, tes allures, ta course. Réservée aux adhérents du run club.">
+<title>L'app · Essor Athletics</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@1,900&family=DM+Sans:wght@400;500;600&display=swap">
+<style>
+/* Same look as index.html and vma.html: near-black, off-white, vert sapin and mint. */
+:root {
+  --bg: #0A0A0A; --fg: #FAFAF8; --card: #161616; --line: #262626; --muted: #9AA7A1;
+  --accent: #1E4D3A; --accent-soft: rgba(124,196,162,0.12); --mint: #7CC4A2;
+  --display: 'Archivo', 'Arial Black', Arial, sans-serif; --body: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body { font-family: var(--body); font-size: 17px; line-height: 1.45; }
+[hidden] { display: none !important }
+.hero { position: relative; overflow: hidden; background: linear-gradient(160deg, #12291f 0%, #0A0A0A 70%); }
+.hero .in { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 22px max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 8px; min-height: 190px; justify-content: flex-end; }
+.lanes { position: absolute; right: -14%; top: -30%; width: 64%; max-width: 360px; opacity: 0.45; }
+.brand { display: flex; align-items: baseline; gap: 8px; }
+.brand a { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 46px; letter-spacing: -1.4px; line-height: 0.95; color: #fff; text-decoration: none; }
+.brand span { font-size: 15px; color: var(--mint); letter-spacing: 3px; }
+.kicker { font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); margin: 0; }
+.hero .kicker { color: var(--mint); }
+.wrap { max-width: 520px; margin: 0 auto; padding: 18px max(16px, env(safe-area-inset-right, 0px)) 56px max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 18px; }
+h1 { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 34px; line-height: 1.02; letter-spacing: -0.9px; margin: 0; text-wrap: balance; }
+h2 { font-size: 20px; font-weight: 600; line-height: 1.2; margin: 0; }
+p { margin: 0 }
+.muted { color: var(--muted); font-size: 15px; }
+.small { font-size: 13px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.btn { font: inherit; font-size: 18px; font-weight: 500; border: 0; border-radius: 26px; height: 52px; padding: 0 20px; background: var(--mint); color: #0A0A0A; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; }
+.btn.line { background: transparent; color: var(--fg); border: 1px solid var(--line); font-size: 16px; height: 46px; }
+.btn[aria-disabled="true"] { background: var(--line); color: var(--muted); pointer-events: none; }
+.btn:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+.steps { margin: 0; padding: 0 0 0 22px; display: flex; flex-direction: column; gap: 8px; color: var(--fg); }
+.steps li::marker { color: var(--mint); font-weight: 600; }
+.phone { display: flex; align-items: center; gap: 10px; }
+.phone svg { flex: none; }
+.footer { color: var(--muted); font-size: 13px; text-align: center; }
+.footer a { color: var(--mint); }
+</style>
+</head>
+<body>
+<header class="hero">
+  <svg class="lanes" viewBox="0 0 400 620" aria-hidden="true">
+    <rect x="1" y="1" width="398" height="618" rx="199" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.6"/>
+    <rect x="15" y="15" width="370" height="590" rx="185" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.45"/>
+    <rect x="29" y="29" width="342" height="562" rx="171" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.3"/>
+    <rect x="43" y="43" width="314" height="534" rx="157" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.18"/>
+  </svg>
+  <div class="in">
+    <p class="kicker">Run club · CrossFit Essor</p>
+    <div class="brand"><a href="./">essor</a><span>athletics</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div>
+    <h1>L'app du run club</h1>
+    <p class="muted" style="margin-top:8px">Tes séances du vendredi avec tes temps à viser, ta VMA et tes zones, tes records, ta course. Réservée aux adhérents inscrits au run club.</p>
+  </div>
+
+  <!-- iPhone -->
+  <section class="card" id="ios">
+    <div class="phone">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
+      <h2>iPhone</h2>
+    </div>
+    <p class="muted">L'app passe par TestFlight, l'outil d'Apple pour les apps en accès privé.</p>
+    <ol class="steps">
+      <li>Installe <b>TestFlight</b> depuis l'App Store si tu ne l'as pas.</li>
+      <li>Reviens ici et appuie sur le bouton : TestFlight s'ouvre, puis <b>Installer</b>.</li>
+      <li>Ouvre <b>essor athletics</b>, « Je cours avec Essor », ton numéro + ton prénom.</li>
+    </ol>
+    <a class="btn" id="iosBtn" href="#" aria-disabled="true">Bientôt disponible</a>
+    <a class="btn line" href="https://apps.apple.com/app/testflight/id899247664">Installer TestFlight d'abord</a>
+  </section>
+
+  <!-- Android -->
+  <section class="card" id="android">
+    <div class="phone">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
+      <h2>Android</h2>
+    </div>
+    <p class="muted">L'app est sur Google Play en test fermé : seuls les comptes Google de la liste peuvent l'installer.</p>
+    <ol class="steps">
+      <li>Envoie-nous l'adresse Gmail de ton téléphone (WhatsApp du run club) — on t'ajoute à la liste.</li>
+      <li>Une fois ajouté·e, appuie sur le bouton et accepte l'invitation.</li>
+      <li>Installe depuis Google Play, puis « Je cours avec Essor », ton numéro + ton prénom.</li>
+    </ol>
+    <a class="btn" id="androidBtn" href="#" aria-disabled="true">Bientôt disponible</a>
+  </section>
+
+  <section class="card">
+    <h2>Ça ne marche pas ?</h2>
+    <p class="muted">Le numéro et le prénom doivent être ceux de ton questionnaire. Si l'app dit que ton accès n'est pas encore ouvert, c'est que ton inscription au run club n'est pas finalisée : écris-nous sur le groupe WhatsApp.</p>
+    <a class="btn line" href="./vma.html">Ma VMA, sur le site</a>
+  </section>
+
+  <p class="footer">Essor Athletics · <a href="./">le run club</a></p>
+</main>
+
+<script>
+/*
+  Fill in the two links once the builds are up — nothing else to change:
+    IOS_LINK      the TestFlight public link (App Store Connect → TestFlight → the external group → Public Link)
+    ANDROID_LINK  the Google Play "join on the web" link of the testing track (Play Console → Testing → the track → Testers tab)
+  Leave a link empty and its button stays "Bientôt disponible".
+*/
+const IOS_LINK = "";
+const ANDROID_LINK = "";
+
+const wire = (id, href, label) => {
+  const a = document.getElementById(id);
+  if (!href) return;
+  a.href = href;
+  a.textContent = label;
+  a.removeAttribute("aria-disabled");
+};
+wire("iosBtn", IOS_LINK, "Ouvrir dans TestFlight");
+wire("androidBtn", ANDROID_LINK, "Rejoindre le test sur Google Play");
+
+/* Show the visitor's own phone first */
+const ua = navigator.userAgent || "";
+const isIOS = /iPhone|iPad|iPod/.test(ua);
+const isAndroid = /Android/.test(ua);
+if (isAndroid) document.getElementById("android").parentNode.insertBefore(document.getElementById("android"), document.getElementById("ios"));
+if (isIOS || isAndroid) document.getElementById(isIOS ? "android" : "ios").querySelector("ol").hidden = true;
+</script>
+</body>
+</html>

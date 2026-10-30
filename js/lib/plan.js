@@ -166,5 +166,33 @@ export const splitSessions = (today = todayKey(), list = sessions) => {
   };
 };
 
+/* ── Cycle ─────────────────────────────────────────────────────────────── */
+
+/*
+  The cycle a session belongs to: 8 Fridays towards the Course du Bout de l'An.
+  "Séance 3/8" comes from the session's place among the cycle's dates, so a
+  coach-written session on one of those Fridays replaces its slot rather
+  than adding a ninth.
+*/
+export const CYCLES = [
+  { id: "cycle1", name: "Cycle 1", from: "2026-10-30", to: "2026-12-18", race: "Course du Bout de l'An" },
+];
+
+export const cycleOf = (date) => CYCLES.find((c) => date >= c.from && date <= c.to);
+
+/* { cycle, index: 3, of: 8 } or null when the session sits outside every cycle */
+export const cyclePosition = (session, list = sessions) => {
+  const cycle = cycleOf(session.date);
+  if (!cycle) return null;
+  const dates = [...new Set(list.filter((s) => cycleOf(s.date) === cycle).map((s) => s.date))].sort();
+  return { cycle, index: dates.indexOf(session.date) + 1, of: dates.length };
+};
+
+/* "Séance 3/8" — the session's place in its cycle */
+export const sessionNumber = (session, list) => {
+  const p = cyclePosition(session, list);
+  return p ? `Séance ${p.index}/${p.of}` : null;
+};
+
 /* Built-in sessions only — the app uses useSessions().byId (js/lib/store.js) */
 export const sessionById = (id) => sessions.find((s) => s.id === id);
