@@ -9,6 +9,7 @@ import RecordScreen from "../../screens/RecordScreen";
 import QuestionScreen from "../../screens/QuestionScreen";
 import ProgrammeScreen from "../../screens/ProgrammeScreen";
 import BeginnerSessionScreen from "../../screens/BeginnerSessionScreen";
+import BeginnerTimerScreen from "../../screens/BeginnerTimerScreen";
 import CoachCodeScreen from "../../screens/CoachCodeScreen";
 import SessionEditorScreen from "../../screens/SessionEditorScreen";
 import CoachSessionScreen from "../../screens/CoachSessionScreen";
@@ -34,6 +35,7 @@ const AppNavigator = createStackNavigator();
     Question         reopens a sign-up question ({ field })
     Programme        a Débuter programme in full ({ level })
     BeginnerSession  one walk-run session ({ level, index })
+    BeginnerTimer    the chrono for that session ({ level, index })
     CoachCode        unlock the coach view
     SessionEditor    coach: write / edit a club session ({ id })
     CoachSession     coach: the session hub — who's coming, their paces ({ id })
@@ -56,6 +58,7 @@ const AppStack = () => (
     <AppNavigator.Screen name="Question" component={QuestionScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="Programme" component={ProgrammeScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="BeginnerSession" component={BeginnerSessionScreen} options={verticalSlideModal} />
+    <AppNavigator.Screen name="BeginnerTimer" component={BeginnerTimerScreen} options={{ ...verticalSlideModal, gestureEnabled: false }} />
     <AppNavigator.Screen name="CoachCode" component={CoachCodeScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="SessionEditor" component={SessionEditorScreen} options={verticalSlideModal} />
     <AppNavigator.Screen name="CoachSession" component={CoachSessionScreen} options={verticalSlideModal} />

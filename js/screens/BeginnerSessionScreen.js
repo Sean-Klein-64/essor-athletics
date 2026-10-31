@@ -77,6 +77,18 @@ const BeginnerSessionScreen = ({ navigation, route }) => {
           {!!session.note && <Text style={[typography.finePrint, styles.summary]}>{session.note}</Text>}
         </View>
 
+        <Pressable onPress={() => navigation.navigate("BeginnerTimer", { level: levelId, index: session.index })}>
+          <View style={[styles.timer, { backgroundColor: colors.accent }]}>
+            <View style={styles.timerPlay}>
+              <Glyph name="play" size={20} color={colors.accent} />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={styles.timerTitle}>Lancer le chrono</Text>
+              <Text style={styles.timerSub}>Il te dit quand courir et quand marcher — même téléphone verrouillé.</Text>
+            </View>
+          </View>
+        </Pressable>
+
         {parts.map((part) => (
           <View key={part.key} style={styles.section}>
             <SectionLabel>{part.label}</SectionLabel>
@@ -128,6 +140,10 @@ const styles = StyleSheet.create({
   rule: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
   check: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
   hint: { textAlign: "center", fontSize: 14 },
+  timer: { flexDirection: "row", alignItems: "center", gap: 14, borderRadius: 20, padding: 14, marginTop: 2 },
+  timerPlay: { width: 44, height: 44, borderRadius: 22, backgroundColor: "white", alignItems: "center", justifyContent: "center", paddingLeft: 3 },
+  timerTitle: { color: "white", fontSize: 20, fontFamily: "DiatypePreTrial-Medium", letterSpacing: -0.4 },
+  timerSub: { color: "rgba(255,255,255,0.78)", fontSize: 14, lineHeight: 18, fontFamily: "DiatypePre-Regular" },
 });
 
 export default BeginnerSessionScreen;

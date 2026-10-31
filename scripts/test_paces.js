@@ -13,7 +13,7 @@ const out = path.join(__dirname, ".paces.bundle.js");
 fs.writeFileSync(
   entry,
   `export * from "../js/lib/paces"; export * from "../js/lib/plan"; export * from "../js/lib/records";
-   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export * from "../js/lib/history"; export { default as goal } from "../js/lib/goal";
+   export * from "../js/lib/beginner"; export * from "../js/lib/placement"; export * from "../js/lib/editor"; export * from "../js/lib/goal"; export * from "../js/lib/booking"; export * from "../js/lib/member"; export * from "../js/lib/coach"; export * from "../js/lib/objectives"; export * from "../js/lib/photo"; export * from "../js/lib/history"; export * from "../js/lib/timer"; export { default as goal } from "../js/lib/goal";
    export { default as sessions } from "../js/lib/sessions"; export { default as levels } from "../js/lib/levels";`,
 );
 try {
@@ -447,6 +447,48 @@ check("Wodify: app first, then store, then website", () => {
   assert.ok(ios.includes("itms-apps://apps.apple.com/app/id1563729830"));
   assert.ok(ios[ios.length - 1].includes("app.wodify.com"));
   assert.ok(m.wodifyTargets("android").some((t) => t.url.startsWith("market://")));
+});
+
+console.log("Chrono (Débuter)");
+const s5 = m.PROGRAMMES.beginnerA.weeks[0][0]; // 5×(1'/1')
+const ph = m.sessionPhases(s5);
+check("5×(1'/1') is warm-up + 5 runs + 4 walks + cool-down", () => {
+  assert.strictEqual(ph.length, 11);
+  assert.deepStrictEqual(ph.map((p) => p.kind), ["walk", "run", "walk", "run", "walk", "run", "walk", "run", "walk", "run", "walk"]);
+});
+check("total is 5' + 9' + 5' = 19'", () => assert.strictEqual(m.phasesSeconds(ph), 19 * 60));
+check("a continuous 15' is walk / run / walk", () => {
+  const c = m.sessionPhases(m.PROGRAMMES.beginnerB.weeks[3][2]);
+  assert.deepStrictEqual(c.map((p) => [p.kind, p.seconds]), [["walk", 300], ["run", 900], ["walk", 300]]);
+});
+check("at 5:30 the runner is in run 1 with 30\" left", () => {
+  const pos = m.positionAt(ph, 330);
+  assert.strictEqual(pos.index, 1);
+  assert.strictEqual(pos.remaining, 30);
+  assert.strictEqual(pos.total, 19 * 60 - 330);
+});
+check("past the end is done", () => assert.strictEqual(m.positionAt(ph, 5000).done, true));
+check("pause stops the clock, resume carries on", () => {
+  let c = m.startClock(0);
+  c = m.pauseClock(c, 10000);
+  assert.strictEqual(m.elapsedOf(c, 50000), 10);
+  c = m.resumeClock(c, 50000);
+  assert.strictEqual(m.elapsedOf(c, 60000), 20);
+});
+check("skip jumps to the start of the next phase", () => {
+  const c = m.skipPhase(m.startClock(0), ph, 100000);
+  assert.strictEqual(m.positionAt(ph, m.elapsedOf(c, 100000)).index, 1);
+  assert.strictEqual(m.positionAt(ph, m.elapsedOf(c, 100000)).remaining, 60);
+});
+check("countdown formatting", () => {
+  assert.strictEqual(m.formatCountdown(300), "5:00");
+  assert.strictEqual(m.formatCountdown(7.2), "0:08");
+});
+check("announcements are in French and say the set", () => {
+  assert.strictEqual(m.phaseAnnouncement(ph[0]), "Échauffement. 5 minutes de marche rapide.");
+  assert.strictEqual(m.phaseAnnouncement(ph[1], ph[2]), "Course 1 sur 5. Cours, 1 minute.");
+  assert.strictEqual(m.phaseAnnouncement(ph[2], ph[3]), "Marche, 1 minute.");
+  assert.strictEqual(m.phaseAnnouncement(ph[10]), "Retour au calme. 5 minutes de marche.");
 });
 
 (async () => {

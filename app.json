@@ -38,6 +38,7 @@
     },
     "plugins": [
       "expo-video",
+      ["expo-notifications", { "color": "#1E4D3A" }],
       [
         "expo-font",
         {
