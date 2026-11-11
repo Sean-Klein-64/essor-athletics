@@ -125,17 +125,21 @@ check("cycle 1: the 8 Fridays 30/10 → 18/12, in the agreed order, every one a 
   const edited = [...m.sessions, { id: "x", date: "2026-11-13", levels: {} }];
   assert.strictEqual(m.sessionNumber(cycle[7], edited), "Séance 8/8");
 });
-check("cycle 1: the block as built — S4 repeats S2, S6 adds reps to S3, S5 is Mel's (details to come)", () => {
+check("cycle 1: the block as built — S4 is 400s in two blocks, S6 adds reps to S3, S5 is Mel's pyramid", () => {
   const by = (date) => m.sessions.find((s) => s.date === date);
   const vma = 15;
   const main = (s, level) => m.planFor(s, level).main;
-  // S2 → S4: the same session (reps, distance, recovery)
+  // S4: 2 × (6 / 5 / 3 × 400 m at 95 %), 1' walk between reps, 3' walk between blocks
+  const reps400 = { level1: 6, level2: 5, level3: 3 };
   levelIds.forEach((l) => {
-    const [a] = main(by("2026-11-06"), l);
-    const [b] = main(by("2026-11-20"), l);
-    assert.strictEqual(a.repeat, b.repeat);
-    assert.strictEqual(a.steps[0].run, b.steps[0].run);
-    assert.strictEqual(m.toSeconds(b.rest.walk), m.toSeconds(a.rest.walk), `${l}: S4 is the same session as S2`);
+    const [set] = main(by("2026-11-20"), l);
+    assert.strictEqual(set.repeat, 2, `${l}: S4 is two blocks`);
+    assert.strictEqual(m.toSeconds(set.rest.walk), 180, `${l}: 3' between blocks`);
+    const [block] = set.steps;
+    assert.strictEqual(block.repeat, reps400[l], `${l}: S4 reps per block`);
+    assert.strictEqual(block.steps[0].run, 400);
+    assert.strictEqual(block.steps[0].vma, 95);
+    assert.strictEqual(m.toSeconds(block.rest.walk), 60, `${l}: 1' between 400s`);
   });
   // S3 → S6: one or two more 30/30 per set
   levelIds.forEach((l) => {
@@ -143,9 +147,12 @@ check("cycle 1: the block as built — S4 repeats S2, S6 adds reps to S3, S5 is 
     const added = reps(by("2026-12-04")) - reps(by("2026-11-13"));
     assert.ok(added >= 1 && added <= 2, `${l}: S6 should add one or two reps, not ${added}`);
   });
-  // S5: Mel's session — a note only until she sends it
+  // S5: Mel's pyramid — 400/300/200/200/300/400, two blocks (Level 3: a block and a half)
   const pyr = by("2026-11-27");
-  levelIds.forEach((l) => assert.ok(/Mel/.test(pyr.levels[l][0].note || ""), `${l}: S5 should still be Mel's placeholder`));
+  const metres = (steps) => steps.reduce((sum, st) => sum + (st.repeat ? st.repeat * metres(st.steps) : typeof st.run === "number" ? st.run : 0), 0);
+  assert.strictEqual(metres(main(pyr, "level1")), 3600);
+  assert.strictEqual(metres(main(pyr, "level2")), 3600);
+  assert.strictEqual(metres(main(pyr, "level3")), 2700);
   // Level 3 always shorter than Level 2, Level 2 than Level 1
   m.sessions
     .filter((s) => s.kind !== "test" && s.kind !== "pyramid")

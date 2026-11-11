@@ -52,6 +52,21 @@ const sharedWarmup = [
 
 const sharedCooldown = [{ easy: "10:00", note: "Très facile, puis étirements" }];
 
+// One block of Mel's pyramid (session 5): down then back up, 1' walk between reps.
+const pyramidBlock = [
+  { run: 400, vma: 95 },
+  { walk: "1:00" },
+  { run: 300, vma: 100 },
+  { walk: "1:00" },
+  { run: 200, vma: 100 },
+  { walk: "1:00" },
+  { run: 200, vma: 100 },
+  { walk: "1:00" },
+  { run: 300, vma: 100 },
+  { walk: "1:00" },
+  { run: 400, vma: 95 },
+];
+
 const sessions = [
   {
     id: "2026-10-30-test-vma",
@@ -110,19 +125,19 @@ const sessions = [
   {
     id: "2026-11-20-vo2-10k",
     date: "2026-11-20",
-    title: "VO2 Max",
+    title: "VO2 Max 400 m",
     kind: "vo2",
     summary:
-      "Des répétitions à ton allure 10 km, 2' de récup en marchant. Toutes à la même vitesse : si la dernière est la plus lente, tu es parti·e trop vite.",
+      "Des 400 m en deux blocs, un peu plus vite que ton allure 10 km. 1' de récup en marchant entre les 400, 3' entre les deux blocs. Régulier du premier au dernier.",
     warmup: [
       { easy: "15:00" },
       { drills: "Skipping, talons-fesses, montées de genoux" },
     ],
     cooldown: sharedCooldown,
     levels: {
-      level1: [{ repeat: 5, steps: [{ run: 1000, vma: 90 }], rest: { walk: "2:00" } }],
-      level2: [{ repeat: 4, steps: [{ run: 1000, vma: 90 }], rest: { walk: "2:00" } }],
-      level3: [{ repeat: 3, steps: [{ run: 800, vma: 90 }], rest: { walk: "2:00" } }],
+      level1: [{ repeat: 2, steps: [{ repeat: 6, steps: [{ run: 400, vma: 95 }], rest: { walk: "1:00" } }], rest: { walk: "3:00" } }],
+      level2: [{ repeat: 2, steps: [{ repeat: 5, steps: [{ run: 400, vma: 95 }], rest: { walk: "1:00" } }], rest: { walk: "3:00" } }],
+      level3: [{ repeat: 2, steps: [{ repeat: 3, steps: [{ run: 400, vma: 95 }], rest: { walk: "1:00" } }], rest: { walk: "3:00" } }],
     },
   },
   {
@@ -130,13 +145,14 @@ const sessions = [
     date: "2026-11-27",
     title: "Pyramide",
     kind: "pyramid",
-    summary: "Séance préparée par Mel : les détails arrivent bientôt.",
+    summary:
+      "La pyramide de Mel : 400 / 300 / 200, puis on remonte 200 / 300 / 400. Les 200 et 300 à ta VMA, les 400 juste en dessous. 1' de récup en marchant entre chaque, 3' entre les blocs.",
     warmup: [{ easy: "15:00" }, { drills: "Skipping, talons-fesses, montées de genoux" }],
     cooldown: sharedCooldown,
     levels: {
-      level1: [{ note: "Séance préparée par Mel, détails à venir" }],
-      level2: [{ note: "Séance préparée par Mel, détails à venir" }],
-      level3: [{ note: "Séance préparée par Mel, détails à venir" }],
+      level1: [{ repeat: 2, steps: pyramidBlock, rest: { walk: "3:00" } }],
+      level2: [{ repeat: 2, steps: pyramidBlock, rest: { walk: "3:00" } }],
+      level3: [...pyramidBlock, { walk: "3:00" }, ...pyramidBlock.slice(0, 5)],
     },
   },
   {
