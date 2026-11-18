@@ -576,16 +576,36 @@ function renderAdminCalendar(by) {
 }
 
 (async () => {
-  if (!coach || !code) { app.innerHTML = `<h1>Lien incomplet</h1><p class="muted">Utilise le lien que Sean t'a envoyé.</p>`; return; }
+  if (!coach || !code) {
+    // Arriving from the site without a personal link: reopen the last planning used on this device, or ask once.
+    let saved = null; try { saved = JSON.parse(localStorage.getItem("planning_me") || "null"); } catch (e) {}
+    if (saved && saved.c && saved.k && !q.get("login")) { location.replace(`?c=${encodeURIComponent(saved.c)}&k=${encodeURIComponent(saved.k)}`); return; }
+    const names = [["sean", "Sean"], ...Object.entries(P.coaches).map(([id, c]) => [id, c.name])];
+    app.innerHTML = `<h1>Espace coachs</h1><p class="muted">Choisis ton prénom et entre ton code (celui de ton lien). Ce téléphone s'en souviendra.</p>
+      <form id="login" class="card" style="margin-top:16px">
+        <label class="small muted" for="lc">Prénom</label>
+        <select id="lc" style="width:100%;font:inherit;font-size:17px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;margin:6px 0 14px">${names.map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join("")}</select>
+        <label class="small muted" for="lk">Code</label>
+        <input id="lk" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" required style="width:100%;font:inherit;font-size:17px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:6px">
+        <button class="btn" type="submit">Ouvrir mon planning</button>
+      </form>`;
+    document.getElementById("login").addEventListener("submit", e => {
+      e.preventDefault(); const k = document.getElementById("lk").value.trim(); if (!k) return;
+      location.href = `?c=${encodeURIComponent(document.getElementById("lc").value)}&k=${encodeURIComponent(k)}`;
+    });
+    return;
+  }
+  const remember = () => { try { localStorage.setItem("planning_me", JSON.stringify({ c: coach, k: code })); } catch (e) {} };
   try {
-    if (coach === "sean") { renderAdmin(await rpc("planning_all", { p_code: code, p_month: P.month })); return; }
+    if (coach === "sean") { const all = await rpc("planning_all", { p_code: code, p_month: P.month }); remember(); renderAdmin(all); return; }
     if (!P.coaches[coach]) throw new Error("unknown coach");
     const rows = await rpc("planning_mine", { p_coach: coach, p_code: code, p_month: P.month });
     for (const r of rows) answers[r.session_key] = { answer: r.answer, comment: r.comment || "" };
-    renderCoach();
+    remember(); renderCoach();
   } catch (e) {
     console.error(e);
-    app.innerHTML = `<h1>Lien non reconnu</h1><p class="muted">Ce lien ne marche pas (ou la connexion a échoué). Demande à Sean de te le renvoyer.</p>`;
+    app.innerHTML = `<h1>Lien non reconnu</h1><p class="muted">Ce lien ne marche pas (ou la connexion a échoué). Demande à Sean de te le renvoyer.</p><a class="btn ghost" href="?login=1">Entrer mon code</a>`;
+    try { localStorage.removeItem("planning_me"); } catch (e2) {}
   }
 })();
 </script>
