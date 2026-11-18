@@ -1,0 +1,135 @@
+{
+ "banner": "Salle fermée jeu. 24, ven. 25 et sam. 26/12, puis ven. 01/01. Du lun. 28 au jeu. 31/12 : horaires réduits. Reprise normale lun. 04/01.",
+ "notes": {
+  "2026-12-12": "Repas de Noël de la salle ce jour-là.",
+  "2026-12-28": "Horaires réduits de Noël.",
+  "2026-12-29": "Horaires réduits de Noël.",
+  "2026-12-30": "Horaires réduits de Noël.",
+  "2026-12-31": "Matin seulement.",
+  "2027-01-02": "Reprise normale lun. 04/01."
+ },
+ "coaches": {
+  "joffrey": {
+   "name": "Joffrey",
+   "master": "JOFFREY",
+   "file": "Planning_Decembre_2026_Joffrey.xlsx",
+   "tags": {
+    "2026-12-12_1000_HYROX": "déjà calé",
+    "2026-12-12_1100_SPÉ-LIFT": "déjà calé",
+    "2026-12-18_1230_WOD": "déjà calé",
+    "2026-12-21_1230_HYBRID": "déjà calé"
+   },
+   "swaps": {
+    "2026-12-29_1030_HYROX": {
+     "why": "Horaires réduits de Noël : la salle tourne avec quatre cours par jour du lun. 28 au mer. 30/12, et le matin seulement le jeu. 31."
+    },
+    "2026-12-29_1130_LIFT": {
+     "why": "Horaires réduits de Noël : la salle tourne avec quatre cours par jour du lun. 28 au mer. 30/12, et le matin seulement le jeu. 31."
+    },
+    "2026-12-30_1700_BUILD": {
+     "why": "Horaires réduits de Noël : la salle tourne avec quatre cours par jour du lun. 28 au mer. 30/12, et le matin seulement le jeu. 31."
+    },
+    "2026-12-30_1800_BUILD": {
+     "why": "Horaires réduits de Noël : la salle tourne avec quatre cours par jour du lun. 28 au mer. 30/12, et le matin seulement le jeu. 31."
+    },
+    "2026-12-31_1030_GYM": {
+     "why": "Horaires réduits de Noël : la salle tourne avec quatre cours par jour du lun. 28 au mer. 30/12, et le matin seulement le jeu. 31."
+    },
+    "2026-12-31_1230_GYM": {
+     "why": "Horaires réduits de Noël : la salle tourne avec quatre cours par jour du lun. 28 au mer. 30/12, et le matin seulement le jeu. 31."
+    }
+   }
+  },
+  "lilou": {
+   "name": "Lilou",
+   "master": "LILOU",
+   "file": "Planning_Decembre_2026_Lilou.xlsx",
+   "swaps": {
+    "2026-12-21_1600_FREE": {
+     "from": "SEAN",
+     "why": "Sean absent (Angleterre, ven. 18/12 – mar. 22/12)."
+    },
+    "2026-12-21_1700_HYBRID": {
+     "from": "SEAN",
+     "why": "Sean absent (Angleterre, ven. 18/12 – mar. 22/12)."
+    },
+    "2026-12-21_1800_HYBRID": {
+     "from": "SEAN",
+     "why": "Sean absent (Angleterre, ven. 18/12 – mar. 22/12)."
+    }
+   }
+  },
+  "thomas": {
+   "name": "Thomas",
+   "master": "THOMAS",
+   "file": "Planning_Decembre_2026_Thomas.xlsx",
+   "swaps": {
+    "2026-12-28_1700_HYBRID": {
+     "why": "Horaires réduits de Noël : la salle tourne avec quatre cours par jour du lun. 28 au mer. 30/12, et le matin seulement le jeu. 31."
+    },
+    "2026-12-28_1800_HYBRID": {
+     "why": "Horaires réduits de Noël : la salle tourne avec quatre cours par jour du lun. 28 au mer. 30/12, et le matin seulement le jeu. 31."
+    },
+    "2026-12-29_1700_LIFT": {
+     "why": "Horaires réduits de Noël : la salle tourne avec quatre cours par jour du lun. 28 au mer. 30/12, et le matin seulement le jeu. 31."
+    },
+    "2026-12-29_1800_LIFT": {
+     "why": "Horaires réduits de Noël : la salle tourne avec quatre cours par jour du lun. 28 au mer. 30/12, et le matin seulement le jeu. 31."
+    },
+    "2027-01-02_1000_HYROX": {
+     "why": "Samedi de la semaine du Nouvel An : la salle est ouverte, avec tes deux cours habituels. Tu es là ?"
+    },
+    "2027-01-02_1100_SPÉ-LIFT": {
+     "why": "Samedi de la semaine du Nouvel An : la salle est ouverte, avec tes deux cours habituels. Tu es là ?"
+    }
+   }
+  },
+  "ines": {
+   "name": "Inès",
+   "master": "INES",
+   "file": "Planning_Decembre_2026_Ines.xlsx",
+   "swaps": {
+    "2026-12-23_0700_BUILD": {
+     "why": "On t'a notée en congé du 21/12 au 02/01, à confirmer. Peux-tu quand même assurer cette séance ?"
+    },
+    "2026-12-23_0830_BUILD": {
+     "why": "On t'a notée en congé du 21/12 au 02/01, à confirmer. Peux-tu quand même assurer cette séance ?"
+    },
+    "2026-12-30_1030_BUILD": {
+     "why": "On t'a notée en congé du 21/12 au 02/01, à confirmer. Peux-tu quand même assurer cette séance ?"
+    },
+    "2026-12-30_1130_BUILD": {
+     "why": "On t'a notée en congé du 21/12 au 02/01, à confirmer. Peux-tu quand même assurer cette séance ?"
+    }
+   }
+  },
+  "mel": {
+   "name": "Mel",
+   "master": "MEL",
+   "file": "Planning_Decembre_2026_Mel.xlsx"
+  },
+  "teo": {
+   "name": "Teo",
+   "master": "TEO",
+   "file": "Planning_Decembre_2026_Teo.xlsx",
+   "swaps": {
+    "2026-12-22_1230_HYROX": {
+     "from": "SEAN",
+     "why": "Sean absent (Angleterre, ven. 18/12 – mar. 22/12)."
+    },
+    "2026-12-22_1600_FREE": {
+     "from": "SEAN",
+     "why": "Sean absent (Angleterre, ven. 18/12 – mar. 22/12)."
+    },
+    "2026-12-23_1230_BUILD": {
+     "from": "SEAN",
+     "why": "Sean en congé à partir du mer. 23/12."
+    },
+    "2026-12-23_1800_BUILD": {
+     "from": "SEAN",
+     "why": "Sean en congé à partir du mer. 23/12."
+    }
+   }
+  }
+ }
+}

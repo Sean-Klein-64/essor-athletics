@@ -93,6 +93,63 @@ th { color: var(--muted); font-weight: 500; font-size: 12px; letter-spacing: 1px
 .chip[data-coach].off { text-decoration: line-through; opacity: 0.55; }
 .chip[data-coach].mark::after { content: attr(data-mark); float: right; font-size: 9px; font-weight: 700; }
 .day.many { min-height: 100px; }
+
+/* ── Coach view, phone first ── */
+.wrap { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
+.hello { font-size: 17px; color: var(--muted); margin: 0; }
+.hello b { color: var(--fg); font-weight: 600; }
+.steps { padding: 6px 16px; margin-top: 16px; }
+.step { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 0; border: 0; border-top: 1px solid var(--line); background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; min-height: 56px; }
+.step:first-child { border-top: 0; }
+.step .num { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--muted); }
+.step.now .num { border-color: var(--mint); color: var(--mint); }
+.step.ok .num { background: var(--mint); border-color: var(--mint); color: #0A0A0A; }
+.step .txt { flex: 1; }
+.step .txt b { display: block; font-size: 16px; font-weight: 600; }
+.step .txt span { display: block; font-size: 14px; color: var(--muted); }
+.step.ok .txt b { color: var(--muted); }
+.step .go { color: var(--muted); font-size: 18px; }
+.info { border-color: rgba(232,180,75,0.4); font-size: 15px; display: flex; gap: 10px; }
+.info .ic { flex: none; }
+.ask h3 { margin: 0; font-size: 19px; }
+.ask .meta { color: var(--muted); font-size: 15px; margin: 2px 0 8px; }
+.ask .why { font-size: 14.5px; color: var(--muted); margin: 0 0 12px; }
+.ask .from { color: var(--warn); font-weight: 500; }
+.ask { border-color: rgba(232,180,75,0.45); scroll-margin-top: 16px; }
+.ask.yes { border-color: rgba(124,196,162,0.5); }
+.ask.nope { border-color: rgba(224,122,95,0.5); }
+.seg button { min-height: 50px; font-size: 16px; font-weight: 500; }
+.linkbtn { font: inherit; font-size: 14px; color: var(--muted); background: transparent; border: 0; padding: 12px 0 2px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.dayhead { font-size: 13px; color: var(--muted); letter-spacing: 0.4px; padding: 14px 0 2px; border-top: 1px solid var(--line); }
+.dayhead:first-of-type { border-top: 0; padding-top: 2px; }
+.wkhead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.wkhead b { font-size: 16px; }
+.row { display: flex; align-items: center; gap: 10px; padding: 8px 0; min-height: 56px; }
+.row .time { min-width: 62px; font-variant-numeric: tabular-nums; }
+.row .time b { display: block; font-size: 16px; }
+.row .time span { font-size: 13px; color: var(--muted); }
+.row .what { flex: 1; font-size: 16px; font-weight: 600; }
+.row.off .time b, .row.off .what > b { text-decoration: line-through; color: var(--muted); }
+.row .what b { font-weight: 600; }
+button.cant { font: inherit; font-size: 14px; font-weight: 500; min-height: 44px; border: 1px solid var(--line); background: transparent; color: var(--fg); border-radius: 999px; padding: 0 14px; cursor: pointer; white-space: nowrap; }
+button.cant[aria-pressed="true"] { background: var(--bad-soft); color: var(--bad); border-color: rgba(224,122,95,0.5); }
+.rowstate { font-size: 13px; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.rowstate.ok { background: var(--accent-soft); color: var(--mint); }
+.rowstate.bad { background: var(--bad-soft); color: var(--bad); }
+.rowstate.wait { background: rgba(232,180,75,0.16); color: var(--warn); }
+.tag.set { background: var(--accent-soft); color: var(--mint); }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: rgba(10,10,10,0.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--line); padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); }
+.bar .in { max-width: 608px; margin: 0 auto; }
+.bar .btn { margin-top: 0; height: 54px; font-weight: 600; }
+.bar .btn.todo { background: var(--warn); }
+.bar .btn.fin { background: transparent; color: var(--mint); border: 1px solid rgba(124,196,162,0.5); }
+.bar .saved { text-align: center; font-size: 13px; color: var(--muted); margin-top: 6px; min-height: 18px; }
+.bar .saved.err { color: var(--bad); }
+.grid.six { grid-template-columns: repeat(6, 1fr); }
+.grid.six .chip { font-size: 11.5px; padding: 6px 4px; min-height: 40px; }
+.grid.six .chip small { font-size: 10.5px; }
+.grid.six .day { min-height: 64px; }
+@media (max-width: 380px) { body { font-size: 16px; } h1 { font-size: 27px; } .row .time { min-width: 56px; } button.cant { padding: 0 11px; } }
 footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
 </style>
 </head>
@@ -100,9 +157,12 @@ footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
 <div class="wrap">
   <div class="brand">essor<span>PLANNING COACHS</span></div>
   <div id="app"><p class="muted" style="margin-top:24px">Chargement…</p></div>
-  <footer>Les échanges passent toujours par Sean, pour que le planning et Wodify restent alignés. Une question : réponds au mail ou envoie un SMS.</footer>
+  <footer>Ton lien reste le même chaque mois. Les échanges passent toujours par Sean, pour que le planning et Wodify restent alignés. Une question : réponds au mail ou envoie un SMS.</footer>
 </div>
-<script src="data.js"></script>
+<script>
+/* Current month lives in data.js; older months in data-YYYY-MM.js, opened with &m=YYYY-MM. */
+(function () { var m = new URLSearchParams(location.search).get("m"); document.write('<script src="' + (/^\d{4}-\d{2}$/.test(m || "") ? "data-" + m + ".js" : "data.js") + '"><\/script>'); })();
+</script>
 <script>
 /* ── Supabase (same project as the run club). Data goes through the planning_* functions in supabase/planning.sql. ── */
 const SUPABASE_URL = "https://rqomypmgbjigukvztjxz.supabase.co";
@@ -136,90 +196,131 @@ let view = (() => { try { return localStorage.getItem('planning_view') || 'list'
 let openKey = null;
 let saving = 0;
 
-function statusBar(text, err) {
-  const el = document.getElementById("status");
-  if (!el) return;
-  el.className = "status" + (err ? " err" : "");
-  el.innerHTML = `<span class="dot"></span><span>${esc(text)}</span>`;
+function setSaved(text, err) {
+  const el = document.getElementById("saved"); if (!el) return;
+  el.className = "saved" + (err ? " err" : ""); el.textContent = text;
 }
 
 async function save(key, answer, comment) {
   answers[key] = { answer, comment: comment ?? answers[key]?.comment ?? "" };
-  saving++; statusBar("Enregistrement…");
+  saving++; setSaved("Enregistrement…");
   try {
     await rpc("planning_answer", { p_coach: coach, p_code: code, p_month: P.month, p_session: key, p_answer: answer, p_comment: answers[key].comment || null });
-    saving--; if (!saving) statusBar(summary());
+    saving--; if (!saving) setSaved("Enregistré ✓");
+    return true;
   } catch (e) {
-    saving--; statusBar("Pas enregistré — vérifie ta connexion et réessaie.", true); console.error(e);
+    saving--; setSaved("Pas enregistré — vérifie ta connexion et réessaie.", true); console.error(e);
+    return false;
   }
 }
 
-function summary() {
-  const me = P.coaches[coach];
-  const indispo = me.sessions.filter(s => !me.swaps.includes(s.key) && answers[s.key]?.answer === "indispo").length;
-  const swapsLeft = me.swaps.filter(k => !answers[k]?.answer).length;
-  if (answers._confirmed?.answer === "confirmed") return `Merci, c'est confirmé ✓${indispo ? ` (${indispo} indispo signalée${indispo > 1 ? "s" : ""})` : ""}`;
-  const parts = [];
-  if (swapsLeft) parts.push(`${swapsLeft} demande${swapsLeft > 1 ? "s" : ""} à répondre`);
-  if (indispo) parts.push(`${indispo} indispo signalée${indispo > 1 ? "s" : ""}`);
-  parts.push("tout est enregistré au fur et à mesure");
-  return parts.join(" · ");
+/* Any change after confirming puts the planning back to "à confirmer". */
+function touch() {
+  if (answers._confirmed?.answer === "confirmed") save("_confirmed", null, "");
+}
+
+const LONGDAY = iso => { const d = new Date(iso + "T12:00:00"); const M = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]; return `${d.getDate()} ${M[d.getMonth()]}`; };
+const nice = n => n[0] + n.slice(1).toLowerCase();
+const plural = (n, w) => `${n} ${w}${n > 1 ? "s" : ""}`;
+let openNotes = {};   // session_key -> true when the comment box is open
+
+function commentBox(key, attr) {
+  const has = !!answers[key]?.comment;
+  if (!has && !openNotes[key]) return `<button class="linkbtn" data-note="${esc(key)}">Ajouter un mot pour Sean</button>`;
+  return `<textarea placeholder="Un mot pour Sean (facultatif)" ${attr}="${esc(key)}">${esc(answers[key]?.comment || "")}</textarea>`;
 }
 
 function renderCoach() {
   const me = P.coaches[coach];
   const swaps = me.sessions.filter(s => me.swaps.includes(s.key));
+  const left = swaps.filter(s => !answers[s.key]?.answer);
   const weeks = [...new Set(me.sessions.map(s => s.wk))].sort((a, b) => a - b);
   const hours = me.sessions.reduce((t, s) => { const [h1, m1] = s.s.split(":").map(Number), [h2, m2] = s.e.split(":").map(Number); return t + (h2 * 60 + m2 - h1 * 60 - m1) / 60; }, 0);
-  let html = `<h1>${esc(P.label)} — ${esc(me.name)}</h1>
-  <p class="muted">${me.sessions.length} séance${me.sessions.length > 1 ? "s" : ""} · ${String(hours).replace(".", ",")} h. Vérifie tout, puis confirme en bas. Réponse sous 48 h, merci.</p>
-  <div id="status" class="status"><span class="dot"></span><span>…</span></div>
-  <div class="views"><button data-view="list" aria-pressed="${view === "list"}">Liste</button><button data-view="cal" aria-pressed="${view === "cal"}">Calendrier</button></div>`;
+  const indispo = me.sessions.filter(s => !me.swaps.includes(s.key) && answers[s.key]?.answer === "indispo").length;
+  const confirmed = answers._confirmed?.answer === "confirmed";
+
+  let html = `<h1>${esc(P.label)}</h1>
+  <p class="hello"><b>Salut ${esc(me.name)}.</b> ${plural(me.sessions.length, "séance")} · ${String(hours).replace(".", ",")} h ce mois-ci. Trois choses à faire, ça prend deux minutes.</p>
+  <div class="card steps">`;
+  if (swaps.length) html += `<button class="step ${left.length ? "now" : "ok"}" data-goto="${left.length ? esc(left[0].key) : "asks"}"><span class="num">${left.length ? "1" : "✓"}</span><span class="txt"><b>Réponds aux demandes</b><span>${left.length ? `${swaps.length - left.length} sur ${swaps.length} répondue${swaps.length - left.length > 1 ? "s" : ""}` : `${plural(swaps.length, "réponse")} enregistrée${swaps.length > 1 ? "s" : ""}`}</span></span><span class="go">›</span></button>`;
+  const n2 = swaps.length ? 2 : 1, n3 = n2 + 1;
+  html += `<button class="step ${confirmed ? "ok" : !left.length ? "now" : ""}" data-goto="plan"><span class="num">${confirmed ? "✓" : n2}</span><span class="txt"><b>Vérifie tes séances</b><span>${indispo ? `${plural(indispo, "indispo")} signalée${indispo > 1 ? "s" : ""}` : "Une séance impossible ? Appuie sur « Je ne peux pas »"}</span></span><span class="go">›</span></button>
+    <button class="step ${confirmed ? "ok" : !left.length ? "now" : ""}" data-goto="bar"><span class="num">${confirmed ? "✓" : n3}</span><span class="txt"><b>Confirme</b><span>${confirmed ? "C'est fait, merci" : "Le bouton vert en bas de l'écran"}</span></span><span class="go">›</span></button>
+  </div>`;
+  if (P.banner) html += `<div class="card info"><span class="ic">🎄</span><span>${esc(P.banner)}</span></div>`;
+  html += `<div class="views"><button data-view="list" aria-pressed="${view === "list"}">Liste</button><button data-view="cal" aria-pressed="${view === "cal"}">Calendrier</button></div>`;
 
   if (view === "cal") { html += renderCalendar(me); }
   if (view === "list" && swaps.length) {
-    html += `<h2>Ce qu'on te demande de prendre</h2>`;
+    html += `<h2 id="asks">On te demande · ${swaps.length}</h2>`;
+    if (left.length >= 3) html += `<button class="btn ghost" id="allok" style="margin:0 0 10px">OK pour ${left.length === swaps.length ? "tout" : `les ${left.length} qui restent`}</button>`;
     for (const s of swaps) {
       const a = answers[s.key]?.answer;
-      html += `<div class="card swap" data-key="${esc(s.key)}">
-        <div class="when"><b>${DAYS[s.day]} ${fmtDate(s.date)} · ${esc(s.s)}–${esc(s.e)}</b></div>
-        <div class="what"><b>${esc(s.cl)}</b></div>
-        <div class="why"><span class="from">À la place de ${esc(s.from[0] + s.from.slice(1).toLowerCase())}</span> — ${esc(s.why)}</div>
+      html += `<div class="card ask${a === "ok" ? " yes" : a === "pas_possible" ? " nope" : ""}" id="ask-${esc(s.key)}" data-key="${esc(s.key)}">
+        <h3>${esc(s.cl)}</h3>
+        <div class="meta">${esc(s.day)} ${LONGDAY(s.date)} · ${esc(s.s)}–${esc(s.e)}</div>
+        <p class="why">${s.from ? `<span class="from">À la place de ${esc(nice(s.from))}.</span> ` : ""}${esc(s.why)}</p>
         <div class="seg">
-          <button class="ok" aria-pressed="${a === "ok"}" data-ans="ok">OK, je prends</button>
-          <button class="no" aria-pressed="${a === "pas_possible"}" data-ans="pas_possible">Pas possible</button>
+          <button class="ok" aria-pressed="${a === "ok"}" data-ans="ok">${a === "ok" ? "✓ " : ""}OK, je prends</button>
+          <button class="no" aria-pressed="${a === "pas_possible"}" data-ans="pas_possible">${a === "pas_possible" ? "✕ " : ""}Pas possible</button>
         </div>
-        <textarea placeholder="Un mot si besoin (facultatif)" data-comment="${esc(s.key)}">${esc(answers[s.key]?.comment || "")}</textarea>
+        ${commentBox(s.key, "data-comment")}
       </div>`;
     }
   }
 
   if (view === "list") {
-  html += `<h2>Ton planning</h2><p class="muted small" style="margin:-4px 0 12px">Une séance que tu ne peux pas assurer ? Appuie sur « Indispo ».</p>`;
-  for (const wk of weeks) {
-    const list = me.sessions.filter(s => s.wk === wk);
-    html += `<div class="card"><div class="muted small" style="margin-bottom:6px">${esc(weekLabel(wk, me.sessions))}</div>`;
-    const notes = [...new Set(list.map(s => P.notes[s.date]).filter(Boolean))];
-    for (const n of notes) html += `<div class="week-note">${esc(n)}</div>`;
-    for (const s of list) {
-      const isSwap = me.swaps.includes(s.key);
-      const off = answers[s.key]?.answer === "indispo";
-      html += `<div class="sess${off ? " off" : ""}" data-key="${esc(s.key)}">
-        <div class="when"><b>${DAYS[s.day]} ${fmtDate(s.date)}</b><span>${esc(s.s)}–${esc(s.e)}</span></div>
-        <div class="what"><b>${esc(s.cl)}${s.typ === "1:1" ? `<span class="tag pt">1:1</span>` : ""}${isSwap ? `<span class="tag">demande</span>` : ""}</b></div>
-        ${isSwap ? `<span class="small muted">voir plus haut</span>` : `<button class="tgl" aria-pressed="${off}" data-indispo="${esc(s.key)}">${off ? "Indispo ✕" : "Indispo"}</button>`}
-      </div>`;
+    html += `<h2 id="plan">Tes séances</h2>`;
+    for (const wk of weeks) {
+      const list = me.sessions.filter(s => s.wk === wk);
+      const ds = list.map(s => s.date).sort();
+      html += `<div class="card"><div class="wkhead"><b>Semaine du ${LONGDAY(ds[0])}</b><span class="muted small">${plural(list.length, "séance")}</span></div>`;
+      let lastDate = null;
+      for (const s of list) {
+        if (s.date !== lastDate) {
+          html += `<div class="dayhead">${esc(s.day)} ${LONGDAY(s.date)}${P.notes[s.date] ? ` · <span style="color:var(--warn)">${esc(P.notes[s.date])}</span>` : ""}</div>`;
+          lastDate = s.date;
+        }
+        const isSwap = me.swaps.includes(s.key);
+        const a = answers[s.key]?.answer;
+        const off = !isSwap && a === "indispo";
+        let right;
+        if (isSwap) right = a === "ok" ? `<span class="rowstate ok">OK ✓</span>` : a === "pas_possible" ? `<span class="rowstate bad">Pas possible</span>` : `<button class="rowstate wait" data-goto="${esc(s.key)}" style="border:0;font:inherit;font-size:13px;min-height:44px;cursor:pointer">À répondre ↑</button>`;
+        else right = `<button class="cant" aria-pressed="${off}" data-indispo="${esc(s.key)}">${off ? "Indispo · annuler" : "Je ne peux pas"}</button>`;
+        html += `<div class="row${off || (isSwap && a === "pas_possible") ? " off" : ""}" data-key="${esc(s.key)}">
+          <div class="time"><b>${esc(s.s)}</b><span>${esc(s.e)}</span></div>
+          <div class="what"><b>${esc(s.cl)}</b>${s.typ === "1:1" ? `<span class="tag pt">1:1</span>` : ""}${s.tag ? `<span class="tag set">${esc(s.tag)}</span>` : ""}</div>
+          ${right}
+        </div>`;
+        if (off) html += commentBox(s.key, "data-comment");
+      }
+      html += `</div>`;
     }
-    html += `</div>`;
-  }
   }
 
-  const confirmed = answers._confirmed?.answer === "confirmed";
-  html += `<button class="btn" id="confirm" ${confirmed ? "disabled" : ""}>${confirmed ? "Planning confirmé ✓" : "J'ai tout vérifié, je confirme"}</button>`;
   if (me.file) html += `<a class="btn ghost" href="files/${esc(me.file)}" download>Télécharger mon planning (Excel)</a>`;
+  const barBtn = left.length
+    ? `<button class="btn todo" id="next">${left.length === 1 ? "Il reste 1 demande à répondre" : `Il reste ${left.length} demandes à répondre`} ↑</button>`
+    : confirmed ? `<button class="btn fin" disabled>Planning confirmé ✓ — merci</button>`
+    : `<button class="btn" id="confirm">Tout est bon, je confirme</button>`;
+  html += `<div class="bar" id="bar"><div class="in">${barBtn}<div class="saved" id="saved">${confirmed ? "Tu peux encore modifier : il suffira de reconfirmer." : "Chaque réponse est enregistrée tout de suite."}</div></div></div>`;
   if (openKey) html += renderSheet(me, openKey);
   app.innerHTML = html;
-  statusBar(summary());
+
+  const goto = k => {
+    if (k === "bar") { window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); return; }
+    if (view !== "list") { view = "list"; renderCoach(); }
+    const el = document.getElementById(k) || document.getElementById("ask-" + k);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  app.querySelectorAll("[data-goto]").forEach(b => b.addEventListener("click", () => goto(b.dataset.goto)));
+  const nx = document.getElementById("next"); if (nx) nx.addEventListener("click", () => goto(left[0].key));
+  app.querySelectorAll("[data-note]").forEach(b => b.addEventListener("click", () => {
+    openNotes[b.dataset.note] = true; renderCoach();
+    const t = app.querySelector(`textarea[data-comment="${CSS.escape(b.dataset.note)}"]`); if (t) t.focus();
+  }));
+  const allok = document.getElementById("allok");
+  if (allok) allok.addEventListener("click", () => { touch(); for (const s of left) save(s.key, "ok"); renderCoach(); });
 
   app.querySelectorAll(".views button").forEach(b => b.addEventListener("click", () => {
     view = b.dataset.view; try { localStorage.setItem("planning_view", view); } catch (e) {} renderCoach();
@@ -230,11 +331,10 @@ function renderCoach() {
     bg.addEventListener("click", e => { if (e.target === bg || e.target.classList.contains("close")) { openKey = null; renderCoach(); } });
     bg.querySelectorAll("[data-sheet-indispo]").forEach(b => b.addEventListener("click", () => {
       const key = b.dataset.sheetIndispo; const now = answers[key]?.answer === "indispo";
-      answers[key] = { ...(answers[key] || {}), answer: now ? null : "indispo" }; answers._confirmed = { answer: null };
-      save(key, now ? null : "indispo"); openKey = null; renderCoach();
+      touch(); save(key, now ? null : "indispo"); openKey = null; renderCoach();
     }));
     bg.querySelectorAll(".sheet .seg button").forEach(b => b.addEventListener("click", () => {
-      const key = b.dataset.key; answers[key] = { ...(answers[key] || {}), answer: b.dataset.ans }; save(key, b.dataset.ans); renderCoach();
+      touch(); save(b.dataset.key, b.dataset.ans); openKey = null; renderCoach();
     }));
     bg.querySelectorAll("textarea[data-sheet-comment]").forEach(t => t.addEventListener("change", () => {
       const key = t.dataset.sheetComment; save(key, answers[key]?.answer ?? null, t.value.trim());
@@ -243,24 +343,25 @@ function renderCoach() {
 
   app.querySelectorAll("[data-indispo]").forEach(b => b.addEventListener("click", () => {
     const key = b.dataset.indispo; const now = answers[key]?.answer === "indispo";
-    save(key, now ? null : "indispo").then(() => { answers._confirmed = { answer: null }; renderCoach(); });
-    answers[key] = { ...(answers[key] || {}), answer: now ? null : "indispo" }; renderCoach();
+    touch(); save(key, now ? null : "indispo"); renderCoach();
   }));
-  app.querySelectorAll(".swap .seg button").forEach(b => b.addEventListener("click", () => {
-    const key = b.closest(".swap").dataset.key;
-    answers[key] = { ...(answers[key] || {}), answer: b.dataset.ans }; renderCoach(); save(key, b.dataset.ans);
+  app.querySelectorAll(".ask .seg button").forEach(b => b.addEventListener("click", () => {
+    const key = b.closest(".ask").dataset.key;
+    const same = answers[key]?.answer === b.dataset.ans;
+    touch(); save(key, same ? null : b.dataset.ans);
+    if (!same && b.dataset.ans === "pas_possible") openNotes[key] = true;
+    renderCoach();
   }));
   app.querySelectorAll("textarea[data-comment]").forEach(t => t.addEventListener("change", () => {
     const key = t.dataset.comment; save(key, answers[key]?.answer ?? null, t.value.trim());
   }));
   const c = document.getElementById("confirm");
   if (c) c.addEventListener("click", async () => {
-    const me = P.coaches[coach];
-    const left = me.swaps.filter(k => !answers[k]?.answer);
-    if (left.length && !confirm(`Il reste ${left.length} demande${left.length > 1 ? "s" : ""} sans réponse plus haut. Confirmer quand même ?`)) return;
     c.disabled = true; c.textContent = "Envoi…";
-    await save("_confirmed", "confirmed", "");
+    const ok = await save("_confirmed", "confirmed", "");
+    if (!ok) answers._confirmed = { answer: null };
     renderCoach();
+    if (!ok) setSaved("Pas envoyé — vérifie ta connexion et réessaie.", true);
   });
 }
 
@@ -273,15 +374,16 @@ function renderCalendar(me) {
   while (m <= last) { months.push(new Date(m)); m = new Date(m.getFullYear(), m.getMonth() + 1, 1); }
   const today = new Date().toISOString().slice(0, 10);
   const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
-  let html = `<div class="cal"><p class="muted small" style="margin:12px 0 0">Appuie sur une séance pour la marquer indispo ou répondre à une demande.</p>`;
+  let html = `<div class="cal"><p class="muted small" style="margin:12px 0 0">Appuie sur une séance pour répondre ou dire que tu ne peux pas.</p>`;
   for (const mo of months) {
-    html += `<div class="month">${MONTHS[mo.getMonth()]} ${mo.getFullYear()}</div><div class="grid">`;
-    for (const d of ["L", "M", "M", "J", "V", "S", "D"]) html += `<div class="dow">${d}</div>`;
-    const startPad = (mo.getDay() + 6) % 7;
+    html += `<div class="month">${MONTHS[mo.getMonth()]} ${mo.getFullYear()}</div><div class="grid six">`;
+    for (const d of ["L", "M", "M", "J", "V", "S"]) html += `<div class="dow">${d}</div>`;
+    const startPad = Math.min((mo.getDay() + 6) % 7, 6) % 6;
     for (let i = 0; i < startPad; i++) html += `<div class="day empty"></div>`;
     const days = new Date(mo.getFullYear(), mo.getMonth() + 1, 0).getDate();
     for (let d = 1; d <= days; d++) {
       const iso = `${mo.getFullYear()}-${String(mo.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      if (new Date(iso + "T12:00:00").getDay() === 0) continue;
       const inRange = iso >= dates[0] && iso <= dates[dates.length - 1];
       const list = byDate[iso] || [];
       html += `<div class="day${inRange ? "" : " pad"}${iso === today ? " today" : ""}"><div class="n">${d}</div>`;
@@ -303,7 +405,7 @@ function renderSheet(me, key) {
   const isSwap = me.swaps.includes(key); const a = answers[key]?.answer;
   let inner = `<button class="close">Fermer ✕</button><h3>${esc(s.cl)}</h3><p class="muted" style="margin:0 0 12px">${esc(s.day)} ${fmtDate(s.date)} · ${esc(s.s)}–${esc(s.e)}${P.notes[s.date] ? `<br><span class="week-note">${esc(P.notes[s.date])}</span>` : ""}</p>`;
   if (isSwap) {
-    inner += `<div class="why"><span class="from">À la place de ${esc(s.from[0] + s.from.slice(1).toLowerCase())}</span> — ${esc(s.why)}</div>
+    inner += `<div class="why">${s.from ? `<span class="from">À la place de ${esc(nice(s.from))}.</span> ` : ""}${esc(s.why)}</div>
       <div class="seg"><button class="ok" data-key="${esc(key)}" data-ans="ok" aria-pressed="${a === "ok"}">OK, je prends</button><button class="no" data-key="${esc(key)}" data-ans="pas_possible" aria-pressed="${a === "pas_possible"}">Pas possible</button></div>
       <textarea placeholder="Un mot si besoin (facultatif)" data-sheet-comment="${esc(key)}">${esc(answers[key]?.comment || "")}</textarea>`;
   } else {
@@ -358,8 +460,8 @@ function wireViews(fn, arg) {
   }));
 }
 
-const COACH_COLORS = { SEAN: "#5BB8E8", INES: "#CC66CC", LILOU: "#92C36E", THOMAS: "#C9B94A", JOFFREY: "#A6A6A6", MEL: "#7FD1C2", ARTHUR: "#C9B3E6", ROMAIN: "#E8A44B", "NEEDS COVER": "#FF4D4D" };
-const SHORT = { SEAN: "Sean", INES: "Inès", LILOU: "Lilou", THOMAS: "Thomas", JOFFREY: "Joffrey", MEL: "Mel", ARTHUR: "Arthur", "NEEDS COVER": "À couvrir" };
+const COACH_COLORS = { TEO: "#E8A44B", SEAN: "#5BB8E8", INES: "#CC66CC", LILOU: "#92C36E", THOMAS: "#C9B94A", JOFFREY: "#A6A6A6", MEL: "#7FD1C2", ARTHUR: "#C9B3E6", ROMAIN: "#E8A44B", "NEEDS COVER": "#FF4D4D" };
+const SHORT = { TEO: "Teo", SEAN: "Sean", INES: "Inès", LILOU: "Lilou", THOMAS: "Thomas", JOFFREY: "Joffrey", MEL: "Mel", ARTHUR: "Arthur", "NEEDS COVER": "À couvrir" };
 
 function renderAdminCalendar(by) {
   // answers keyed by coach id -> session_key
