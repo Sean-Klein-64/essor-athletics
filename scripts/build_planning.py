@@ -36,6 +36,15 @@ for cid, c in req["coaches"].items():
     coaches[cid] = {"name": c["name"], "sessions": sessions, "swaps": swaps, "file": c.get("file")}
 
 allrows = [{"date": iso(r[1]), "day": r[2], "s": r[3], "e": r[4], "cl": r[5], "coach": r[8]} for r in SL]
-out = {"month": month, "label": label, "banner": req.get("banner"), "coaches": coaches, "all": allrows, "notes": req.get("notes", {})}
+# Optional: carry a straddling week from last month's file, read-only (argv: <prev data file> <from ISO> <to ISO>)
+before_note = None
+if len(sys.argv) >= 8:
+    prev_txt = open(sys.argv[5], encoding="utf-8").read()
+    prev = json.loads(prev_txt[prev_txt.index("{"):prev_txt.rindex("}") + 1])
+    for cid, c in coaches.items():
+        c["before"] = [{k: s[k] for k in ("date", "day", "s", "e", "cl", "typ")}
+                       for s in prev["coaches"].get(cid, {}).get("sessions", []) if sys.argv[6] <= s["date"] <= sys.argv[7]]
+    before_note = "Déjà dans ton planning du mois dernier — rien à refaire."
+out = {"month": month, "label": label, "banner": req.get("banner"), "beforeNote": before_note, "coaches": coaches, "all": allrows, "notes": req.get("notes", {})}
 open("docs/planning/data.js", "w", encoding="utf-8").write("window.PLANNING = " + json.dumps(out, ensure_ascii=False) + ";\n")
 for cid, c in coaches.items(): print(cid, len(c["sessions"]), "séances,", len(c["swaps"]), "demandes")

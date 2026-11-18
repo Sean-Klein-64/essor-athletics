@@ -152,6 +152,9 @@ button.cant[aria-pressed="true"] { background: var(--bad-soft); color: var(--bad
 @media (max-width: 380px) { body { font-size: 16px; } h1 { font-size: 27px; } .row .time { min-width: 56px; } button.cant { padding: 0 11px; } }
 .views.months { margin-top: 8px; }
 .views.months button { font-weight: 600; }
+.card.ro { opacity: 0.8; }
+.card.ro .row { min-height: 44px; padding: 4px 0; }
+.chip.ro { background: #1d1d1d; color: var(--muted); cursor: default; }
 footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
 </style>
 </head>
@@ -224,6 +227,7 @@ function touch() {
 }
 
 const LONGDAY = iso => { const d = new Date(iso + "T12:00:00"); const M = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]; return `${d.getDate()} ${M[d.getMonth()]}`; };
+const mondayOf = iso => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 const nice = n => n[0] + n.slice(1).toLowerCase();
 const plural = (n, w) => `${n} ${w}${n > 1 ? "s" : ""}`;
 let openNotes = {};   // session_key -> true when the comment box is open
@@ -275,10 +279,19 @@ function renderCoach() {
 
   if (view === "list") {
     html += `<h2 id="plan">Tes séances</h2>`;
+    if (me.before && me.before.length) {
+      html += `<div class="card ro"><div class="wkhead"><b>Semaine du ${LONGDAY(mondayOf(me.before[0].date))}</b><span class="rowstate ok">Déjà confirmée</span></div><div class="muted small" style="margin:-2px 0 4px">${esc(P.beforeNote || "")}</div>`;
+      let lastB = null;
+      for (const s of me.before) {
+        if (s.date !== lastB) { html += `<div class="dayhead">${esc(s.day)} ${LONGDAY(s.date)}</div>`; lastB = s.date; }
+        html += `<div class="row"><div class="time"><b>${esc(s.s)}</b><span>${esc(s.e)}</span></div><div class="what"><b>${esc(s.cl)}</b>${s.typ === "1:1" ? `<span class="tag pt">1:1</span>` : ""}</div></div>`;
+      }
+      html += `</div>`;
+    }
     for (const wk of weeks) {
       const list = me.sessions.filter(s => s.wk === wk);
       const ds = list.map(s => s.date).sort();
-      html += `<div class="card"><div class="wkhead"><b>Semaine du ${LONGDAY(ds[0])}</b><span class="muted small">${plural(list.length, "séance")}</span></div>`;
+      html += `<div class="card"><div class="wkhead"><b>Semaine du ${LONGDAY(mondayOf(ds[0]))}</b><span class="muted small">${plural(list.length, "séance")}</span></div>`;
       let lastDate = null;
       for (const s of list) {
         if (s.date !== lastDate) {
@@ -407,6 +420,7 @@ async function downloadFilled(me) {
 
 function renderCalendar(me) {
   const byDate = {};
+  for (const s of (me.before || [])) (byDate[s.date] ||= []).push({ ...s, ro: true });
   for (const s of me.sessions) (byDate[s.date] ||= []).push(s);
   const dates = me.sessions.map(s => s.date).sort();
   const first = new Date(dates[0] + "T12:00:00"), last = new Date(dates[dates.length - 1] + "T12:00:00");
@@ -425,10 +439,11 @@ function renderCalendar(me) {
       const iso = `${mo.getFullYear()}-${String(mo.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       if (iso > dates[dates.length - 1] && new Date(iso + "T12:00:00").getDay() === 1) break;   // stop after the last week that has classes
       if (new Date(iso + "T12:00:00").getDay() === 0) continue;
-      const inRange = iso >= dates[0] && iso <= dates[dates.length - 1];
       const list = byDate[iso] || [];
+      const inRange = (iso >= dates[0] && iso <= dates[dates.length - 1]) || list.length > 0;
       html += `<div class="day${inRange ? "" : " pad"}${iso === today ? " today" : ""}"><div class="n">${d}</div>`;
       for (const s of list) {
+        if (s.ro) { html += `<div class="chip ro">${esc(s.cl)}<small>${esc(s.s)}</small></div>`; continue; }
         const a = answers[s.key]?.answer; const isSwap = me.swaps.includes(s.key);
         const cls = ["chip", s.typ === "1:1" ? "pt" : "", isSwap ? "ask" : "", isSwap && a === "ok" ? "ok" : "", isSwap && a === "pas_possible" ? "no" : "", !isSwap && a === "indispo" ? "off" : ""].filter(Boolean).join(" ");
         html += `<button class="${cls}" data-key="${esc(s.key)}">${esc(s.cl.replace("1:1 ", ""))}<small>${esc(s.s)}</small></button>`;
