@@ -298,7 +298,7 @@ function renderCoach() {
     }
   }
 
-  if (me.file) html += `<a class="btn ghost" href="files/${esc(me.file)}" download>Télécharger mon planning (Excel)</a>`;
+  if (me.file) html += `<a class="btn ghost" id="dl" href="files/${esc(me.file)}" download>Télécharger mon planning avec mes réponses (Excel)</a>`;
   const barBtn = left.length
     ? `<button class="btn todo" id="next">${left.length === 1 ? "Il reste 1 demande à répondre" : `Il reste ${left.length} demandes à répondre`} ↑</button>`
     : confirmed ? `<button class="btn fin" disabled>Planning confirmé ✓ — merci</button>`
@@ -355,6 +355,12 @@ function renderCoach() {
   app.querySelectorAll("textarea[data-comment]").forEach(t => t.addEventListener("change", () => {
     const key = t.dataset.comment; save(key, answers[key]?.answer ?? null, t.value.trim());
   }));
+  const dl = document.getElementById("dl");
+  if (dl) dl.addEventListener("click", async e => {
+    e.preventDefault(); const label = dl.textContent; dl.textContent = "Préparation du fichier…";
+    try { await downloadFilled(me); } catch (err) { console.error(err); location.href = dl.href; }
+    dl.textContent = label;
+  });
   const c = document.getElementById("confirm");
   if (c) c.addEventListener("click", async () => {
     c.disabled = true; c.textContent = "Envoi…";
@@ -363,6 +369,36 @@ function renderCoach() {
     renderCoach();
     if (!ok) setSaved("Pas envoyé — vérifie ta connexion et réessaie.", true);
   });
+}
+
+/* The Excel download is the coach's own file with their answers written in:
+   « Oui » under Indisponible ?, OK / Pas possible under Ta réponse. Built in the browser (ExcelJS). */
+function loadScript(src) {
+  return new Promise((res, rej) => { const el = document.createElement("script"); el.src = src; el.onload = res; el.onerror = rej; document.head.appendChild(el); });
+}
+async function downloadFilled(me) {
+  if (!window.ExcelJS) await loadScript("exceljs.min.js");
+  const buf = await (await fetch("files/" + me.file)).arrayBuffer();
+  const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf);
+  const frDate = iso => iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4);
+  const byRow = {}; for (const s of me.sessions) byRow[frDate(s.date) + " " + s.s] = s;
+  const mine = wb.worksheets[0]; let last = 4;
+  mine.eachRow((row, n) => {
+    if (n < 5) return; const s = byRow[row.getCell(2).value + " " + row.getCell(4).value]; if (!s) return;
+    last = n; const a = answers[s.key]?.answer;
+    row.getCell(8).value = a === "indispo" || a === "pas_possible" ? "Oui" : a === "ok" || answers._confirmed?.answer === "confirmed" ? "Non" : null;
+  });
+  const ex = wb.worksheets[2];
+  if (ex) ex.eachRow((row, n) => {
+    if (n < 5) return; const s = byRow[row.getCell(2).value + " " + row.getCell(4).value]; if (!s) return;
+    const a = answers[s.key]?.answer; row.getCell(10).value = a === "ok" ? "OK" : a === "pas_possible" ? "Pas possible" : null;
+  });
+  const now = new Date(); const stamp = now.toLocaleDateString("fr-FR") + " à " + now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  mine.getCell(last + 5, 1).value = `Réponses au ${stamp} — ${answers._confirmed?.answer === "confirmed" ? "planning confirmé" : "pas encore confirmé"}.`;
+  const out = await wb.xlsx.writeBuffer();
+  const url = URL.createObjectURL(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  const a = document.createElement("a"); a.href = url; a.download = me.file; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 function renderCalendar(me) {
