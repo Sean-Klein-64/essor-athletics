@@ -150,6 +150,8 @@ button.cant[aria-pressed="true"] { background: var(--bad-soft); color: var(--bad
 .grid.six .chip small { font-size: 10.5px; }
 .grid.six .day { min-height: 64px; }
 @media (max-width: 380px) { body { font-size: 16px; } h1 { font-size: 27px; } .row .time { min-width: 56px; } button.cant { padding: 0 11px; } }
+.views.months { margin-top: 8px; }
+.views.months button { font-weight: 600; }
 footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
 </style>
 </head>
@@ -163,6 +165,7 @@ footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
 /* Current month lives in data.js; older months in data-YYYY-MM.js, opened with &m=YYYY-MM. */
 (function () { var m = new URLSearchParams(location.search).get("m"); document.write('<script src="' + (/^\d{4}-\d{2}$/.test(m || "") ? "data-" + m + ".js" : "data.js") + '"><\/script>'); })();
 </script>
+<script src="months.js"></script>
 <script>
 /* ── Supabase (same project as the run club). Data goes through the planning_* functions in supabase/planning.sql. ── */
 const SUPABASE_URL = "https://rqomypmgbjigukvztjxz.supabase.co";
@@ -177,7 +180,8 @@ async function rpc(fn, args) {
   const txt = await r.text(); return txt ? JSON.parse(txt) : null;
 }
 
-const P = window.PLANNING;
+let P = window.PLANNING;
+const MONTHS = window.PLANNING_MONTHS || [{ m: P.month, label: P.label, file: "data.js" }];
 const q = new URLSearchParams(location.search);
 const coach = (q.get("c") || "").toLowerCase();
 const code = q.get("k") || "";
@@ -322,7 +326,7 @@ function renderCoach() {
   const allok = document.getElementById("allok");
   if (allok) allok.addEventListener("click", () => { touch(); for (const s of left) save(s.key, "ok"); renderCoach(); });
 
-  app.querySelectorAll(".views button").forEach(b => b.addEventListener("click", () => {
+  app.querySelectorAll(".views button[data-view]").forEach(b => b.addEventListener("click", () => {
     view = b.dataset.view; try { localStorage.setItem("planning_view", view); } catch (e) {} renderCoach();
   }));
   app.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { openKey = b.dataset.key; renderCoach(); }));
@@ -419,6 +423,7 @@ function renderCalendar(me) {
     const days = new Date(mo.getFullYear(), mo.getMonth() + 1, 0).getDate();
     for (let d = 1; d <= days; d++) {
       const iso = `${mo.getFullYear()}-${String(mo.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      if (iso > dates[dates.length - 1] && new Date(iso + "T12:00:00").getDay() === 1) break;   // stop after the last week that has classes
       if (new Date(iso + "T12:00:00").getDay() === 0) continue;
       const inRange = iso >= dates[0] && iso <= dates[dates.length - 1];
       const list = byDate[iso] || [];
@@ -455,7 +460,7 @@ function renderAdmin(rows) {
   const by = {};
   for (const r of rows) (by[r.coach] ||= {})[r.session_key] = r;
   let html = `<h1>${esc(P.label)} — vue Sean</h1><p class="muted">Réponses des coachs. Un tap chez eux = une ligne ici, en direct.</p>
-  <div class="views"><button data-view="list" aria-pressed="${view === "list"}">Réponses</button><button data-view="cal" aria-pressed="${view === "cal"}">Calendrier</button></div>`;
+  <div class="views"><button data-view="list" aria-pressed="${view === "list"}">Réponses</button><button data-view="cal" aria-pressed="${view === "cal"}">Calendrier</button></div>${monthPills()}`;
   if (view === "cal") { html += renderAdminCalendar(by); html += `<button class="btn ghost" onclick="location.reload()">Actualiser</button>`; app.innerHTML = html; wireViews(renderAdmin, rows); return; }
   for (const [id, me] of Object.entries(P.coaches)) {
     const a = by[id] || {};
@@ -490,8 +495,23 @@ function renderAdmin(rows) {
   wireViews(renderAdmin, rows);
 }
 
+/* Sean's view: pick the month. Each month is its own data file, listed in months.js. */
+function monthPills() {
+  if (MONTHS.length < 2) return "";
+  return `<div class="views months" style="grid-template-columns:repeat(${MONTHS.length},1fr)">` + MONTHS.map(x => `<button data-month="${esc(x.m)}" aria-pressed="${x.m === P.month}">${esc(x.label)}</button>`).join("") + `</div>`;
+}
+async function setMonth(m) {
+  const x = MONTHS.find(y => y.m === m); if (!x || m === P.month) return;
+  if (window.PLANNING_ALL && window.PLANNING_ALL[m]) P = window.PLANNING_ALL[m];
+  else { await loadScript(x.file); P = window.PLANNING; }
+  app.innerHTML = `<p class="muted" style="margin-top:24px">Chargement…</p>`;
+  renderAdmin(await rpc("planning_all", { p_code: code, p_month: P.month }));
+  window.scrollTo(0, 0);
+}
+
 function wireViews(fn, arg) {
-  app.querySelectorAll(".views button").forEach(b => b.addEventListener("click", () => {
+  app.querySelectorAll("[data-month]").forEach(b => b.addEventListener("click", () => setMonth(b.dataset.month).catch(e => { console.error(e); app.innerHTML = `<h1>Mois indisponible</h1><p class="muted">Impossible de charger ce mois. Actualise la page.</p>`; })));
+  app.querySelectorAll(".views button[data-view]").forEach(b => b.addEventListener("click", () => {
     view = b.dataset.view; try { localStorage.setItem("planning_view", view); } catch (e) {} fn(arg);
   }));
 }
@@ -519,6 +539,7 @@ function renderAdminCalendar(by) {
     const days = new Date(mo.getFullYear(), mo.getMonth() + 1, 0).getDate();
     for (let d = 1; d <= days; d++) {
       const iso = `${mo.getFullYear()}-${String(mo.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      if (iso > dates[dates.length - 1] && new Date(iso + "T12:00:00").getDay() === 1) break;   // stop after the last week that has classes
       const inRange = iso >= dates[0] && iso <= dates[dates.length - 1];
       const list = byDate[iso] || [];
       html += `<div class="day${inRange ? "" : " pad"}${iso === today ? " today" : ""}${list.length > 5 ? " many" : ""}"><div class="n">${d}</div>`;
