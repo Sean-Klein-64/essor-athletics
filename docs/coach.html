@@ -57,10 +57,15 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--mint); outl
 .step { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; padding: 8px 12px; border: 1px dashed rgba(255,255,255,0.25); border-radius: 12px; font-size: 14px; }
 .step b { font-weight: 600; white-space: nowrap; } .step span { text-align: right; color: rgba(255,255,255,0.85); }
 .blk { background: rgba(0,0,0,0.3); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
-.bh { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-.bh b { color: var(--mint); font-weight: 600; } .bh span { font-size: 13px; color: rgba(255,255,255,0.75); }
+.bh { display: flex; align-items: center; gap: 12px; }
+.cnt { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 44px; line-height: 0.9; letter-spacing: -1px; color: var(--mint); font-variant-numeric: tabular-nums; }
+.cnt small { font-size: 26px; margin-left: 2px; }
+.what { display: flex; flex-direction: column; }
+.what b { font-size: 20px; font-weight: 600; line-height: 1.15; } .what span { font-size: 13px; color: rgba(255,255,255,0.75); }
 .pills { display: flex; flex-wrap: wrap; gap: 5px; }
-.pills i { font-style: normal; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; background: var(--mint); color: #0A0A0A; border-radius: 999px; padding: 4px 10px; }
+.pills i { font-style: normal; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; background: rgba(124,196,162,0.16); color: var(--fg); border: 1px solid var(--mint); border-radius: 999px; padding: 3px 10px 3px 3px; display: inline-flex; align-items: center; gap: 6px; min-height: 28px; }
+.pills i em { font-style: normal; background: var(--mint); color: #0A0A0A; border-radius: 50%; width: 22px; height: 22px; display: inline-grid; place-items: center; font-size: 12px; }
+.pills i:has(em:only-child) { padding: 3px; border-color: transparent; background: transparent; }
 .gap { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.8); padding: 0 4px; }
 .gap::before, .gap::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.25); }
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -72,8 +77,8 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--mint); outl
 .note b { color: var(--fg); font-weight: 600; }
 
 /* Tabs, filters */
-.seg { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 4px; position: sticky; top: 8px; z-index: 5; }
-.seg button { font-size: 15px; border: 0; border-radius: 10px; padding: 10px 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 4px; position: sticky; top: 8px; z-index: 5; }
+.seg button { font-size: 14px; border: 0; border-radius: 10px; padding: 10px 6px; background: transparent; color: var(--muted); cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--fg); box-shadow: inset 0 0 0 1px var(--mint); }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { font-size: 14px; border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 7px 12px; cursor: pointer; }
@@ -114,6 +119,14 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--mint); outl
 .cell span { display: block; font-size: 11px; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; }
 .cell b { font-variant-numeric: tabular-nums; font-size: 15px; }
 .inj-box { border: 1px solid var(--bad); color: #f3c4b6; border-radius: 12px; padding: 8px 10px; }
+.tw { overflow-x: auto; -webkit-overflow-scrolling: touch; background: var(--card); border: 1px solid var(--line); border-radius: 20px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { padding: 10px 12px; text-align: right; white-space: nowrap; border-top: 1px solid var(--line); }
+thead th { border-top: 0; font-size: 11px; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--card); font-weight: 600; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+td.hot { color: var(--mint); font-weight: 600; font-size: 15px; }
+td.lvl { color: var(--muted); }
+tr.cut td { border-top: 2px solid var(--mint); }
 .empty { padding: 18px 16px; color: var(--muted); font-size: 14px; }
 .foot { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
 @media (max-width: 420px) { .stats { grid-template-columns: repeat(2, 1fr); } .sess .title { font-size: 34px; } .grid { grid-template-columns: repeat(2, 1fr); } }
@@ -157,6 +170,7 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--mint); outl
 
     <div class="seg" role="group" aria-label="Vue">
       <button type="button" data-view="groups" aria-pressed="true">Groupes</button>
+      <button type="button" data-view="table" aria-pressed="false">Tableau</button>
       <button type="button" data-view="booked" aria-pressed="false">Réservés</button>
       <button type="button" data-view="all" aria-pressed="false">Tous</button>
     </div>
@@ -408,7 +422,7 @@ const renderSession = () => {
   let n = 0;
   const flow = bl.map(b => b.rest
     ? `<div class="gap"><span>${esc(b.rest)}</span></div>`
-    : `<div class="blk"><div class="bh"><b>Bloc ${++n}</b><span>${b.pills.length} rép.${b.rec ? " · récup " + esc(b.rec) : ""}</span></div><div class="pills">${b.pills.map(p => `<i>${esc(p)}</i>`).join("")}</div></div>`).join("");
+    : (() => { const same = new Set(b.pills).size === 1; return `<div class="blk"><div class="bh"><span class="cnt">${b.pills.length}<small>×</small></span><span class="what"><b>${same ? esc(b.pills[0]) : "répétitions"}</b><span>Bloc ${++n}${b.rec ? " · récup " + esc(b.rec) + " entre chaque" : ""}</span></span></div><div class="pills">${b.pills.map((p, i) => `<i><em>${i + 1}</em>${same ? "" : esc(p)}</i>`).join("")}</div></div>`; })()).join("");
   const facts = [
     rs.length ? ["Intensité", [...new Set(rs.map(r => r.vma))].join(" / ") + " % VMA"] : null,
     vol ? ["Volume vite", vol >= 1000 ? String(vol / 1000).replace(".", ",") + " km" : vol + " m"] : null,
@@ -441,7 +455,7 @@ const render = () => {
   else n.hidden = true;
 
   document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
-  $("tools").hidden = view === "groups";
+  $("tools").hidden = view === "groups" || view === "table";
   $("chips").innerHTML = [["", "Tous"], ...LEVELS.map(l => [l.id, l.short])].map(([id, t]) => `<button type="button" class="chip" data-level="${id}" aria-pressed="${levelFilter === id}">${t}</button>`).join("");
 
   const q = norm($("search").value);
@@ -455,6 +469,15 @@ const render = () => {
     const beg = p.filter(a => !a.level || !a.level.club).sort(cmp);
     if (beg.length) html += `<h2>Débuter / niveau à confirmer <b>${beg.length}</b></h2><div class="card flush"><div class="list">${beg.map(row).join("")}</div></div>`;
     if (extras.length) html += `<h2>Réservés sans fiche <b>${extras.length}</b></h2><div class="card"><p class="muted small">Dans Wodify mais pas de questionnaire à ce nom :</p><p>${extras.map(esc).join(" · ")}</p></div>`;
+  } else if (view === "table") {
+    // The pace table: one line per runner, fastest first, a mint line where a new pace group starts
+    const gs = packs(p), starts = new Set(gs.slice(1).map(g => g[0].id));
+    const cols = []; LEVELS.filter(l => l.club).forEach(l => reps(mainOf(session, l.id)).forEach(r => { if (!cols.some(c => c.run === r.run && c.vma === r.vma)) cols.push(r); }));
+    const line = (a) => { const mine = a.level && a.level.club ? reps(mainOf(session, a.level.id)) : []; return `<tr class="${starts.has(a.id) ? "cut" : ""}"><td>${esc(a.name)}</td><td class="lvl">${a.level ? a.level.short : "?"}</td><td>${a.vma ? a.vma.toFixed(1) : "—"}</td>${cols.map(c => `<td class="hot">${a.vma && mine.some(r => r.run === c.run && r.vma === c.vma) ? target(c, a.vma) : "—"}</td>`).join("")}<td>${a.vma ? clock(paceAt(a.vma, 100)) : "—"}</td><td>${a.vma ? clock(paceAt(a.vma, 90)) : "—"}</td><td>${a.vma ? clock(paceAt(a.vma, 68)) + "–" + clock(paceAt(a.vma, 63)) : "—"}</td></tr>`; };
+    const rows = [...gs.flat(), ...club.filter(a => !a.vma).sort(cmp)];
+    html += `<h2>Tableau d'allures <b>${rows.length}</b></h2>`;
+    html += rows.length ? `<div class="tw"><table><thead><tr><th>Coureur</th><th>Niv.</th><th>VMA</th>${cols.map(c => `<th>${repLabel(c)}${cols.some(o => o !== c && o.run === c.run) ? " " + c.vma + " %" : ""}</th>`).join("")}<th>VMA /km</th><th>10 km /km</th><th>Footing /km</th></tr></thead><tbody>${rows.map(line).join("")}</tbody></table></div><p class="muted small">Temps cible par répétition en vert. Le trait vert marque un nouveau groupe d'allure. Fais défiler le tableau vers la droite pour les autres allures.</p>`
+      : `<div class="card"><p class="muted">Aucun coureur à afficher.</p></div>`;
   } else {
     let list = view === "booked" ? athletes.filter(a => a.booked) : athletes.slice();
     if (levelFilter) list = list.filter(a => a.level && a.level.id === levelFilter);
