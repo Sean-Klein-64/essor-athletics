@@ -389,31 +389,79 @@ function renderCoach() {
 }
 
 /* The Excel download is the coach's own file with their answers written in:
-   « Oui » under Indisponible ?, OK / Pas possible under Ta réponse. Built in the browser (ExcelJS). */
+   « Oui » / « Non » under Indisponible ?, OK / Pas possible under Ta réponse, plus one dated line.
+   The file is opened as a zip (JSZip) and only those cells are touched, so every tab keeps exactly
+   the look of the file Sean prepared: fonts, colours, widths, drop-down lists, frozen rows. */
 function loadScript(src) {
   return new Promise((res, rej) => { const el = document.createElement("script"); el.src = src; el.onload = res; el.onerror = rej; document.head.appendChild(el); });
 }
 async function downloadFilled(me) {
-  if (!window.ExcelJS) await loadScript("exceljs.min.js");
-  const buf = await (await fetch("files/" + me.file)).arrayBuffer();
-  const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf);
+  if (!window.JSZip) await loadScript("jszip.min.js");
+  const zip = await JSZip.loadAsync(await (await fetch("files/" + me.file)).arrayBuffer());
+  const NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  const xml = async p => new DOMParser().parseFromString(await zip.file(p).async("string"), "application/xml");
+  const put = (p, doc) => zip.file(p, '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + new XMLSerializer().serializeToString(doc.documentElement));
+  const kids = (el, name) => [...el.childNodes].filter(n => n.localName === name);
+
+  // sheet paths in tab order, and the shared strings the cells point to
+  const wbDoc = await xml("xl/workbook.xml"), relDoc = await xml("xl/_rels/workbook.xml.rels");
+  const target = {}; for (const r of relDoc.getElementsByTagName("Relationship")) target[r.getAttribute("Id")] = r.getAttribute("Target");
+  const paths = [...wbDoc.getElementsByTagNameNS(NS, "sheet")].map(sh => {
+    const t = target[sh.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id")];
+    return t.startsWith("/") ? t.slice(1) : "xl/" + t;
+  });
+  const shared = zip.file("xl/sharedStrings.xml") ? [...(await xml("xl/sharedStrings.xml")).getElementsByTagNameNS(NS, "si")].map(si => [...si.getElementsByTagNameNS(NS, "t")].map(t => t.textContent).join("")) : [];
+  const text = c => { if (!c) return ""; const v = kids(c, "v")[0]; if (c.getAttribute("t") === "s") return shared[+v.textContent] || ""; if (c.getAttribute("t") === "inlineStr") return c.textContent; return v ? v.textContent : ""; };
+  const colOf = ref => ref.replace(/\d+/g, "");
+  const colNum = L => [...L].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0);
+  const cellAt = (row, L) => kids(row, "c").find(c => colOf(c.getAttribute("r")) === L);
+  const write = (doc, row, L, value, styleFrom) => {
+    let c = cellAt(row, L);
+    if (!c) {
+      c = doc.createElementNS(NS, "c"); c.setAttribute("r", L + row.getAttribute("r"));
+      if (styleFrom && styleFrom.getAttribute("s")) c.setAttribute("s", styleFrom.getAttribute("s"));
+      const after = kids(row, "c").find(x => colNum(colOf(x.getAttribute("r"))) > colNum(L));
+      row.insertBefore(c, after || null);
+    }
+    while (c.firstChild) c.removeChild(c.firstChild);
+    if (value == null) { c.removeAttribute("t"); return; }
+    c.setAttribute("t", "inlineStr");
+    const is = doc.createElementNS(NS, "is"), t = doc.createElementNS(NS, "t"); t.textContent = value; is.appendChild(t); c.appendChild(is);
+  };
+
   const frDate = iso => iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4);
   const byRow = {}; for (const s of me.sessions) byRow[frDate(s.date) + " " + s.s] = s;
-  const mine = wb.worksheets[0]; let last = 4;
-  mine.eachRow((row, n) => {
-    if (n < 5) return; const s = byRow[row.getCell(2).value + " " + row.getCell(4).value]; if (!s) return;
+  const confirmed = answers._confirmed?.answer === "confirmed";
+
+  // tab 1 — my sessions: column H
+  const doc1 = await xml(paths[0]); const data1 = doc1.getElementsByTagNameNS(NS, "sheetData")[0]; let last = 4;
+  for (const row of kids(data1, "row")) {
+    const n = +row.getAttribute("r"); if (n < 5) continue;
+    const s = byRow[text(cellAt(row, "B")) + " " + text(cellAt(row, "D"))]; if (!s) continue;
     last = n; const a = answers[s.key]?.answer;
-    row.getCell(8).value = a === "indispo" || a === "pas_possible" ? "Oui" : a === "ok" || answers._confirmed?.answer === "confirmed" ? "Non" : null;
-  });
-  const ex = wb.worksheets[2];
-  if (ex) ex.eachRow((row, n) => {
-    if (n < 5) return; const s = byRow[row.getCell(2).value + " " + row.getCell(4).value]; if (!s) return;
-    const a = answers[s.key]?.answer; row.getCell(10).value = a === "ok" ? "OK" : a === "pas_possible" ? "Pas possible" : null;
-  });
+    write(doc1, row, "H", a === "indispo" || a === "pas_possible" ? "Oui" : a === "ok" || confirmed ? "Non" : null);
+  }
   const now = new Date(); const stamp = now.toLocaleDateString("fr-FR") + " à " + now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  mine.getCell(last + 5, 1).value = `Réponses au ${stamp} — ${answers._confirmed?.answer === "confirmed" ? "planning confirmé" : "pas encore confirmé"}.`;
-  const out = await wb.xlsx.writeBuffer();
-  const url = URL.createObjectURL(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  const rows1 = kids(data1, "row"); const noteN = last + 5;
+  let noteRow = rows1.find(r => +r.getAttribute("r") === noteN);
+  if (!noteRow) { noteRow = doc1.createElementNS(NS, "row"); noteRow.setAttribute("r", String(noteN)); data1.insertBefore(noteRow, rows1.find(r => +r.getAttribute("r") > noteN) || null); }
+  const totals = rows1.find(r => +r.getAttribute("r") === last + 2);
+  write(doc1, noteRow, "A", `Réponses au ${stamp} — ${confirmed ? "planning confirmé" : "pas encore confirmé"}.`, totals && cellAt(totals, "A"));
+  put(paths[0], doc1);
+
+  // tab 3 — what I'm asked to take: column J
+  if (paths[2]) {
+    const doc3 = await xml(paths[2]);
+    for (const row of kids(doc3.getElementsByTagNameNS(NS, "sheetData")[0], "row")) {
+      if (+row.getAttribute("r") < 5) continue;
+      const s = byRow[text(cellAt(row, "B")) + " " + text(cellAt(row, "D"))]; if (!s) continue;
+      const a = answers[s.key]?.answer; write(doc3, row, "J", a === "ok" ? "OK" : a === "pas_possible" ? "Pas possible" : null);
+    }
+    put(paths[2], doc3);
+  }
+
+  const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a"); a.href = url; a.download = me.file; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
