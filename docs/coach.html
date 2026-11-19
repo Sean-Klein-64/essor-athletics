@@ -41,6 +41,17 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--mint); outl
 .btn.sm { width: auto; height: 36px; font-size: 14px; padding: 0 14px; }
 .hint-bad { color: var(--bad); font-size: 14px; }
 
+/* Séances / Athlètes */
+.top { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 4px; }
+.top a { text-align: center; padding: 11px 6px; border-radius: 12px; color: var(--muted); text-decoration: none; font-size: 16px; font-weight: 500; }
+.top a[aria-current="true"] { background: var(--mint); color: #0A0A0A; font-weight: 600; }
+#roster:not([hidden]) { display: flex; }
+table.roster tbody tr { cursor: pointer; }
+table.roster tbody tr:active td { background: var(--accent-soft); }
+table.roster td:first-child, table.roster th:first-child { max-width: 128px; }
+table.roster th, table.roster td { padding: 10px 9px; }
+table.roster .pain { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--bad); margin-right: 6px; vertical-align: 1px; }
+
 /* Athlete profile */
 #profile:not([hidden]) { display: flex; }
 .back { align-self: flex-start; background: transparent; border: 0; color: var(--mint); font-size: 15px; padding: 4px 0; cursor: pointer; }
@@ -198,6 +209,22 @@ tr.cut td { border-top: 2px solid var(--mint); }
   <p class="muted" id="loading">Chargement…</p>
 
   <!-- 2. The hub -->
+  <nav class="top" id="topnav" hidden>
+    <a href="#" data-top="hub">Séances</a>
+    <a href="#athletes" data-top="roster">Athlètes</a>
+  </nav>
+  <section id="roster" hidden style="flex-direction:column;gap:14px">
+    <div>
+      <p class="kicker">Tous les athlètes · cycle 1</p>
+      <h1>Athlètes</h1>
+    </div>
+    <div class="stats" id="rStats"></div>
+    <input id="rSearch" type="search" placeholder="Chercher un athlète" aria-label="Chercher un athlète">
+    <div class="chips" id="rChips"></div>
+    <div class="chips" id="rSort"></div>
+    <div id="rList"></div>
+    <p class="muted small">Tape un nom pour son profil complet. Point rouge = douleur signalée. Présences : listes Wodify (« Signed in »). Fais glisser le tableau vers la droite pour les allures.</p>
+  </section>
   <section id="profile" hidden style="flex-direction:column;gap:14px"></section>
   <section id="hub" hidden style="display:flex;flex-direction:column;gap:16px">
     <div class="strip" id="strip" role="group" aria-label="Séances du cycle"></div>
@@ -496,7 +523,57 @@ const renderProfile = (a) => {
     <h2>Questionnaire</h2>
     <div class="card flush"><div class="list">${qa.map(([k, v]) => `<div class="prow"><span class="pd"><span>${k}</span></span><span class="ps">${esc(v)}</span></div>`).join("")}</div></div>`;
   $("pBack").onclick = () => history.length > 1 ? history.back() : (location.hash = "");
+  $("pBack").textContent = "← Retour";
 };
+
+/* ── Athlètes: everyone, outside any session ── */
+let rLevel = "", rSort = "name";
+const attendanceOf = (a) => {
+  const sts = SESSIONS.map(x => statusAt(a, x));
+  const counted = sts.filter(st => st === "yes" || st === "no");
+  const here = counted.filter(st => st === "yes").length;
+  const lastI = sts.lastIndexOf("yes");
+  return { here, of: counted.length, last: lastI >= 0 ? SESSIONS[lastI].date : null };
+};
+const renderRoster = () => {
+  const q = norm($("rSearch").value);
+  let list = athletes.slice();
+  if (rLevel === "none") list = list.filter(a => !a.level);
+  else if (rLevel) list = list.filter(a => a.level && a.level.id === rLevel);
+  if (q) list = list.filter(a => a.key.includes(q));
+  const att = new Map(athletes.map(a => [a.id, attendanceOf(a)]));
+  const lvlRank = (a) => a.level ? LEVELS.indexOf(a.level) : 99;
+  const sorts = {
+    name: (x, y) => x.name.localeCompare(y.name),
+    vma: (x, y) => (y.vma || 0) - (x.vma || 0) || x.name.localeCompare(y.name),
+    level: (x, y) => lvlRank(x) - lvlRank(y) || (y.vma || 0) - (x.vma || 0),
+    att: (x, y) => att.get(y.id).here - att.get(x.id).here || x.name.localeCompare(y.name),
+  };
+  list.sort(sorts[rSort]);
+  const withVma = athletes.filter(a => a.vma).length;
+  const counted = SESSIONS.filter(x => { const r = (wodSessions() || {})[x.date]; return r && Array.isArray(r.attended); });
+  const avg = counted.length ? Math.round(counted.reduce((t, x) => t + wodSessions()[x.date].attended.length, 0) / counted.length) : null;
+  $("rStats").innerHTML = [["Athlètes", athletes.length], ["Avec VMA", withVma], ["Moy. présents", avg ?? "—"], ["Douleurs", athletes.filter(a => a.injury).length]]
+    .map(([k, v], i) => `<div class="stat ${i === 3 && v ? "warn" : ""}"><span>${k}</span><b>${v}</b></div>`).join("");
+  const lv = [["", "Tous"], ...LEVELS.map(l => [l.id, l.short])]; if (athletes.some(a => !a.level)) lv.push(["none", "Sans niveau"]);
+  $("rChips").innerHTML = lv.map(([id, t]) => `<button type="button" class="chip" data-rl="${id}" aria-pressed="${rLevel === id}">${t}</button>`).join("");
+  $("rSort").innerHTML = `<span class="muted small" style="align-self:center">Trier :</span>` + [["name", "Nom"], ["vma", "VMA"], ["level", "Niveau"], ["att", "Présences"]].map(([id, t]) => `<button type="button" class="chip" data-rs="${id}" aria-pressed="${rSort === id}">${t}</button>`).join("");
+  const row = (a) => { const t = att.get(a.id); return `<tr data-profile="${esc(a.id)}">
+    <td>${a.injury ? '<i class="pain" title="Douleur signalée"></i>' : ""}${esc(a.name)}</td>
+    <td class="lvl">${a.level ? a.level.short : "?"}</td>
+    <td>${a.vma ? a.vma.toFixed(1) : "—"}</td>
+    <td class="hot">${t.of ? `${t.here}/${t.of}` : "—"}</td>
+    <td>${t.last ? shortDate(t.last) : "—"}</td>
+    <td>${a.testM ? Math.round(a.testM) + " m" : "—"}</td>
+    <td>${a.vma ? clock(paceAt(a.vma, 100)) : "—"}</td>
+    <td>${a.vma ? clock(paceAt(a.vma, 90)) : "—"}</td>
+    <td>${a.vma ? clock(paceAt(a.vma, 68)) + "–" + clock(paceAt(a.vma, 63)) : "—"}</td></tr>`; };
+  $("rList").innerHTML = list.length ? `<div class="tw"><table class="roster"><thead><tr><th>Athlète</th><th>Niv.</th><th>VMA</th><th>Prés.</th><th>Dernière</th><th>Test 6'</th><th>VMA /km</th><th>10 km /km</th><th>Footing /km</th></tr></thead><tbody>${list.map(row).join("")}</tbody></table></div>` : `<div class="card"><p class="muted">Personne ici.</p></div>`;
+};
+$("rSearch").oninput = renderRoster;
+$("rChips").onclick = (e) => { const b = e.target.closest("[data-rl]"); if (b) { rLevel = b.dataset.rl; renderRoster(); } };
+$("rSort").onclick = (e) => { const b = e.target.closest("[data-rs]"); if (b) { rSort = b.dataset.rs; renderRoster(); } };
+$("rList").onclick = (e) => { const r = e.target.closest("[data-profile]"); if (r) { route.y = window.scrollY; location.hash = "a=" + encodeURIComponent(r.dataset.profile); } };
 
 /* Packs of runners who can run the reps together: sorted by VMA, a new pack when the gap to the pack's fastest passes 0.8 km/h */
 const packs = (list) => {
@@ -640,7 +717,7 @@ const asText = () => {
 $("enter").onclick = () => { code = $("code").value.trim(); if (code) load(); };
 $("code").onkeydown = (e) => { if (e.key === "Enter") $("enter").click(); };
 $("refresh").onclick = load;
-$("out").onclick = () => { $("profile").hidden = true; location.hash = ""; store.set("essor-coach-code", null); code = ""; $("hub").hidden = true; $("gate").hidden = false; $("gateBad").hidden = true; $("code").value = ""; };
+$("out").onclick = () => { $("profile").hidden = true; $("roster").hidden = true; $("topnav").hidden = true; location.hash = ""; store.set("essor-coach-code", null); code = ""; $("hub").hidden = true; $("gate").hidden = false; $("gateBad").hidden = true; $("code").value = ""; };
 $("copy").onclick = async () => { const b = $("copy"); try { await navigator.clipboard.writeText(asText()); b.textContent = "Copié ✓"; } catch { b.textContent = "Copie impossible"; } setTimeout(() => (b.textContent = "Copier pour WhatsApp"), 1800); };
 $("search").oninput = render;
 $("strip").onclick = (e) => { const b = e.target.closest("[data-s]"); if (b) pick(b.dataset.s); };
@@ -648,11 +725,16 @@ $("sess").onclick = (e) => { const b = e.target.closest("[data-lv]"); if (b) { s
 document.querySelector(".seg").onclick = (e) => { const b = e.target.closest("button"); if (b) { view = b.dataset.view; render(); } };
 $("chips").onclick = (e) => { const b = e.target.closest("button"); if (b) { levelFilter = b.dataset.level; render(); } };
 const route = () => {
+  if (!athletes.length && !$("gate").hidden) return;
   const id = (location.hash.match(/^#a=(.+)$/) || [])[1];
   const a = id && athletes.find(x => x.id === decodeURIComponent(id));
-  if (!athletes.length) return;
-  $("profile").hidden = !a; $("hub").hidden = !!a;
-  if (a) { renderProfile(a); window.scrollTo(0, 0); } else if (route.y != null) { window.scrollTo(0, route.y); route.y = null; }
+  const page = a ? "profile" : location.hash === "#athletes" ? "roster" : "hub";
+  $("profile").hidden = page !== "profile"; $("roster").hidden = page !== "roster"; $("hub").hidden = page !== "hub";
+  $("topnav").hidden = page === "profile";
+  document.querySelectorAll("#topnav [data-top]").forEach(x => x.setAttribute("aria-current", String(x.dataset.top === page)));
+  if (page === "profile") { route.from = route.from || "#"; renderProfile(a); window.scrollTo(0, 0); return; }
+  if (page === "roster") renderRoster();
+  if (route.y != null) { window.scrollTo(0, route.y); route.y = null; } else window.scrollTo(0, 0);
 };
 window.addEventListener("hashchange", route);
 $("view").onclick = (e) => {
