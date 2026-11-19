@@ -41,6 +41,23 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--mint); outl
 .btn.sm { width: auto; height: 36px; font-size: 14px; padding: 0 14px; }
 .hint-bad { color: var(--bad); font-size: 14px; }
 
+/* Athlete profile */
+#profile:not([hidden]) { display: flex; }
+.back { align-self: flex-start; background: transparent; border: 0; color: var(--mint); font-size: 15px; padding: 4px 0; cursor: pointer; }
+.phead { display: flex; flex-direction: column; gap: 8px; }
+.phead .sub { display: flex; gap: 6px; }
+.prof { align-self: flex-start; }
+.prow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 16px; border-top: 1px solid var(--line); }
+.prow:first-child { border-top: 0; }
+.prow .pd { display: flex; gap: 10px; align-items: baseline; min-width: 0; }
+.prow .pd b { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.prow .pd span { color: var(--muted); font-size: 14px; }
+.prow .ps { font-size: 14px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.prow .ps.pace { color: var(--mint); font-weight: 600; white-space: nowrap; }
+.prow.yes .ps { color: var(--mint); font-weight: 600; } .prow.no .ps { color: var(--bad); font-weight: 600; }
+.prow.bk .ps { color: var(--warn); font-weight: 600; }
+.prow.future .pd b, .prow.future .pd span { opacity: .6; }
+
 /* The cycle's sessions */
 .strip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .strip::-webkit-scrollbar { display: none; }
@@ -181,6 +198,7 @@ tr.cut td { border-top: 2px solid var(--mint); }
   <p class="muted" id="loading">Chargement…</p>
 
   <!-- 2. The hub -->
+  <section id="profile" hidden style="flex-direction:column;gap:14px"></section>
   <section id="hub" hidden style="display:flex;flex-direction:column;gap:16px">
     <div class="strip" id="strip" role="group" aria-label="Séances du cycle"></div>
     <div class="sess" id="sess"></div>
@@ -307,7 +325,7 @@ const toAthlete = (row) => {
     vma: pickVma(row), testM: row.vma && row.vma.test_m, hr: row.vma && row.vma.hr_max, vmaAt: row.vma && row.vma.updated_at,
     history: (row.vma && row.vma.history) || [],
     appDone: p.at ? Object.keys(p.done || {}).length : null,
-    injury: a.injury === "yes", injuryDetail: a.injuryDetail || "", goal: a.goal || "", bests: a.bests || {}, fiveK: a.fiveK || "",
+    answers: a, injury: a.injury === "yes", injuryDetail: a.injuryDetail || "", goal: a.goal || "", bests: a.bests || {}, fiveK: a.fiveK || "",
     booked: null, done: null,
   };
 };
@@ -362,7 +380,7 @@ const load = async () => {
   session = nextSession();
   applyWodify();
   $("loading").hidden = true; $("hub").hidden = false;
-  render();
+  render(); route();
 };
 
 /* ── Rendering ── */
@@ -392,19 +410,92 @@ const row = (a) => {
       if (a.testM) cells.push(["Test 6'", a.testM + " m"]);
     }
     if (a.hr) cells.push(["FC max", a.hr + " bpm"]);
-    if (a.fiveK) cells.push(["5 km déclaré", ({ never: "Jamais", "30plus": "+ de 30'", "25-30": "25–30'", sub25: "- de 25'" })[a.fiveK] || a.fiveK]);
     const set = a.level && a.level.club && session ? mainOf(session, a.level.id).map(describe).join(" + ") : "";
     more = `<div class="more">
       ${set ? `<p><span class="muted">Sa séance :</span> ${esc(set)}</p>` : a.level && !a.level.club ? `<p class="muted">Programme ${a.level.name} — marche-course, pas de séance club.</p>` : ""}
       ${a.injury ? `<div class="inj-box">${esc(a.injuryDetail || "Douleur signalée au questionnaire")}</div>` : ""}
       ${cells.length ? `<div class="grid">${cells.map(([k, v]) => `<div class="cell"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>` : ""}
-      ${attendance ? `<div class="att">${SESSIONS.filter(x => isPast(x) || x === nextSession()).map(x => { const S = wodSessions() || {}, r = S[x.date] || {}; const known = Array.isArray(r.attended); const here = known ? !!a.seen[x.date] : null; const bk = !known && Array.isArray(r.booked) ? r.booked.some(n => matchName(n) === a) : null; return `<span class="${here ? "yes" : here === false ? "no" : bk ? "bk" : "na"}"><b>${x.date.slice(8)}/${x.date.slice(5, 7)}</b>${esc(x.title)}<i>${here ? "présent" : here === false ? "absent" : bk ? "réservé" : bk === false ? "pas réservé" : "—"}</i></span>`; }).join("")}</div>` : ""}
-      ${a.history.length > 1 ? `<p class="muted small">VMA : ${a.history.map(h => Number(h.vma).toFixed(1)).join(" → ")}</p>` : ""}
-      ${a.siteLevel && a.level && a.siteLevel.id !== a.level.id ? `<p class="muted small">Questionnaire : ${a.siteLevel.name}</p>` : ""}
+      <button type="button" class="btn line sm prof" data-profile="${esc(a.id)}">Voir le profil complet →</button>
     </div>`;
   }
   const dot = a.booked == null ? `<span class="dot na" title="Inconnu"></span>` : `<span class="dot ${a.booked ? "on" : ""}" title="${a.booked ? (past ? "Présent" : "Réservé") : (past ? "Absent" : "Pas réservé")}">✓</span>`;
   return `<div class="ath"><button type="button" data-id="${esc(a.id)}" aria-expanded="${isOpen}">${dot}<span class="who"><b>${esc(a.name)}</b><span class="sub">${tags}</span></span><span class="num">${right}</span></button>${more}</div>`;
+};
+
+/* ── An athlete's full profile ── */
+const ANS = {
+  fiveK: { none: "Jamais couru 5 km", over30: "Plus de 30 min", "25to30": "25 à 30 min", under25: "Moins de 25 min" },
+  runContinuous: { under5: "Moins de 5 min", "5to15": "5 à 15 min", "15to30": "15 à 30 min", over30: "30 min ou plus" },
+  runsPerWeek: { never: "Jamais", once: "1 fois", twice: "2 fois", more: "3 fois ou plus" },
+  goal: { run30: "Courir 30 min sans s'arrêter", faster: "Gagner en vitesse", race: "Préparer une course", fun: "Courir en groupe pour le plaisir" },
+};
+const ZONES = [
+  ["Récup", null, 62], ["Footing (EF)", 63, 68], ["Endurance", 66, 72], ["Allure marathon", 77, 80],
+  ["Seuil", 87, 89], ["VO2max", 93, 97], ["Vitesse", 98, null],
+];
+const zonePace = (vma, lo, hi) => lo == null ? `> ${clock(paceAt(vma, hi))}` : hi == null ? `< ${clock(paceAt(vma, lo))}` : `${clock(paceAt(vma, hi))} – ${clock(paceAt(vma, lo))}`;
+const PRED = [["5 km", 5000, 95], ["10 km", 10000, 90], ["Semi", 21097.5, 85], ["Marathon", 42195, 80]];
+const hms = (sec) => { const t = Math.round(sec), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), r = t % 60; return h ? `${h}:${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}` : `${m}:${String(r).padStart(2, "0")}`; };
+const shortDate = (iso) => `${iso.slice(8)}/${iso.slice(5, 7)}`;
+
+/* Present / absent / booked / unknown for one session */
+const statusAt = (a, x) => {
+  const r = (wodSessions() || {})[x.date] || {};
+  if (Array.isArray(r.attended)) return r.attended.some(n => matchName(n) === a) ? "yes" : "no";
+  if (!isPast(x) && Array.isArray(r.booked)) return r.booked.some(n => matchName(n) === a) ? "bk" : "nb";
+  return isPast(x) ? "na" : "future";
+};
+const STATUS = { yes: "Présent", no: "Absent", bk: "Réservé", nb: "Pas réservé", na: "Pas de liste", future: "À venir" };
+
+const renderProfile = (a) => {
+  const sts = SESSIONS.map(x => ({ x, st: statusAt(a, x) }));
+  const counted = sts.filter(o => o.st === "yes" || o.st === "no");
+  const here = counted.filter(o => o.st === "yes").length;
+  const last = [...sts].reverse().find(o => o.st === "yes");
+  const tile = (k, v, c = "") => `<div class="stat ${c}"><span>${k}</span><b>${v}</b></div>`;
+  const ans = a.answers || {};
+  const qa = [
+    ["Niveau au questionnaire", a.siteLevel ? a.siteLevel.name : "—"],
+    ["Court sans s'arrêter", ANS.runContinuous[ans.runContinuous] || "—"],
+    ["Sorties par semaine", ANS.runsPerWeek[ans.runsPerWeek] || "—"],
+    ["5 km récent", ANS.fiveK[ans.fiveK] || "—"],
+    ["Objectif", ANS.goal[ans.goal] || "—"],
+    ["Courses faites", ans.races || "—"],
+    ["Records", Object.entries(ans.bests || {}).filter(([, t]) => t).map(([d, t]) => `${({ "5k": "5 km", "10k": "10 km", semi: "Semi", marathon: "Marathon" })[d] || d} ${t}`).join(" · ") || "—"],
+  ];
+  const set = a.level && a.level.club && session ? mainOf(session, a.level.id) : [];
+  $("profile").innerHTML = `
+    <button type="button" class="back" id="pBack">← Retour à la séance</button>
+    <div class="phead">
+      <p class="kicker">Profil athlète</p>
+      <h1>${esc(a.name)}</h1>
+      <div class="sub">${a.level ? `<span class="tag ${a.level.cls}">${a.level.name}</span>` : `<span class="tag warn">Niveau ?</span>`}${a.injury ? `<span class="tag inj">Douleur</span>` : ""}</div>
+    </div>
+    <div class="stats">
+      ${tile("VMA", a.vma ? a.vma.toFixed(1) : "—", a.vma ? "" : "warn")}
+      ${tile("Test 6'", a.testM ? a.testM + " m" : "—")}
+      ${tile("Séances", counted.length ? `${here}/${counted.length}` : "—")}
+      ${tile("Dernière", last ? shortDate(last.x.date) : "—")}
+    </div>
+    ${a.injury ? `<div class="inj-box">${esc(a.injuryDetail || "Douleur signalée au questionnaire")}</div>` : ""}
+
+    <h2>Présences · cycle 1</h2>
+    <div class="card flush"><div class="list">${sts.map(({ x, st }) => `<div class="prow ${st}"><span class="pd"><b>${shortDate(x.date)}</b><span>${esc(x.title)}</span></span><span class="ps">${STATUS[st]}</span></div>`).join("")}</div></div>
+    ${!attendance ? `<p class="muted small">Les présences arrivent avec la synchro Wodify.</p>` : ""}
+
+    ${a.vma && set.length ? `<h2>Sa séance · ${esc(shortDate(session.date))} <b>${esc(session.title)}</b></h2>
+    <div class="card"><p>${esc(set.map(describe).join(" + "))}</p><div class="grid">${reps(set).map(r => `<div class="cell"><span>${esc(repLabel(r))} · ${r.vma} %</span><b>${target(r, a.vma)}</b></div>`).join("")}</div></div>` : ""}
+
+    ${a.vma ? `<h2>Allures <b>VMA ${a.vma.toFixed(1)} · ${clock(paceAt(a.vma, 100))} /km</b></h2>
+    <div class="card flush"><div class="list">${ZONES.map(([n, lo, hi]) => `<div class="prow"><span class="pd"><b>${n}</b><span>${lo == null ? "< " + hi : hi == null ? "> " + lo : lo + "–" + hi} % VMA</span></span><span class="ps pace">${zonePace(a.vma, lo, hi)} /km</span></div>`).join("")}</div></div>
+    <h2>Prédictions</h2>
+    <div class="stats">${PRED.map(([n, m, pct]) => tile(n, hms(repTime(m, a.vma, pct)))).join("")}</div>` : `<div class="card"><p class="muted">Pas encore de VMA : les allures s'affichent dès qu'il ou elle entre son test sur la page Ma VMA.</p></div>`}
+
+    ${a.history.length ? `<h2>Historique VMA</h2><div class="card flush"><div class="list">${a.history.slice().reverse().map(h => `<div class="prow"><span class="pd"><b>${Number(h.vma).toFixed(1)} km/h</b><span>${h.test_m ? h.test_m + " m en 6'" : "VMA entrée directement"}</span></span><span class="ps">${h.at ? new Date(h.at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : ""}</span></div>`).join("")}</div></div>` : ""}
+
+    <h2>Questionnaire</h2>
+    <div class="card flush"><div class="list">${qa.map(([k, v]) => `<div class="prow"><span class="pd"><span>${k}</span></span><span class="ps">${esc(v)}</span></div>`).join("")}</div></div>`;
+  $("pBack").onclick = () => history.length > 1 ? history.back() : (location.hash = "");
 };
 
 /* Packs of runners who can run the reps together: sorted by VMA, a new pack when the gap to the pack's fastest passes 0.8 km/h */
@@ -549,14 +640,25 @@ const asText = () => {
 $("enter").onclick = () => { code = $("code").value.trim(); if (code) load(); };
 $("code").onkeydown = (e) => { if (e.key === "Enter") $("enter").click(); };
 $("refresh").onclick = load;
-$("out").onclick = () => { store.set("essor-coach-code", null); code = ""; $("hub").hidden = true; $("gate").hidden = false; $("gateBad").hidden = true; $("code").value = ""; };
+$("out").onclick = () => { $("profile").hidden = true; location.hash = ""; store.set("essor-coach-code", null); code = ""; $("hub").hidden = true; $("gate").hidden = false; $("gateBad").hidden = true; $("code").value = ""; };
 $("copy").onclick = async () => { const b = $("copy"); try { await navigator.clipboard.writeText(asText()); b.textContent = "Copié ✓"; } catch { b.textContent = "Copie impossible"; } setTimeout(() => (b.textContent = "Copier pour WhatsApp"), 1800); };
 $("search").oninput = render;
 $("strip").onclick = (e) => { const b = e.target.closest("[data-s]"); if (b) pick(b.dataset.s); };
 $("sess").onclick = (e) => { const b = e.target.closest("[data-lv]"); if (b) { sessLevel = b.dataset.lv; renderSession(); } };
 document.querySelector(".seg").onclick = (e) => { const b = e.target.closest("button"); if (b) { view = b.dataset.view; render(); } };
 $("chips").onclick = (e) => { const b = e.target.closest("button"); if (b) { levelFilter = b.dataset.level; render(); } };
-$("view").onclick = (e) => { const b = e.target.closest(".ath > button"); if (!b) return; const id = b.dataset.id; open.has(id) ? open.delete(id) : open.add(id); render(); };
+const route = () => {
+  const id = (location.hash.match(/^#a=(.+)$/) || [])[1];
+  const a = id && athletes.find(x => x.id === decodeURIComponent(id));
+  if (!athletes.length) return;
+  $("profile").hidden = !a; $("hub").hidden = !!a;
+  if (a) { renderProfile(a); window.scrollTo(0, 0); } else if (route.y != null) { window.scrollTo(0, route.y); route.y = null; }
+};
+window.addEventListener("hashchange", route);
+$("view").onclick = (e) => {
+  const pb = e.target.closest("[data-profile]");
+  if (pb) { route.y = window.scrollY; location.hash = "a=" + encodeURIComponent(pb.dataset.profile); return; }
+  const b = e.target.closest(".ath > button"); if (!b) return; const id = b.dataset.id; open.has(id) ? open.delete(id) : open.add(id); render(); };
 
 if (code) load(); else { $("loading").hidden = true; $("gate").hidden = false; }
 </script>

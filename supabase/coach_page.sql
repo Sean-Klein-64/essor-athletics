@@ -13,7 +13,7 @@ begin
     select jsonb_agg(r order by r->>'name') from (
       select jsonb_build_object(
         'id', s.id, 'name', s.name, 'level', s.level,
-        'answers', jsonb_build_object('fiveK', s.answers->'fiveK', 'injury', s.answers->'injury', 'injuryDetail', s.answers->'injuryDetail', 'goal', s.answers->'goal', 'bests', s.answers->'bests', 'member', s.answers->'member'),
+        'answers', jsonb_build_object('fiveK', s.answers->'fiveK', 'injury', s.answers->'injury', 'injuryDetail', s.answers->'injuryDetail', 'goal', s.answers->'goal', 'bests', s.answers->'bests', 'member', s.answers->'member', 'runContinuous', s.answers->'runContinuous', 'runsPerWeek', s.answers->'runsPerWeek', 'races', s.answers->'races'),
         'vma', (select jsonb_build_object('vma', v.vma, 'test_m', v.test_m, 'hr_max', v.hr_max, 'history', v.history, 'updated_at', v.updated_at)
                 from public.vma v
                 where v.signup_id = s.id
