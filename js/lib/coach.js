@@ -83,7 +83,7 @@ export const nameCase = (t) =>
     .trim()
     .replace(/\s+/g, " ")
     .toLowerCase()
-    .replace(/(^|[\s\-'’(])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+    .replace(/(^|[\s\-'’(])([a-zà-öø-ÿœ])/g, (m, a, b) => a + b.toUpperCase()); // no \p{…}: keep the regex Hermes-safe
 
 const keyOf = (t) =>
   String(t || "")
