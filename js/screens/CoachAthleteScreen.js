@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -9,7 +9,8 @@ import UserContext from "../variables/context";
 
 import useSessions from "../lib/store";
 import { levelById } from "../lib/levels";
-import { vmaDateLabel, goalLabel, myRaceLabel, objectivesLabel, bestRows, trainingPaces, injuryLabel, sessionTargets, isClubLevel, athleteSessions, athleteBeginner, effectiveLevel } from "../lib/coach";
+import { vmaDateLabel, goalLabel, myRaceLabel, objectivesLabel, bestRows, trainingPaces, injuryLabel, sessionTargets, isClubLevel, athleteSessions, athleteBeginner, effectiveLevel, wodifyAttendance, ATTENDANCE_LABEL, loadCoachData } from "../lib/coach";
+import { PREDICTIONS, predict } from "../lib/paces";
 import { beginnerHistory, feelById } from "../lib/history";
 import { formatDay, todayKey } from "../lib/plan";
 
@@ -44,7 +45,16 @@ const CoachAthleteScreen = ({ navigation, route }) => {
   const athlete = route.params?.athlete;
   const { sessions, byId } = useSessions();
   const session = byId(route.params?.sessionId);
+  const [wodify, setWodify] = useState(route.params?.wodify || null);
+  useEffect(() => {
+    if (!wodify) loadCoachData().then((d) => setWodify(d.wodify)).catch(() => {});
+  }, [wodify]);
   if (!athlete) return null;
+
+  const att = wodify ? wodifyAttendance(athlete, sessions, wodify) : [];
+  const counted = att.filter((x) => x.status === "present" || x.status === "absent");
+  const here = counted.filter((x) => x.status === "present").length;
+  const lastHere = [...att].reverse().find((x) => x.status === "present");
 
   const level = effectiveLevel(athlete);
   const club = isClubLevel(level);
@@ -78,6 +88,13 @@ const CoachAthleteScreen = ({ navigation, route }) => {
             {athlete.vmaTestMetres ? ` · ${athlete.vmaTestMetres} m en 6'` : ""}
           </Text>
         </Card>
+
+        {/* Attendance at a glance */}
+        <View style={styles.stats}>
+          <Stat k="Séances" v={counted.length ? `${here}/${counted.length}` : "—"} colors={colors} typography={typography} />
+          <Stat k="Dernière" v={lastHere ? lastHere.session.date.slice(8) + "/" + lastHere.session.date.slice(5, 7) : "—"} colors={colors} typography={typography} />
+          <Stat k="Test 6'" v={athlete.vmaTestMetres ? `${athlete.vmaTestMetres} m` : "—"} colors={colors} typography={typography} />
+        </View>
 
         {/* Injury — first thing a coach should see */}
         <View style={[styles.flag, injured ? { backgroundColor: colors.accentSoft, borderColor: colors.accentText } : { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -125,9 +142,33 @@ const CoachAthleteScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {/* The Fridays — done, how it felt, their note */}
+        {/* Present / absent at each session of the cycle, from Wodify */}
         <View style={styles.section}>
-          <SectionLabel>Les vendredis · {athlete.reportedAt ? `${doneCount}/${history.length || 0}` : "—"}</SectionLabel>
+          <SectionLabel>Présences · cycle 1</SectionLabel>
+          <Card colors={colors}>
+            {att.length ? (
+              att.map((x, i) => {
+                const color = x.status === "present" ? colors.accentText : x.status === "absent" ? "#E07A5F" : x.status === "booked" ? "#E9C46A" : colors.text;
+                return (
+                  <View key={x.session.id} style={[styles.row, i < att.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }, x.status === "future" && { opacity: 0.55 }]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={typography.heading}>{x.session.title}</Text>
+                      <Text style={[typography.finePrint, { fontSize: 13 }]}>{formatDay(x.session.date)}</Text>
+                    </View>
+                    <Text style={[typography.heading, typography.bold, { color, fontSize: 15 }]}>{ATTENDANCE_LABEL[x.status]}</Text>
+                  </View>
+                );
+              })
+            ) : (
+              <Text style={[typography.finePrint, styles.empty]}>Les présences arrivent avec la synchro Wodify</Text>
+            )}
+          </Card>
+        </View>
+
+        {/* The Fridays — done, how it felt, their note */}
+        {!!athlete.reportedAt && (
+        <View style={styles.section}>
+          <SectionLabel>Ressenti dans l{"'"}app · {`${doneCount}/${history.length || 0}`}</SectionLabel>
           <Card colors={colors}>
             {!athlete.reportedAt ? (
               <Text style={[typography.finePrint, styles.empty]}>Rien reçu de son téléphone pour l’instant</Text>
@@ -147,6 +188,7 @@ const CoachAthleteScreen = ({ navigation, route }) => {
             )}
           </Card>
         </View>
+        )}
 
         <View style={styles.section}>
           <SectionLabel>Parcours</SectionLabel>
@@ -178,6 +220,18 @@ const CoachAthleteScreen = ({ navigation, route }) => {
           </Card>
         </View>
 
+        {!!athlete.vma && (
+          <View style={styles.section}>
+            <SectionLabel>Prédictions</SectionLabel>
+            <Card colors={colors}>
+              {PREDICTIONS.map((pr, i) => {
+                const r = predict(athlete.vma, pr);
+                return <Row key={pr.id} title={pr.name} sub={r.pace} value={r.time} mono last={i === PREDICTIONS.length - 1} {...rowProps} />;
+              })}
+            </Card>
+          </View>
+        )}
+
         {!!athlete.reportedAt && (
           <Text style={[typography.finePrint, styles.hint]}>Progression envoyée par son téléphone le {athlete.reportedAt.split("-").reverse().join("/")}.</Text>
         )}
@@ -186,7 +240,17 @@ const CoachAthleteScreen = ({ navigation, route }) => {
   );
 };
 
+const Stat = ({ k, v, colors, typography }) => (
+  <View style={[styles.stat, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <Text style={[typography.finePrint, { fontSize: 11, letterSpacing: 0.6, textTransform: "uppercase" }]}>{k}</Text>
+    <Text style={[styles.statV, { color: colors.text }]}>{v}</Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
+  stats: { flexDirection: "row", gap: 8 },
+  stat: { flex: 1, borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10 },
+  statV: { fontFamily: "Archivo-BlackItalic", fontSize: 24, lineHeight: 28 },
   content: { paddingHorizontal: 20, paddingTop: 4, gap: 20 },
   card: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 16 },
   hero: { paddingVertical: 18, gap: 6, alignItems: "flex-start" },

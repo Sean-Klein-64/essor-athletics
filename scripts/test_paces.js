@@ -456,6 +456,45 @@ check("Wodify: app first, then store, then website", () => {
   assert.ok(m.wodifyTargets("android").some((t) => t.url.startsWith("market://")));
 });
 
+console.log("Coach — Wodify, names, groups, blocks");
+check("names are capitalised", () => {
+  assert.strictEqual(m.nameCase("hugo DELPLAN"), "Hugo Delplan");
+  assert.strictEqual(m.nameCase("marie-laure pietrangeli"), "Marie-Laure Pietrangeli");
+  assert.strictEqual(m.nameCase("charlotte d'addario"), "Charlotte D'Addario");
+});
+check("Wodify names find the right runner", () => {
+  const roster = ["Alex Duran", "Alejandro Aguinaga", "Florent Pesenti", "Héloïse Ruel", "Laurence Martiarena"].map((name, i) => ({ id: String(i), name }));
+  assert.strictEqual(m.matchName(roster, "Hugo DELPLAN"), null);
+  assert.strictEqual(m.matchName(roster, "Alex Duran").name, "Alex Duran");
+  assert.strictEqual(m.matchName(roster, "Alejandro Aguinaga").name, "Alejandro Aguinaga");
+  assert.strictEqual(m.matchName(roster, "Flo Pesenti").name, "Florent Pesenti");
+  assert.strictEqual(m.matchName(roster, "Héloise Ruel").name, "Héloïse Ruel");
+  assert.strictEqual(m.matchName(roster, "Laurence Martiaréna").name, "Laurence Martiarena");
+});
+check("pace groups split at 0.8 km/h and give the rep target", () => {
+  const s = m.sessions.find((x) => x.id === "2026-11-20-vo2-10k");
+  const ath = [16.9, 16.5, 15.3, 14.7, 12.6].map((vma, i) => ({ id: String(i), name: "R" + i, level: "level2", vma }));
+  const g = m.paceGroups(ath, s);
+  assert.deepStrictEqual(g.map((x) => x.athletes.length), [2, 2, 1]);
+  assert.strictEqual(g[0].rep, "400 m");
+  assert.strictEqual(g[0].target, "1:30 – 1:32");
+});
+check("session blocks: 2 × 5 × 400 m, then the pyramid", () => {
+  const b = m.sessionBlocks(m.sessions.find((x) => x.id === "2026-11-20-vo2-10k"), "level2");
+  assert.deepStrictEqual(b.map((x) => (x.rest ? "~" + x.rest : `${x.reps}×${x.what}`)), ["5×400 m", "~3' marche", "5×400 m"]);
+  const p = m.sessionBlocks(m.sessions.find((x) => x.id === "2026-11-27-pyramide"), "level3");
+  assert.deepStrictEqual(p.map((x) => (x.rest ? "~" + x.rest : x.reps)), [6, "~3' marche", 3]);
+  assert.strictEqual(p[0].rec, "1' marche");
+});
+check("attendance across the cycle from a Wodify snapshot", () => {
+  const a = { id: "x", name: "Alex Duran" };
+  const wod = { sessions: { "2026-11-06": { attended: ["Alex Duran"] }, "2026-11-13": { attended: ["Paul Lafon"] } } };
+  const list = m.wodifyAttendance(a, m.sessions, wod);
+  assert.strictEqual(list.find((x) => x.session.date === "2026-11-06").status, "present");
+  assert.strictEqual(list.find((x) => x.session.date === "2026-11-13").status, "absent");
+  assert.strictEqual(list.find((x) => x.session.date === "2026-10-30").status, "noList");
+});
+
 console.log("Chrono (Débuter)");
 const s5 = m.PROGRAMMES.beginnerA.weeks[0][0]; // 5×(1'/1')
 const ph = m.sessionPhases(s5);

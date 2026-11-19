@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { StyleSheet, View, Text, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -11,6 +11,7 @@ import UserContext from "../variables/context";
 import useSessions from "../lib/store";
 import { splitSessions, formatDay, todayKey } from "../lib/plan";
 import myWeek from "../lib/myWeek";
+import { fetchWodify, wodifyList } from "../lib/coach";
 
 /*
   Coach view — what members never see. Tap a session for its hub (who's
@@ -60,6 +61,11 @@ const CoachHomeScreen = ({ navigation }) => {
   const edit = (s) => navigation.navigate("SessionEditor", { id: s?.id });
   const hub = (s) => navigation.navigate("CoachSession", { id: s.id });
   const today = myWeek[(new Date().getDay() + 6) % 7];
+  const [wodify, setWodify] = useState(null);
+  useEffect(() => {
+    fetchWodify().then(setWodify);
+  }, []);
+  const count = (s) => wodifyList(wodify, s)?.names.length;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
@@ -94,10 +100,21 @@ const CoachHomeScreen = ({ navigation }) => {
           </View>
         </Pressable>
 
+        <Pressable onPress={() => navigation.navigate("CoachAthletes")}>
+          <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Glyph name="people" size={18} color={colors.text} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[typography.heading, typography.bold]}>Athlètes</Text>
+              <Text style={[typography.finePrint, { fontSize: 13 }]}>Tout le club · VMA, présences, allures</Text>
+            </View>
+            <Glyph name="right" size={16} color={colors.text} />
+          </View>
+        </Pressable>
+
         {!!next && (
           <View style={styles.section}>
             <SectionLabel>Prochaine séance</SectionLabel>
-            <Row session={next} onPress={() => hub(next)} onEdit={() => edit(next)} draft={!!local[next.id] && !shared} colors={colors} typography={typography} />
+            <Row session={next} count={count(next)} onPress={() => hub(next)} onEdit={() => edit(next)} draft={!!local[next.id] && !shared} colors={colors} typography={typography} />
             <Pressable onPress={() => navigation.navigate("Session", { id: next.id })} small>
               <Text style={[typography.finePrint, styles.link, { color: colors.accentText }]}>Voir comme un membre</Text>
             </Pressable>
@@ -108,7 +125,7 @@ const CoachHomeScreen = ({ navigation }) => {
           <View style={styles.section}>
             <SectionLabel>À venir</SectionLabel>
             {upcoming.map((s) => (
-              <Row key={s.id} session={s} onPress={() => hub(s)} onEdit={() => edit(s)} draft={!!local[s.id] && !shared} colors={colors} typography={typography} />
+              <Row key={s.id} session={s} count={count(s)} onPress={() => hub(s)} onEdit={() => edit(s)} draft={!!local[s.id] && !shared} colors={colors} typography={typography} />
             ))}
           </View>
         )}
@@ -130,7 +147,7 @@ const CoachHomeScreen = ({ navigation }) => {
           <View style={styles.section}>
             <SectionLabel>Passées</SectionLabel>
             {past.map((s) => (
-              <Row key={s.id} session={s} onPress={() => hub(s)} onEdit={() => edit(s)} colors={colors} typography={typography} />
+              <Row key={s.id} session={s} count={count(s)} onPress={() => hub(s)} onEdit={() => edit(s)} colors={colors} typography={typography} />
             ))}
           </View>
         )}

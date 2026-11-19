@@ -49,19 +49,124 @@ export const fetchRoster = async (code = COACH_CODE) => {
 };
 
 /*
-  Who's coming to a session. The ONE place the list is decided.
+  Wodify, as the coach page on the site sees it: coach_wodify() in Supabase
+  (supabase/coach_page.sql) holds one snapshot of the Run Club class,
+    { sessions: { "2026-11-20": { booked: [names] }, "2026-11-13": { attended: [names] } } }
+  read off Wodify ("Signed in" = present). Null when there's none yet.
+*/
+export const fetchWodify = async (code = COACH_CODE) => {
+  try {
+    const res = await rpc("coach_wodify", { p_code: code });
+    const data = res?.data || null;
+    if (!data) return null;
+    const sessions = data.sessions || (data.session_date ? { [data.session_date]: { booked: data.booked || [] } } : {});
+    return { sessions, updatedAt: res.updated_at || null };
+  } catch {
+    return null; // no snapshot (or not set up): the screens fall back to the roster
+  }
+};
 
-  Today: every runner with app access (the whole club is expected on Friday).
-  Wodify bookings plug in here later — fetch the Run Club class reservations
-  for session.date and keep only the athletes who booked, e.g.
-    const booked = await fetchWodifyBookings(session.date);   // names / phones
-    return roster.filter((a) => booked.has(a.matchKey));
+/* Roster + Wodify together, kept for a minute so going back and forth doesn't refetch */
+let cache = null;
+export const loadCoachData = async ({ force } = {}) => {
+  if (!force && cache && Date.now() - cache.at < 60000) return cache.data;
+  const [roster, wodify] = await Promise.all([fetchRoster(), fetchWodify()]);
+  cache = { at: Date.now(), data: { roster, wodify } };
+  return cache.data;
+};
+
+/* ── Names: Wodify spells them its own way ───────────────────────────── */
+
+/* "hugo DELPLAN" → "Hugo Delplan", "marie-laure" → "Marie-Laure", "d'addario" → "D'Addario" */
+export const nameCase = (t) =>
+  String(t || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase()
+    .replace(/(^|[\s\-'’(])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+
+const keyOf = (t) =>
+  String(t || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/* The roster entry a Wodify name belongs to: exact, then first + last name, then a short first name ("Flo" = Florent) */
+export const matchName = (athletes, name) => {
+  const k = keyOf(name);
+  if (!k) return null;
+  const parts = k.split(" ");
+  const first = parts[0];
+  const last = parts[parts.length - 1];
+  const words = (a) => keyOf(a.name).split(" ");
+  return (
+    athletes.find((a) => keyOf(a.name) === k) ||
+    athletes.find((a) => { const p = words(a); return p[0] === first && p[p.length - 1] === last; }) ||
+    athletes.find((a) => { const p = words(a); return parts.length > 1 && p.includes(first) && p.includes(last); }) ||
+    athletes.find((a) => { const p = words(a); return parts.length > 1 && p[p.length - 1] === last && (p[0].startsWith(first) || first.startsWith(p[0])); }) ||
+    null
+  );
+};
+
+/* A session is "past" from 19:00 on its day */
+export const isPastSession = (session, now = new Date()) => {
+  const today = todayKeyOf(now);
+  return session.date < today || (session.date === today && now.getHours() >= 19);
+};
+const todayKeyOf = (now) => `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+/* The Wodify list for one session: who was there once it's past (attended), who booked before */
+export const wodifyList = (wodify, session) => {
+  const rec = wodify?.sessions?.[session?.date];
+  if (!rec) return null;
+  const past = isPastSession(session);
+  const list = past ? rec.attended || rec.booked : rec.booked;
+  return Array.isArray(list) ? { names: list, kind: past && rec.attended ? "present" : "booked" } : null;
+};
+
+/*
+  Who's coming to a session. The ONE place the list is decided.
+  With a Wodify list for that date: the runners on it (and the Wodify names
+  with no questionnaire, as `extras`). Without: every Level 1–3 runner.
   `source` tells the screen which list it is showing.
 */
-export const getSessionAttendees = async (session, { roster } = {}) => {
-  const athletes = roster || (await fetchRoster());
-  return { athletes, source: "roster" };
+export const getSessionAttendees = async (session, { roster, wodify } = {}) => {
+  const data = roster ? { roster, wodify } : await loadCoachData();
+  const list = wodifyList(data.wodify, session);
+  if (list) {
+    const athletes = [];
+    const extras = [];
+    list.names.forEach((n) => {
+      const a = matchName(data.roster, n);
+      if (a && !athletes.includes(a)) athletes.push(a);
+      else if (!a) extras.push(nameCase(n));
+    });
+    return { athletes, extras, source: list.kind, roster: data.roster, wodify: data.wodify };
+  }
+  return { athletes: data.roster.filter((a) => isClubLevel(effectiveLevel(a))), extras: [], source: "roster", roster: data.roster, wodify: data.wodify };
 };
+
+/*
+  One runner across the cycle, from Wodify:
+    [{ session, status }]  status: present | absent | booked | notBooked | noList | future
+*/
+export const wodifyAttendance = (athlete, sessions, wodify) =>
+  [...sessions]
+    .sort((x, y) => (x.date < y.date ? -1 : 1))
+    .map((session) => {
+      const rec = wodify?.sessions?.[session.date] || {};
+      const past = isPastSession(session);
+      const on = (names) => names.some((n) => matchName([athlete], n));
+      if (Array.isArray(rec.attended)) return { session, status: on(rec.attended) ? "present" : "absent" };
+      if (!past && Array.isArray(rec.booked)) return { session, status: on(rec.booked) ? "booked" : "notBooked" };
+      return { session, status: past ? "noList" : "future" };
+    });
+
+export const ATTENDANCE_LABEL = { present: "Présent", absent: "Absent", booked: "Réservé", notBooked: "Pas réservé", noList: "Pas de liste", future: "À venir" };
 
 /* ── One runner, from a coach_athletes() row ─────────────────────────── */
 
@@ -102,7 +207,7 @@ export const toAthlete = (row) => {
   const vma = pickVma(row.vma, p.vma);
   return {
     id: row.id,
-    name: row.name || "",
+    name: nameCase(row.name),
     level: row.level || null,
     startWeek: row.start_week || null,
     vma: vma?.value ?? null,
@@ -223,6 +328,82 @@ export const sessionTargets = (session, levelId, vma) => {
     return { label: formatDuration(seconds), reps, target: `${Math.round(repDistance(seconds, vma, s.vma) / 5) * 5} m`, pace, pct: s.vma };
   });
 };
+
+/* ── Pace groups: who can run the reps together ─────────────────────── */
+
+/* The first fast rep of a level's main set: { run, vma } */
+const firstRep = (session, levelId) => runSteps(planFor(session, levelId).main).find((s) => s.run !== undefined) || null;
+
+/* "1:31" for 400 m, "130 m" for 30" — one rep at one VMA */
+export const repTarget = (rep, vma) =>
+  typeof rep.run === "number" ? formatClock(repTime(rep.run, vma, rep.vma)) : `${Math.round(repDistance(toSeconds(rep.run), vma, rep.vma) / 10) * 10} m`;
+export const repLabel = (rep) => (typeof rep.run === "number" ? formatDistance(rep.run) : formatDuration(toSeconds(rep.run)));
+
+/*
+  Level 1–3 runners with a VMA, fastest first, cut into packs: a new pack when
+  the gap to the pack's fastest passes 0.8 km/h.
+    [{ athletes, vmaLow, vmaHigh, rep: "400 m", target: "1:30 – 1:32" }]
+*/
+export const paceGroups = (athletes, session) => {
+  const packs = [];
+  athletes
+    .filter((a) => a.vma && isClubLevel(effectiveLevel(a)))
+    .sort((x, y) => y.vma - x.vma || x.name.localeCompare(y.name, "fr"))
+    .forEach((a) => {
+      const g = packs[packs.length - 1];
+      if (g && g[0].vma - a.vma <= 0.8) g.push(a);
+      else packs.push([a]);
+    });
+  return packs.map((g) => {
+    const rep = session ? firstRep(session, effectiveLevel(g[0])) || firstRep(session, "level2") : null;
+    const fast = rep ? repTarget(rep, g[0].vma) : null;
+    const slow = rep ? repTarget(rep, g[g.length - 1].vma) : null;
+    return { athletes: g, vmaHigh: g[0].vma, vmaLow: g[g.length - 1].vma, rep: rep ? repLabel(rep) : null, target: fast ? (fast === slow ? fast : `${fast} – ${slow}`) : null };
+  });
+};
+
+/*
+  A level's main set as blocks for the session card:
+    [{ reps: 5, what: "400 m", items: ["400 m", …], rec: "1' marche" } | { rest: "3' marche" }]
+*/
+export const sessionBlocks = (session, levelId) => {
+  const main = planFor(session, levelId).main;
+  const pause = (x) => toSeconds(x.walk || x.jog || 0) || 0;
+  const recText = (x) => (x.walk ? `${formatDuration(toSeconds(x.walk))} marche` : x.jog ? `${formatDuration(toSeconds(x.jog))} trot` : "");
+  const runs = (steps) => steps.filter((x) => x.run !== undefined);
+  const recOf = (steps, rest) => { const r = rest || steps.find((x) => x.jog || x.walk); return r ? recText(r) : ""; };
+  const block = (items, rec) => ({ reps: items.length, what: new Set(items).size === 1 ? items[0] : "répétitions", items, rec });
+  const out = [];
+  const loose = main.filter((x) => !x.repeat && x.run === undefined && pause(x));
+  const short = loose.length ? Math.min(...loose.map(pause)) : 0;
+  const hasLonger = loose.some((x) => pause(x) > short);
+  let cur = null;
+  main.forEach((st) => {
+    if (!st.repeat) {
+      if (st.run !== undefined) {
+        if (!cur) out.push((cur = { items: [], rec: "" }));
+        cur.items.push(repLabel(st));
+      } else if (cur && pause(st) === short && (hasLonger || !main.some((x) => x.repeat))) cur.rec = recText(st);
+      else if (st.test) out.push({ rest: `Test ${formatDuration(toSeconds(st.test))}` });
+      else { cur = null; if (pause(st)) out.push({ rest: recText(st) }); }
+      return;
+    }
+    cur = null;
+    const inner = st.steps;
+    const nested = inner.length === 1 && inner[0].repeat;
+    if (nested || runs(inner).length > 1) {
+      for (let i = 0; i < st.repeat; i++) {
+        if (i && st.rest) out.push({ rest: recText(st.rest) });
+        if (nested) out.push(block(Array(inner[0].repeat).fill(runs(inner[0].steps).map(repLabel).join(" + ")), recOf(inner[0].steps, inner[0].rest)));
+        else out.push(block(runs(inner).map(repLabel), recOf(inner)));
+      }
+    } else out.push(block(Array(st.repeat).fill(runs(inner).map(repLabel).join(" + ")), recOf(inner, st.rest)));
+  });
+  return out.map((b) => (b.items && !b.reps ? block(b.items, b.rec) : b));
+};
+
+/* Fast volume of a level's main set, in metres */
+export const fastVolume = (session, levelId) => runSteps(planFor(session, levelId).main).reduce((t, s) => t + (typeof s.run === "number" ? s.run : 0), 0);
 
 /* ── A session's structure in a line ─────────────────────────────────── */
 
