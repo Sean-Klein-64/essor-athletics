@@ -121,7 +121,7 @@ a.text { color: var(--mint); }
     </div>
     <p class="muted" id="formIntro">Entre la distance de ton test de 6 minutes. On calcule ta VMA et toutes tes allures d'entraînement, et tu peux revenir les voir quand tu veux.</p>
     <div class="card">
-      <div class="field"><label for="name">Prénom et nom</label><input id="name" type="text" autocomplete="name" placeholder="Prénom Nom"></div>
+      <div class="field"><label for="name">Prénom et nom <span class="small">(comme dans Wodify)</span></label><input id="name" type="text" autocomplete="name" placeholder="Prénom Nom"></div>
       <div class="field"><label for="phone">Ton numéro</label><input id="phone" type="tel" autocomplete="tel" placeholder="06 …"><p class="muted small">Pour retrouver tes zones sur un autre téléphone.</p></div>
     </div>
     <div class="card">
@@ -359,8 +359,10 @@ function setMode(m) {
   $("testField").hidden = m !== "test"; $("vmaField").hidden = m !== "vma";
   check();
 }
+const nameCase = (t) => String(t || "").trim().replace(/\s+/g, " ").toLowerCase().replace(/(^|[\s\-'’(])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+const fullName = (t) => String(t || "").trim().split(/\s+/).filter(w => w.replace(/[^\p{L}]/gu, "").length >= 2).length >= 2;
 function readForm() {
-  const name = $("name").value.trim(), phone = $("phone").value.trim();
+  const name = nameCase($("name").value), phone = $("phone").value.trim();
   const metres = mode === "test" ? Math.round(dec($("metres").value) || 0) || null : null;
   const vma = mode === "test" ? (metres ? vmaFromMetres(metres) : null) : (dec($("vmaIn").value) ? Math.round(dec($("vmaIn").value) * 10) / 10 : null);
   const hrRaw = $("hr").value.trim(); const hr = hrRaw ? Math.round(dec(hrRaw) || 0) : null;
@@ -371,12 +373,14 @@ function check() {
   if (mode === "test" && $("metres").value.trim() && (!f.metres || f.metres < 600 || f.metres > 3000)) bad = "Entre la distance en mètres, par exemple 1500.";
   else if (mode === "vma" && $("vmaIn").value.trim() && (!f.vma || f.vma < 6 || f.vma > 30)) bad = "Une VMA entre 6 et 30 km/h, par exemple 15,5.";
   else if (f.hrRaw && (!f.hr || f.hr < 120 || f.hr > 230)) bad = "Une FC max entre 120 et 230 bpm — ou laisse vide.";
+  else if (f.name && !fullName(f.name)) bad = "Ton prénom et ton nom, comme dans Wodify (ex. Alex Duran).";
   $("formBad").hidden = !bad; $("formBad").textContent = bad;
   $("metres").setAttribute("aria-invalid", String(mode === "test" && !!bad && bad.includes("mètres")));
   $("vmaIn").setAttribute("aria-invalid", String(mode === "vma" && !!bad && bad.includes("VMA entre")));
   $("hr").setAttribute("aria-invalid", String(!!bad && bad.includes("FC")));
   $("calc").textContent = !bad && mode === "test" && f.vma ? `${f.metres} m en 6' → VMA ${fr(f.vma)} km/h` : "";
-  $("save").disabled = !!bad || !f.name || !f.vma || f.vma < 6 || f.vma > 30;
+  $("name").setAttribute("aria-invalid", String(!!bad && bad.includes("prénom et ton nom")));
+  $("save").disabled = !!bad || !fullName(f.name) || !f.vma || f.vma < 6 || f.vma > 30;
 }
 function openForm(editing) {
   const s = me || fromSignup();

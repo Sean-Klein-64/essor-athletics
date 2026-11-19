@@ -41,6 +41,24 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--mint); outl
 .btn.sm { width: auto; height: 36px; font-size: 14px; padding: 0 14px; }
 .hint-bad { color: var(--bad); font-size: 14px; }
 
+/* The cycle's sessions */
+.strip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.strip::-webkit-scrollbar { display: none; }
+.strip button { flex: 0 0 auto; min-width: 118px; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 1px; }
+.strip button b { font-family: var(--display); font-style: italic; font-size: 20px; line-height: 1.05; }
+.strip button span { font-size: 13px; white-space: nowrap; }
+.strip button i { font-style: normal; font-size: 12px; color: var(--muted); }
+.strip button.past b, .strip button.past span { color: var(--muted); }
+.strip button.next i { color: var(--mint); }
+.strip button[aria-pressed="true"] { border-color: var(--mint); background: var(--accent-soft); }
+.strip button[aria-pressed="true"] b, .strip button[aria-pressed="true"] span { color: var(--fg); }
+.att { display: flex; gap: 6px; flex-wrap: wrap; }
+.att span { display: flex; flex-direction: column; font-size: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 6px 9px; min-width: 84px; color: var(--muted); }
+.att span b { font-size: 14px; color: var(--fg); font-variant-numeric: tabular-nums; }
+.att span i { font-style: normal; font-weight: 600; }
+.att .yes { border-color: var(--mint); } .att .yes i { color: var(--mint); }
+.att .no i { color: var(--bad); } .att .bk i { color: var(--warn); }
+
 /* The session */
 .sess { background: var(--accent); border-radius: 24px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
 .sess .kicker { color: rgba(255,255,255,0.75); }
@@ -164,6 +182,7 @@ tr.cut td { border-top: 2px solid var(--mint); }
 
   <!-- 2. The hub -->
   <section id="hub" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="strip" id="strip" role="group" aria-label="Séances du cycle"></div>
     <div class="sess" id="sess"></div>
     <div class="stats" id="stats"></div>
     <div class="note" id="wodNote" hidden></div>
@@ -231,6 +250,7 @@ const LEVELS = [
   { id: "beginnerB", name: "Débuter B", short: "Déb. B", cls: "" },
   { id: "beginnerA", name: "Débuter A", short: "Déb. A", cls: "" },
 ];
+const nameCase = (t) => String(t || "").trim().replace(/\s+/g, " ").toLowerCase().replace(/(^|[\s\-'’(])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\([^)]*\)/g, " ").replace(/[^a-z ]/g, " ").replace(/\s+/g, " ").trim();
 const levelKey = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "");
 const levelOf = (raw) => { const k = levelKey(raw); return (k && LEVELS.find(l => levelKey(l.id) === k || levelKey(l.name) === k)) || null; };
@@ -283,7 +303,7 @@ const pickVma = (row) => {
 const toAthlete = (row) => {
   const a = row.answers || {}, p = row.progress || {};
   return {
-    id: row.id, name: row.name || "", key: norm(row.name), level: levelOf(p.level || row.level) , siteLevel: levelOf(row.level),
+    id: row.id, name: nameCase(row.name), key: norm(row.name), level: levelOf(p.level || row.level) , siteLevel: levelOf(row.level),
     vma: pickVma(row), testM: row.vma && row.vma.test_m, hr: row.vma && row.vma.hr_max, vmaAt: row.vma && row.vma.updated_at,
     history: (row.vma && row.vma.history) || [],
     appDone: p.at ? Object.keys(p.done || {}).length : null,
@@ -298,17 +318,34 @@ const matchName = (name) => {
   return athletes.find(a => a.key === k)
     || athletes.find(a => { const p = a.key.split(" "); return p[0] === parts[0] && p[p.length - 1] === parts[parts.length - 1]; })
     || athletes.find(a => { const p = a.key.split(" "); return parts.length > 1 && p.includes(parts[0]) && p.includes(parts[parts.length - 1]); })
+    // a short first name in Wodify ("Flo Pesenti" = Florent Pesenti): same last name, one first name starts the other
+    || athletes.find(a => { const p = a.key.split(" "); return parts.length > 1 && p[p.length - 1] === parts[parts.length - 1] && (p[0].startsWith(parts[0]) || parts[0].startsWith(p[0])); })
     || null;
 };
+/* The Wodify snapshot, per session date: { sessions: { "2026-11-20": { booked: [names], attended: [names] } } }
+   (an older snapshot with one session_date + booked still reads). */
+const wodSessions = () => !wod ? null : wod.sessions || (wod.session_date ? { [wod.session_date]: { booked: wod.booked || [] } } : null);
+const isPast = (x) => { const t = todayIso(), h = new Date().getHours(); return x.date < t || (x.date === t && h >= 19); };
+let synced = false, past = false, attendance = false;
 const applyWodify = () => {
   extras = [];
-  const forNext = wod && session && wod.session_date === session.date;
-  athletes.forEach(a => { a.booked = forNext ? false : null; a.done = null; });
-  if (!wod) return;
-  if (forNext) (wod.booked || []).forEach(n => { const a = matchName(n); a ? (a.booked = true) : extras.push(n); });
-  Object.entries(wod.attended || {}).forEach(([n, c]) => { const a = matchName(n); if (a) a.done = (a.done || 0) + Number(c || 0); });
-  if (wod.attended) athletes.forEach(a => { if (a.done == null) a.done = 0; });
+  const S = wodSessions(), rec = S && session && S[session.date];
+  past = !!session && isPast(session);
+  const list = rec && (past ? rec.attended || rec.booked : rec.booked);
+  synced = Array.isArray(list);
+  athletes.forEach(a => { a.booked = synced ? false : null; a.done = null; a.seen = {}; });
+  if (synced) list.forEach(n => { const a = matchName(n); a ? (a.booked = true) : extras.push(nameCase(n)); });
+  attendance = false;
+  Object.entries(S || {}).forEach(([date, r]) => {
+    if (!Array.isArray(r.attended)) return;
+    attendance = true;
+    r.attended.forEach(n => { const a = matchName(n); if (a) a.seen[date] = true; });
+  });
+  if (attendance) athletes.forEach(a => { a.done = Object.keys(a.seen).length; });
 };
+/* How many club sessions have an attendance list in the snapshot */
+const countedSessions = () => { const S = wodSessions() || {}; return SESSIONS.filter(x => S[x.date] && Array.isArray(S[x.date].attended)).length; };
+const pick = (id) => { session = SESSIONS.find(x => x.id === id) || session; open.clear(); applyWodify(); render(); };
 const load = async () => {
   $("loading").hidden = false; $("gate").hidden = true;
   let rows;
@@ -331,12 +368,12 @@ const load = async () => {
 /* ── Rendering ── */
 const sessionsDone = (a) => a.done != null ? a.done : a.appDone;
 const cmp = (a, b) => (b.vma || 0) - (a.vma || 0) || a.name.localeCompare(b.name);
-const pool = () => (wod && session && wod.session_date === session.date) ? athletes.filter(a => a.booked) : athletes.filter(a => a.level && a.level.club);
+const pool = () => synced ? athletes.filter(a => a.booked) : athletes.filter(a => a.level && a.level.club);
 
 const row = (a) => {
   const main = a.level && a.level.club ? reps(mainOf(session, a.level.id)) : [];
   const first = main[0];
-  const done = sessionsDone(a), held = heldSessions();
+  const done = sessionsDone(a), held = a.done != null ? countedSessions() : heldSessions();
   const isOpen = open.has(a.id);
   const tags = [
     a.level ? `<span class="tag ${a.level.cls}">${a.level.name}</span>` : `<span class="tag warn">Niveau ?</span>`,
@@ -361,11 +398,12 @@ const row = (a) => {
       ${set ? `<p><span class="muted">Sa séance :</span> ${esc(set)}</p>` : a.level && !a.level.club ? `<p class="muted">Programme ${a.level.name} — marche-course, pas de séance club.</p>` : ""}
       ${a.injury ? `<div class="inj-box">${esc(a.injuryDetail || "Douleur signalée au questionnaire")}</div>` : ""}
       ${cells.length ? `<div class="grid">${cells.map(([k, v]) => `<div class="cell"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>` : ""}
+      ${attendance ? `<div class="att">${SESSIONS.filter(x => isPast(x) || x === nextSession()).map(x => { const S = wodSessions() || {}, r = S[x.date] || {}; const known = Array.isArray(r.attended); const here = known ? !!a.seen[x.date] : null; const bk = !known && Array.isArray(r.booked) ? r.booked.some(n => matchName(n) === a) : null; return `<span class="${here ? "yes" : here === false ? "no" : bk ? "bk" : "na"}"><b>${x.date.slice(8)}/${x.date.slice(5, 7)}</b>${esc(x.title)}<i>${here ? "présent" : here === false ? "absent" : bk ? "réservé" : bk === false ? "pas réservé" : "—"}</i></span>`; }).join("")}</div>` : ""}
       ${a.history.length > 1 ? `<p class="muted small">VMA : ${a.history.map(h => Number(h.vma).toFixed(1)).join(" → ")}</p>` : ""}
       ${a.siteLevel && a.level && a.siteLevel.id !== a.level.id ? `<p class="muted small">Questionnaire : ${a.siteLevel.name}</p>` : ""}
     </div>`;
   }
-  const dot = a.booked == null ? `<span class="dot na" title="Réservation inconnue"></span>` : `<span class="dot ${a.booked ? "on" : ""}" title="${a.booked ? "Réservé" : "Pas réservé"}">✓</span>`;
+  const dot = a.booked == null ? `<span class="dot na" title="Inconnu"></span>` : `<span class="dot ${a.booked ? "on" : ""}" title="${a.booked ? (past ? "Présent" : "Réservé") : (past ? "Absent" : "Pas réservé")}">✓</span>`;
   return `<div class="ath"><button type="button" data-id="${esc(a.id)}" aria-expanded="${isOpen}">${dot}<span class="who"><b>${esc(a.name)}</b><span class="sub">${tags}</span></span><span class="num">${right}</span></button>${more}</div>`;
 };
 
@@ -429,7 +467,7 @@ const renderSession = () => {
     ["Blocs", String(n)],
   ].filter(Boolean);
   const side = (label, steps) => steps && steps.length ? `<div class="step"><b>${label}</b><span>${esc(steps.map(describe).filter(Boolean).join(" + "))}</span></div>` : "";
-  $("sess").innerHTML = `<p class="kicker">Prochaine séance · ${esc(frDate(session.date))} · 16h30 · la Floride</p>
+  $("sess").innerHTML = `<p class="kicker">${session === nextSession() ? "Prochaine séance" : past ? "Séance passée" : "Séance à venir"} · ${esc(frDate(session.date))} · 16h30 · la Floride</p>
     <div class="title">${esc(session.title)}</div>
     <p>${esc(session.summary || "")}</p>
     <div class="lv" role="group" aria-label="Niveau">${LEVELS.filter(l => l.club).map(l => `<button type="button" data-lv="${l.id}" aria-pressed="${l.id === sessLevel}">${l.name}</button>`).join("")}</div>
@@ -439,19 +477,22 @@ const renderSession = () => {
 
 const render = () => {
   renderSession();
-  const synced = wod && session && wod.session_date === session.date;
+  const S = wodSessions() || {}, nxt = nextSession();
+  $("strip").innerHTML = SESSIONS.map(x => { const r = S[x.date] || {}, pa = isPast(x); const l = pa ? r.attended || r.booked : r.booked; return `<button type="button" data-s="${x.id}" aria-pressed="${x === session}" class="${pa ? "past" : x === nxt ? "next" : ""}"><b>${x.date.slice(8)}/${x.date.slice(5, 7)}</b><span>${esc(x.title)}</span><i>${Array.isArray(l) ? l.length + (pa ? " présents" : " réservés") : x === nxt ? "prochaine" : pa ? "faite" : "à venir"}</i></button>`; }).join("");
+  const sel = document.querySelector("#strip [aria-pressed=true]"); if (sel && !render.scrolled) { render.scrolled = true; sel.scrollIntoView({ inline: "center", block: "nearest" }); }
+  const who = past ? "Présents" : "Réservés";
+  document.querySelector('.seg [data-view="booked"]').textContent = who;
   const p = pool();
   const club = p.filter(a => a.level && a.level.club);
   $("stats").innerHTML = [
-    [synced ? "Réservés" : "Athlètes club", synced ? p.length + extras.length : club.length, ""],
+    [synced ? who : "Athlètes club", synced ? p.length + extras.length : club.length, ""],
     ["Groupes d'allure", packs(p).length, ""],
     ["Sans VMA", club.filter(a => !a.vma).length, club.some(a => !a.vma) ? "warn" : ""],
     ["Douleurs", p.filter(a => a.injury).length, p.some(a => a.injury) ? "warn" : ""],
   ].map(([k, v, c]) => `<div class="stat ${c}"><span>${k}</span><b>${v}</b></div>`).join("");
 
   const n = $("wodNote");
-  if (!wod) { n.hidden = false; n.innerHTML = `<b>Réservations Wodify pas encore synchronisées.</b> Les groupes ci-dessous prennent tous les athlètes Level 1–3 ; le nombre de séances vient de l'app.`; }
-  else if (!synced) { n.hidden = false; n.innerHTML = `<b>Les réservations Wodify affichées datent d'une autre séance</b> (${esc(wod.session_date || "?")}). Les groupes prennent tous les athlètes Level 1–3 en attendant la prochaine synchro.`; }
+  if (!synced) { n.hidden = false; n.innerHTML = past ? `<b>Pas de liste de présence Wodify pour cette séance.</b> Les groupes ci-dessous prennent tous les athlètes Level 1–3.` : `<b>Pas encore de réservations Wodify pour cette séance</b> (elles ouvrent 7 jours avant, puis il faut une synchro). Les groupes ci-dessous prennent tous les athlètes Level 1–3.`; }
   else n.hidden = true;
 
   document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
@@ -468,7 +509,7 @@ const render = () => {
     if (noVma.length) html += `<h2>Sans VMA <b>${noVma.length}</b></h2><div class="card flush"><div class="list">${noVma.map(row).join("")}</div></div>`;
     const beg = p.filter(a => !a.level || !a.level.club).sort(cmp);
     if (beg.length) html += `<h2>Débuter / niveau à confirmer <b>${beg.length}</b></h2><div class="card flush"><div class="list">${beg.map(row).join("")}</div></div>`;
-    if (extras.length) html += `<h2>Réservés sans fiche <b>${extras.length}</b></h2><div class="card"><p class="muted small">Dans Wodify mais pas de questionnaire à ce nom :</p><p>${extras.map(esc).join(" · ")}</p></div>`;
+    if (extras.length) html += `<h2>${who} sans fiche <b>${extras.length}</b></h2><div class="card"><p class="muted small">Dans Wodify mais pas de questionnaire à ce nom :</p><p>${extras.map(esc).join(" · ")}</p></div>`;
   } else if (view === "table") {
     // The pace table: one line per runner, fastest first, a mint line where a new pace group starts
     const gs = packs(p), starts = new Set(gs.slice(1).map(g => g[0].id));
@@ -483,9 +524,9 @@ const render = () => {
     if (levelFilter) list = list.filter(a => a.level && a.level.id === levelFilter);
     if (q) list = list.filter(a => a.key.includes(q));
     list.sort(view === "all" ? (a, b) => a.name.localeCompare(b.name) : cmp);
-    html += `<h2>${view === "booked" ? "Réservés pour " + (session ? frDate(session.date) : "la prochaine séance") : "Tous les athlètes"} <b>${list.length}</b></h2>`;
+    html += `<h2>${view === "booked" ? who + " · " + (session ? frDate(session.date) : "") : "Tous les athlètes"} <b>${list.length}</b></h2>`;
     html += list.length ? `<div class="card flush"><div class="list">${list.map(row).join("")}</div></div>`
-      : `<div class="card"><p class="muted">${view === "booked" && !synced ? "Les réservations Wodify ne sont pas encore synchronisées pour cette séance." : "Personne ici."}</p></div>`;
+      : `<div class="card"><p class="muted">${view === "booked" && !synced ? "Pas de liste Wodify pour cette séance." : "Personne ici."}</p></div>`;
   }
   $("view").innerHTML = html;
   $("stamp").textContent = wod && wod.updated_at ? "Wodify synchronisé le " + new Date(wod.updated_at).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
@@ -511,6 +552,7 @@ $("refresh").onclick = load;
 $("out").onclick = () => { store.set("essor-coach-code", null); code = ""; $("hub").hidden = true; $("gate").hidden = false; $("gateBad").hidden = true; $("code").value = ""; };
 $("copy").onclick = async () => { const b = $("copy"); try { await navigator.clipboard.writeText(asText()); b.textContent = "Copié ✓"; } catch { b.textContent = "Copie impossible"; } setTimeout(() => (b.textContent = "Copier pour WhatsApp"), 1800); };
 $("search").oninput = render;
+$("strip").onclick = (e) => { const b = e.target.closest("[data-s]"); if (b) pick(b.dataset.s); };
 $("sess").onclick = (e) => { const b = e.target.closest("[data-lv]"); if (b) { sessLevel = b.dataset.lv; renderSession(); } };
 document.querySelector(".seg").onclick = (e) => { const b = e.target.closest("button"); if (b) { view = b.dataset.view; render(); } };
 $("chips").onclick = (e) => { const b = e.target.closest("button"); if (b) { levelFilter = b.dataset.level; render(); } };

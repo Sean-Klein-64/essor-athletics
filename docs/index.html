@@ -219,7 +219,7 @@ const LEVELS = {
 };
 
 const Q = [
-  { id: "name", k: "Toi", t: "Comment tu t'appelles ?", type: "text", ph: "Prénom Nom", req: true },
+  { id: "name", k: "Toi", t: "Comment tu t'appelles ?", h: "Prénom et nom, comme dans Wodify.", type: "text", ph: "Prénom Nom", req: true },
   { id: "phone", k: "Toi", t: "Ton numéro (WhatsApp)", h: "Pour le groupe du run club.", type: "tel", ph: "06 …", req: true },
   { id: "member", k: "Toi", t: "Tu es adhérent·e à CrossFit Essor ?", h: "Le run club est réservé aux adhérents. Si tu ne l'es pas encore, tu peux quand même découvrir ton niveau et nous laisser ton nom.", type: "choice", opts: [["yes", "Oui, je suis adhérent·e"], ["no", "Pas encore"]] },
   { id: "runContinuous", k: "Course", t: "Aujourd'hui, combien de temps peux-tu courir sans t'arrêter ?", h: "Pour aujourd'hui, pas pour ta meilleure période.", type: "choice", opts: [["under5", "Moins de 5 min"], ["5to15", "5 à 15 min"], ["15to30", "15 à 30 min"], ["over30", "30 min ou plus"]] },
@@ -298,6 +298,8 @@ function render() {
   }
   valid();
 }
+const nameCase = (t) => String(t || "").trim().replace(/\s+/g, " ").toLowerCase().replace(/(^|[\s\-'’(])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+const fullName = (t) => String(t || "").trim().split(/\s+/).filter(w => w.replace(/[^\p{L}]/gu, "").length >= 2).length >= 2;
 const clockOk = (t) => !t || !t.trim() || /^\d{1,2}(:\d{2}){1,2}$/.test(t.trim());
 function valid() {
   const q = current; let ok = true; const v = answers[q.id];
@@ -310,6 +312,14 @@ function valid() {
     bad.textContent = vals.every(clockOk) ? "" : "Tape les chiffres du temps : 5230 pour 52:30, 15800 pour 1:58:00.";
   }
   else if (q.req || !q.skip) ok = !!(v && String(v).trim());
+  if (q.id === "name") {
+    // Prénom ET nom: two people called Alex is enough to mix up VMAs and bookings
+    const full = fullName(v);
+    ok = ok && full;
+    let bad = document.getElementById("name-bad");
+    if (!bad) { bad = document.createElement("p"); bad.id = "name-bad"; bad.className = "hint-bad"; $("qbody").appendChild(bad); }
+    bad.textContent = v && String(v).trim() && !full ? "Ton prénom et ton nom, comme dans Wodify (ex. Alex Duran)." : "";
+  }
   $("next").disabled = !ok;
 }
 $("start").onclick = () => { answers.wants30 = true; i = 0; show("q"); render(); };
@@ -358,6 +368,7 @@ let savedId = null; // the row this phone created, so "Modifier mes réponses" u
 async function save(a, text) {
   const H = { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json", Prefer: "return=minimal" };
   const isNew = !savedId; const id = savedId || (crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)));
+  a.name = nameCase(a.name);
   const body = JSON.stringify({ id, name: a.name, phone: a.phone, level: a.level, answers: a, summary: text });
   const r = isNew
     ? await fetch(SUPABASE_URL + "/rest/v1/signups", { method: "POST", headers: H, body })
