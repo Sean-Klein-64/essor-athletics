@@ -46,9 +46,23 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--mint); outl
 .sess .kicker { color: rgba(255,255,255,0.75); }
 .sess .title { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 40px; line-height: 0.98; letter-spacing: -1px; }
 .sess p { color: rgba(255,255,255,0.9); font-size: 15px; }
-.sets { display: grid; gap: 6px; margin-top: 4px; }
-.sets div { display: flex; gap: 10px; align-items: baseline; background: rgba(0,0,0,0.22); border-radius: 12px; padding: 9px 12px; font-size: 15px; }
-.sets b { min-width: 62px; color: var(--mint); font-weight: 600; }
+.lv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: rgba(0,0,0,0.25); border-radius: 14px; padding: 4px; margin-top: 4px; }
+.lv button { border: 0; border-radius: 10px; padding: 9px 4px; background: transparent; color: rgba(255,255,255,0.7); font-size: 15px; cursor: pointer; }
+.lv button[aria-pressed="true"] { background: var(--mint); color: #0A0A0A; font-weight: 600; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.facts div { background: rgba(0,0,0,0.22); border-radius: 12px; padding: 8px 10px; }
+.facts span { display: block; font-size: 11px; letter-spacing: .6px; text-transform: uppercase; color: rgba(255,255,255,0.65); }
+.facts b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.flow { display: flex; flex-direction: column; gap: 6px; }
+.step { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; padding: 8px 12px; border: 1px dashed rgba(255,255,255,0.25); border-radius: 12px; font-size: 14px; }
+.step b { font-weight: 600; white-space: nowrap; } .step span { text-align: right; color: rgba(255,255,255,0.85); }
+.blk { background: rgba(0,0,0,0.3); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.bh { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.bh b { color: var(--mint); font-weight: 600; } .bh span { font-size: 13px; color: rgba(255,255,255,0.75); }
+.pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.pills i { font-style: normal; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; background: var(--mint); color: #0A0A0A; border-radius: 999px; padding: 4px 10px; }
+.gap { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.8); padding: 0 4px; }
+.gap::before, .gap::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.25); }
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .stat { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; }
 .stat span { display: block; font-size: 11px; color: var(--muted); letter-spacing: .8px; text-transform: uppercase; }
@@ -357,15 +371,56 @@ const packTarget = (g) => {
   return { label: repLabel(rep), text: fast === slow ? fast : `${fast} – ${slow}` };
 };
 
+/* The main set as blocks of reps: [{ pills: ["400 m", …], rec } | { rest }] */
+const runsOf = (steps) => steps.filter(x => x.run != null);
+const recOf = (st) => { const r = st.rest || st.steps.find(x => x.jog || x.walk); return r ? describe(r) : ""; };
+const blocksOf = (main) => {
+  const out = [];
+  // loose steps (run / walk / run / long walk / run…): the shortest recovery is "between reps", a longer one splits the blocks
+  const pause = (x) => toSec(x.walk || x.jog || 0);
+  const short = Math.min(...main.filter(x => !x.repeat && x.run == null && pause(x)).map(pause));
+  let cur = null;
+  main.forEach(st => {
+    if (!st.repeat) {
+      if (st.run != null) { if (!cur) out.push(cur = { pills: [], rec: "" }); cur.pills.push(repLabel(st)); }
+      else if (cur && pause(st) === short && main.some(x => x.run == null && !x.repeat && pause(x) > short)) cur.rec = describe(st);
+      else if (cur && pause(st) === short && !main.some(x => x.repeat)) cur.rec = describe(st);
+      else { cur = null; out.push({ rest: describe(st) }); }
+      return;
+    }
+    cur = null;
+    const inner = st.steps, nested = inner.length === 1 && inner[0].repeat;
+    if (nested || runsOf(inner).length > 1) {
+      for (let i = 0; i < st.repeat; i++) {
+        if (i && st.rest) out.push({ rest: describe(st.rest) });
+        out.push(nested ? { pills: Array(inner[0].repeat).fill(runsOf(inner[0].steps).map(repLabel).join(" + ")), rec: recOf(inner[0]) } : { pills: runsOf(inner).map(repLabel), rec: recOf({ steps: inner }) });
+      }
+    } else out.push({ pills: Array(st.repeat).fill(runsOf(inner).map(repLabel).join(" + ")), rec: recOf(st) });
+  });
+  return out;
+};
+const volume = (steps) => (steps || []).reduce((t, st) => t + (st.repeat ? st.repeat * volume(st.steps) : typeof st.run === "number" ? st.run : 0), 0);
+let sessLevel = "level2";
+
 const renderSession = () => {
   if (!session) { $("sess").innerHTML = `<p class="kicker">Prochaine séance</p><div class="title">Cycle terminé</div><p>Aucune séance à venir dans le cycle.</p>`; return; }
-  const sets = LEVELS.filter(l => l.club).map(l => { const m = mainOf(session, l.id); return m.length ? `<div><b>${l.name}</b><span>${esc(m.map(describe).join(" + "))}</span></div>` : ""; }).join("");
-  const pct = [...new Set(LEVELS.filter(l => l.club).flatMap(l => reps(mainOf(session, l.id)).map(r => r.vma)))].sort((a, b) => a - b);
+  const main = mainOf(session, sessLevel), bl = blocksOf(main), rs = reps(main), vol = volume(main);
+  let n = 0;
+  const flow = bl.map(b => b.rest
+    ? `<div class="gap"><span>${esc(b.rest)}</span></div>`
+    : `<div class="blk"><div class="bh"><b>Bloc ${++n}</b><span>${b.pills.length} rép.${b.rec ? " · récup " + esc(b.rec) : ""}</span></div><div class="pills">${b.pills.map(p => `<i>${esc(p)}</i>`).join("")}</div></div>`).join("");
+  const facts = [
+    rs.length ? ["Intensité", [...new Set(rs.map(r => r.vma))].join(" / ") + " % VMA"] : null,
+    vol ? ["Volume vite", vol >= 1000 ? String(vol / 1000).replace(".", ",") + " km" : vol + " m"] : null,
+    ["Blocs", String(n)],
+  ].filter(Boolean);
+  const side = (label, steps) => steps && steps.length ? `<div class="step"><b>${label}</b><span>${esc(steps.map(describe).filter(Boolean).join(" + "))}</span></div>` : "";
   $("sess").innerHTML = `<p class="kicker">Prochaine séance · ${esc(frDate(session.date))} · 16h30 · la Floride</p>
     <div class="title">${esc(session.title)}</div>
     <p>${esc(session.summary || "")}</p>
-    <div class="sets">${sets}</div>
-    <p class="small">Échauffement : ${esc((session.warmup || []).map(describe).filter(Boolean).join(" + "))}${pct.length ? ` · Intensité : ${pct.join(" / ")} % VMA` : ""}</p>`;
+    <div class="lv" role="group" aria-label="Niveau">${LEVELS.filter(l => l.club).map(l => `<button type="button" data-lv="${l.id}" aria-pressed="${l.id === sessLevel}">${l.name}</button>`).join("")}</div>
+    <div class="facts">${facts.map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join("")}</div>
+    <div class="flow">${side("Échauffement", session.warmup)}${flow}${side("Retour au calme", session.cooldown)}</div>`;
 };
 
 const render = () => {
@@ -433,6 +488,7 @@ $("refresh").onclick = load;
 $("out").onclick = () => { store.set("essor-coach-code", null); code = ""; $("hub").hidden = true; $("gate").hidden = false; $("gateBad").hidden = true; $("code").value = ""; };
 $("copy").onclick = async () => { const b = $("copy"); try { await navigator.clipboard.writeText(asText()); b.textContent = "Copié ✓"; } catch { b.textContent = "Copie impossible"; } setTimeout(() => (b.textContent = "Copier pour WhatsApp"), 1800); };
 $("search").oninput = render;
+$("sess").onclick = (e) => { const b = e.target.closest("[data-lv]"); if (b) { sessLevel = b.dataset.lv; renderSession(); } };
 document.querySelector(".seg").onclick = (e) => { const b = e.target.closest("button"); if (b) { view = b.dataset.view; render(); } };
 $("chips").onclick = (e) => { const b = e.target.closest("button"); if (b) { levelFilter = b.dataset.level; render(); } };
 $("view").onclick = (e) => { const b = e.target.closest(".ath > button"); if (!b) return; const id = b.dataset.id; open.has(id) ? open.delete(id) : open.add(id); render(); };
