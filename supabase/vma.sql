@@ -88,3 +88,47 @@ language sql security definer stable set search_path = public as $$
   from public.vma v where v.token = t;
 $$;
 grant execute on function public.vma_get(uuid) to anon;
+
+-- ── 23/11: runners can change their own level on the site ────────────────────
+-- "Ton niveau" on docs/vma.html is now a picker. The choice is written to the
+-- runner's sign-up row (so the coach page follows) and kept on the vma row too
+-- (for runners the site can't match to a sign-up). It wins over the questionnaire.
+alter table public.vma add column if not exists level text;
+
+drop function if exists public.vma_get(uuid);
+create or replace function public.vma_get(t uuid)
+returns table (token uuid, name text, vma numeric, test_m integer, hr_max integer, history jsonb, updated_at timestamptz, level text)
+language sql security definer stable set search_path = public as $$
+  select v.token, v.name, v.vma, v.test_m, v.hr_max, v.history, v.updated_at,
+    coalesce(
+      v.level,
+      (select s.level from public.signups s where s.id = v.signup_id),
+      (select s.level from public.signups s
+        where char_length(regexp_replace(coalesce(v.phone, ''), '\D', '', 'g')) >= 9
+          and right(regexp_replace(coalesce(s.phone, ''), '\D', '', 'g'), 9) = right(regexp_replace(coalesce(v.phone, ''), '\D', '', 'g'), 9)
+        order by s.created_at desc limit 1)
+    ) as level
+  from public.vma v where v.token = t;
+$$;
+grant execute on function public.vma_get(uuid) to anon;
+
+create or replace function public.vma_set_level(t uuid, p_level text)
+returns text
+language plpgsql security definer set search_path = public as $$
+declare v public.vma%rowtype; sid uuid;
+begin
+  if p_level not in ('beginnerA', 'beginnerB', 'beginnerC', 'level3', 'level2', 'level1') then
+    raise exception 'bad level' using errcode = 'check_violation';
+  end if;
+  select * into v from public.vma where token = t;
+  if not found then raise exception 'unknown runner' using errcode = 'no_data_found'; end if;
+  update public.vma set level = p_level, updated_at = now() where token = t;
+  sid := coalesce(v.signup_id, (
+    select s.id from public.signups s
+    where char_length(regexp_replace(coalesce(v.phone, ''), '\D', '', 'g')) >= 9
+      and right(regexp_replace(coalesce(s.phone, ''), '\D', '', 'g'), 9) = right(regexp_replace(coalesce(v.phone, ''), '\D', '', 'g'), 9)
+    order by s.created_at desc limit 1));
+  if sid is not null then update public.signups set level = p_level where id = sid; end if;
+  return p_level;
+end $$;
+grant execute on function public.vma_set_level(uuid, text) to anon;

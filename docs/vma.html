@@ -291,19 +291,31 @@ function stepsHtml(list, v, main) {
 }
 const LEVEL_KEY = "essor-vma-level";
 const LEVEL_NAMES = { beginnerA: "Débuter A", beginnerB: "Débuter B", beginnerC: "Débuter C", level3: "Level 3", level2: "Level 2", level1: "Level 1" };
-/* The level from their questionnaire (looked up in Supabase by vma_get). Only when it's unknown can the runner pick. */
+/* Level: the runner's own pick on this phone (until the server has it), then the server
+   (their pick, else the questionnaire), then the sign-up on this phone. They can always change it. */
 function myLevel() {
-  if (me && LEVEL_NAMES[me.level]) return { id: me.level, known: true };
-  try { const l = localStorage.getItem(LEVEL_KEY); if (l) return { id: l, known: false }; } catch (e) {}
-  try { const m = (localStorage.getItem("essor-signup") || "").match(/^Niveau : (.+)$/m); const id = m && Object.keys(LEVEL_NAMES).find(k => LEVEL_NAMES[k] === m[1].trim()); if (id) return { id, known: true }; } catch (e) {}
-  return { id: "level3", known: false };
+  try { const l = localStorage.getItem(LEVEL_KEY); if (LEVEL_NAMES[l]) return { id: l, from: "pick" }; } catch (e) {}
+  if (me && LEVEL_NAMES[me.level]) return { id: me.level, from: "server" };
+  try { const m = (localStorage.getItem("essor-signup") || "").match(/^Niveau : (.+)$/m); const id = m && Object.keys(LEVEL_NAMES).find(k => LEVEL_NAMES[k] === m[1].trim()); if (id) return { id, from: "signup" }; } catch (e) {}
+  return { id: "level3", from: "default" };
+}
+async function setLevel(lv) {
+  try { localStorage.setItem(LEVEL_KEY, lv); } catch (e) {}
+  if (me) { me.level = lv; const l = store.get(); store.set({ token: me.token, cache: me, pending: !!(l && l.pending) }); }
+  renderNext();
+  if (!me || !me.token) return;
+  try {
+    await rpc("vma_set_level", { t: me.token, p_level: lv });
+    try { localStorage.removeItem(LEVEL_KEY); } catch (e) {} // the server has it now
+  } catch (e) { /* stays on this phone; the coach can update it */ }
 }
 function renderNext() {
   const x = nextSession(); $("nextCard").hidden = !x || !me; if (!x || !me) return;
   const v = Number(me.vma), L = myLevel(), lv = L.id;
-  $("levelSeg").hidden = L.known;
-  $("levelKnown").hidden = !L.known;
-  $("levelKnown").innerHTML = `Ton niveau : <b style="color:var(--fg)">${LEVEL_NAMES[lv]}</b> — d'après ton questionnaire. Pas le bon ? Dis-le à ton coach.`;
+  $("levelSeg").hidden = false;
+  $("levelKnown").hidden = false;
+  $("levelKnown").innerHTML = `Ton niveau : <b style="color:var(--fg)">${LEVEL_NAMES[lv]}</b>. Trop facile ou trop dur ? Change-le ici, la séance s'adapte.`;
+  document.querySelectorAll("#levelSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.level === lv)));
   if (lv.startsWith("beginner")) {
     $("nextTitle").textContent = "Ton programme " + LEVEL_NAMES[lv];
     $("nextSummary").textContent = "Le vendredi, tu suis la séance débutants avec le coach. Le fractionné du club, ce sera après Débuter C.";
@@ -314,13 +326,12 @@ function renderNext() {
   $("nextWhen").textContent = new Date(x.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "2-digit" }).replace(".", "");
   $("nextTitle").textContent = x.title; $("nextSummary").textContent = x.summary || "";
   $("nextVma").textContent = fr(v);
-  document.querySelectorAll("#levelSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.level === lv)));
   const lvl = x.levels[lv]; const plain = Array.isArray(lvl);
   const warm = plain ? x.warmup : lvl.warmup || x.warmup, main = plain ? lvl : lvl.main, cool = plain ? x.cooldown : lvl.cooldown || x.cooldown;
   $("nextBody").innerHTML = [["Échauffement", warm, false], ["Séance", main, true], ["Retour au calme", cool, false]]
     .filter(([, l]) => l && l.length).map(([t, l, m]) => `<div class="block"><span class="lbl">${t}</span>${stepsHtml(l, v, m)}</div>`).join('<div style="height:10px"></div>');
 }
-document.querySelectorAll("#levelSeg button").forEach(b => b.onclick = () => { try { localStorage.setItem(LEVEL_KEY, b.dataset.level); } catch (e) {} renderNext(); });
+document.querySelectorAll("#levelSeg button").forEach(b => b.onclick = () => { setLevel(b.dataset.level); });
 
 /* ── Who is this? A token in the link (?p=…) or on this phone. ── */
 const $ = (id) => document.getElementById(id);
