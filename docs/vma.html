@@ -105,6 +105,13 @@ a.text { color: var(--mint); }
 .gsteps li .nt { grid-column: 1 / -1; color: var(--muted); font-size: 13px; }
 .gsteps li.rep { border-color: var(--mint); display: flex; flex-direction: column; gap: 6px; }
 .gsteps li.rep > b { color: var(--mint); }
+.fitsteps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; counter-reset: f; }
+.fitsteps li { counter-increment: f; position: relative; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 12px 10px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; font-size: 14px; color: var(--muted); }
+.fitsteps li::before { content: counter(f); position: absolute; top: 8px; left: 10px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 600; display: grid; place-items: center; }
+.fitsteps svg { width: 44px; height: 44px; }
+.fitsteps b { color: var(--fg); font-weight: 600; }
+.fitsteps code { color: var(--mint); font-size: 13px; }
+@media (min-width: 480px) { .fitsteps { grid-template-columns: repeat(4, 1fr); } }
 .how { color: var(--muted); font-size: 14px; margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 @media (min-width: 420px) { .preds { grid-template-columns: repeat(4, 1fr); } }
 </style>
@@ -201,8 +208,15 @@ a.text { color: var(--mint); }
           <li>Enregistre, puis <b>Envoyer vers l'appareil</b>. Sur la montre : Course → Entraînement → Mes séances.</li>
         </ol>
         <ul class="gsteps" id="gsteps"></ul>
+        <p class="kicker" style="margin-top:4px">Avec le fichier · sur un ordinateur</p>
+        <ol class="fitsteps">
+          <li><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="#7CC4A2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M24 8v20"/><path d="M15 20l9 9 9-9"/><path d="M10 34v6h28v-6"/></svg><span><b>Télécharge</b> le fichier de la séance</span></li>
+          <li><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="#7CC4A2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="12" width="22" height="15" rx="2"/><path d="M2 31h26"/><path d="M26 22h8"/><rect x="34" y="14" width="11" height="16" rx="5"/><path d="M39.5 10v4M39.5 30v4"/></svg><span><b>Branche ta montre</b> à l'ordi avec son câble</span></li>
+          <li><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="#7CC4A2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 14h13l4 4h21v20H5z"/><path d="M24 23v10"/><path d="M19 28l5 5 5-5"/></svg><span><b>Copie le fichier</b> dans <code>GARMIN › NewFiles</code></span></li>
+          <li><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="#7CC4A2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="12" width="22" height="24" rx="7"/><path d="M17 12l2-7h10l2 7M17 36l2 7h10l2-7"/><path d="M21 21l6 3-6 3z" fill="#7CC4A2"/></svg><span><b>Débranche.</b> Sur la montre : Course › Entraînement › Mes séances</span></li>
+        </ol>
         <button class="btn line" id="fitBtn">Télécharger le fichier .FIT</button>
-        <p class="muted small">Depuis un ordinateur : connect.garmin.com → Entraînement et planification → Séances d'entraînement → Importer, et choisis le fichier. Ou branche ta montre en USB et copie-le dans le dossier GARMIN/NewFiles.</p>
+        <p class="muted small">Sur Mac, si la montre n'apparaît pas, installe l'app gratuite OpenMTP pour voir ses dossiers. Depuis le téléphone, le plus simple reste les étapes ci-dessus dans l'app Garmin Connect.</p>
       </div>
     </div>
 
