@@ -112,6 +112,18 @@ a.text { color: var(--mint); }
 .fitsteps b { color: var(--fg); font-weight: 600; }
 .fitsteps code { color: var(--mint); font-size: 13px; }
 @media (min-width: 480px) { .fitsteps { grid-template-columns: repeat(4, 1fr); } }
+.cycle { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.cycle li { border-top: 1px solid var(--line); }
+.cycle li:first-child { border-top: 0; }
+.cycle button, .cycle .race { width: 100%; font: inherit; color: var(--fg); background: transparent; border: 0; text-align: left; display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; padding: 11px 6px; border-radius: 10px; }
+.cycle button { cursor: pointer; }
+.cycle button[aria-current="true"] { background: var(--accent-soft); }
+.cycle .dt { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.cycle .tt b { display: block; font-weight: 600; font-size: 15px; }
+.cycle .tt i { display: block; font-style: normal; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.cycle .st { font-size: 12px; color: var(--mint); white-space: nowrap; }
+.cycle .done .tt b, .cycle .done .dt { color: var(--muted); }
+.cycle .race .tt b { color: var(--mint); }
 .how { color: var(--muted); font-size: 14px; margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 @media (min-width: 420px) { .preds { grid-template-columns: repeat(4, 1fr); } }
 </style>
@@ -218,6 +230,12 @@ a.text { color: var(--mint); }
         <button class="btn line" id="fitBtn">Télécharger le fichier .FIT</button>
         <p class="muted small">Sur Mac, si la montre n'apparaît pas, installe l'app gratuite OpenMTP pour voir ses dossiers. Depuis le téléphone, le plus simple reste les étapes ci-dessus dans l'app Garmin Connect.</p>
       </div>
+    </div>
+
+    <div class="card" id="cycleCard" hidden>
+      <div class="sess-head"><h3>Ton cycle</h3><span class="when" id="cycleCount"></span></div>
+      <p class="muted small">Toutes les séances jusqu'à la course, à ton niveau. Touche une séance pour voir le détail et tes allures.</p>
+      <ul class="cycle" id="cycleList"></ul>
     </div>
 
     <div class="card">
@@ -349,17 +367,44 @@ async function setLevel(lv) {
     try { localStorage.removeItem(LEVEL_KEY); } catch (e) {} // the server has it now
   } catch (e) { /* stays on this phone; the coach can update it */ }
 }
-let sessOffset = 0; // 0 = the next session; the arrows let runners look ahead to plan
+let sessOffset = 0; // 0 = the next session; negative = already done, positive = coming up
+const RACE = { name: "Course du Bout de l'An", date: "2026-12-20" }; // same as js/lib/goal.js
+const cycleList = () => SESSIONS.filter(x => x.kind !== "test");
 function shownSession() {
   const n = nextSession(); if (!n) return null;
-  const list = SESSIONS.filter(x => x.kind !== "test" && x.date >= n.date);
-  sessOffset = Math.max(0, Math.min(sessOffset, list.length - 1));
-  $("sessPrev").disabled = sessOffset === 0; $("sessNext").disabled = sessOffset >= list.length - 1;
-  $("nextKicker").textContent = sessOffset === 0 ? "Ta prochaine séance" : "Séance à venir";
-  return list[sessOffset];
+  const list = cycleList(), base = list.indexOf(n);
+  sessOffset = Math.max(-base, Math.min(sessOffset, list.length - 1 - base));
+  $("sessPrev").disabled = base + sessOffset === 0; $("sessNext").disabled = base + sessOffset >= list.length - 1;
+  $("nextKicker").textContent = sessOffset === 0 ? "Ta prochaine séance" : sessOffset < 0 ? "Séance passée" : "Séance à venir";
+  return list[base + sessOffset];
+}
+/* The main set in a few words: "5 × 1000 m", "2 × (8 × 30"/30")", "400 / 300 / 200 …" */
+function compact(list) {
+  const parts = list.map(st => {
+    if (st.repeat) { const inner = compact(st.steps); return inner ? `${st.repeat} × ${/ \/ |×/.test(inner) ? "(" + inner + ")" : inner}` : ""; }
+    if (st.run != null) return typeof st.run === "number" ? `${st.run}` : dur(st.run);
+    return "";
+  }).filter(Boolean);
+  // 30" run + 30" jog reads better as 30"/30"
+  if (list.length === 2 && list[0].run != null && typeof list[0].run !== "number" && list[1].jog) return `${dur(list[0].run)}/${dur(list[1].jog)}`;
+  return parts.join(" / ");
+}
+const unitM = (t) => t.replace(/(\d{3,4})(?![\d'"])/g, "$1").replace(/(\d{3,4}(?: \/ \d{3,4})*)(?![\d'"\/])/g, "$1 m");
+function renderCycle(lv) {
+  const n = nextSession(), list = cycleList(), base = list.indexOf(n), cur = base + sessOffset;
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
+  const dm = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+  const days = Math.round((new Date(RACE.date + "T12:00:00") - new Date(today + "T12:00:00")) / 864e5);
+  $("cycleCount").textContent = days > 1 ? `J-${days}` : days === 1 ? "Demain" : days === 0 ? "Aujourd'hui" : "";
+  $("cycleList").innerHTML = list.map((x, i) => {
+    const l = x.levels[lv], main = Array.isArray(l) ? l : l.main;
+    const state = i < base ? "done" : i === base ? "next" : "";
+    return `<li><button type="button" data-i="${i}" class="${state}" aria-current="${i === cur}"><span class="dt">${dm(x.date)}</span><span class="tt"><b>${esc(x.title)}</b><i>${esc(unitM(compact(main)))}</i></span><span class="st">${state === "done" ? "✓" : state === "next" ? "Prochaine" : ""}</span></button></li>`;
+  }).join("") + `<li class="race"><span class="dt">${dm(RACE.date)}</span><span class="tt"><b>${esc(RACE.name)}</b><i>L'objectif du groupe · 10 km</i></span><span class="st">🏁</span></li>`;
+  $("cycleList").querySelectorAll("button").forEach(bn => bn.onclick = () => { sessOffset = Number(bn.dataset.i) - base; renderNext(); $("nextCard").scrollIntoView({ behavior: "smooth", block: "start" }); });
 }
 function renderNext() {
-  const x = shownSession(); $("nextCard").hidden = !x || !me; if (!x || !me) return;
+  const x = shownSession(); $("nextCard").hidden = !x || !me; if (!x || !me) { $("cycleCard").hidden = true; return; }
   const v = Number(me.vma), L = myLevel(), lv = L.id;
   $("levelSeg").hidden = false;
   $("levelKnown").hidden = false;
@@ -368,7 +413,7 @@ function renderNext() {
   if (lv.startsWith("beginner")) {
     $("nextTitle").textContent = "Ton programme " + LEVEL_NAMES[lv];
     $("nextSummary").textContent = "Le vendredi, tu suis la séance débutants avec le coach. Le fractionné du club, ce sera après Débuter C.";
-    $("nextBody").innerHTML = ""; $("nextVma").textContent = fr(v); $("watchBtn").hidden = true; $("watch").hidden = true;
+    $("nextBody").innerHTML = ""; $("nextVma").textContent = fr(v); $("watchBtn").hidden = true; $("watch").hidden = true; $("cycleCard").hidden = true;
     $("nextWhen").textContent = new Date(x.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "2-digit" }).replace(".", "");
     return;
   }
@@ -379,7 +424,7 @@ function renderNext() {
   const warm = plain ? x.warmup : lvl.warmup || x.warmup, main = plain ? lvl : lvl.main, cool = plain ? x.cooldown : lvl.cooldown || x.cooldown;
   $("nextBody").innerHTML = [["Échauffement", warm, false], ["Séance", main, true], ["Retour au calme", cool, false]]
     .filter(([, l]) => l && l.length).map(([t, l, m]) => `<div class="block"><span class="lbl">${t}</span>${stepsHtml(l, v, m)}</div>`).join('<div style="height:10px"></div>');
-  $("watchBtn").hidden = false;
+  $("watchBtn").hidden = false; $("cycleCard").hidden = false; renderCycle(lv);
   $("gsteps").innerHTML = garminHtml(garminSteps(warm, main, cool, v));
 }
 document.getElementById("sessPrev").onclick = () => { sessOffset--; renderNext(); };
