@@ -93,6 +93,19 @@ a.text { color: var(--mint); }
 .steps .rep > b { font-weight: 600; }
 .steps .rep .rest { color: var(--muted); font-size: 13px; }
 .steps .rep .steps li { font-size: 15px; }
+.sess-nav { display: flex; gap: 6px; }
+.sess-nav button { font: inherit; font-size: 14px; border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 10px; padding: 4px 10px; cursor: pointer; }
+.sess-nav button:disabled { opacity: .35; cursor: default; }
+.watch { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.gsteps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; counter-reset: g; }
+.gsteps li { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; font-size: 15px; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
+.gsteps li b { font-weight: 600; }
+.gsteps li .d { color: var(--fg); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.gsteps li .tg { grid-column: 1 / -1; color: var(--mint); font-variant-numeric: tabular-nums; font-size: 14px; }
+.gsteps li .nt { grid-column: 1 / -1; color: var(--muted); font-size: 13px; }
+.gsteps li.rep { border-color: var(--mint); display: flex; flex-direction: column; gap: 6px; }
+.gsteps li.rep > b { color: var(--mint); }
+.how { color: var(--muted); font-size: 14px; margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 @media (min-width: 420px) { .preds { grid-template-columns: repeat(4, 1fr); } }
 </style>
 </head>
@@ -167,7 +180,8 @@ a.text { color: var(--mint); }
     <p class="ok" id="status" hidden></p>
 
     <div class="card" id="nextCard" hidden>
-      <div class="sess-head"><p class="kicker">Ta prochaine séance</p><span class="when" id="nextWhen"></span></div>
+      <div class="sess-head"><p class="kicker" id="nextKicker">Ta prochaine séance</p><span class="when" id="nextWhen"></span></div>
+      <div class="sess-nav"><button type="button" id="sessPrev" aria-label="Séance précédente">←</button><button type="button" id="sessNext">Séance suivante →</button></div>
       <div class="sess-title" id="nextTitle"></div>
       <p class="muted" id="nextSummary"></p>
       <p class="muted small" id="levelKnown" hidden></p>
@@ -178,6 +192,18 @@ a.text { color: var(--mint); }
       </div>
       <div id="nextBody"></div>
       <p class="muted small">Temps calculés sur ta VMA de <span id="nextVma"></span> km/h. Vendredi 16h30, piste de la Floride.</p>
+      <button class="btn line" id="watchBtn" aria-expanded="false">⌚ Mettre la séance sur ma montre</button>
+      <div class="watch" id="watch" hidden>
+        <h3>Sur ta montre Garmin</h3>
+        <ol class="how">
+          <li>App Garmin Connect → <b>Plus</b> → <b>Entraînement et planification</b> → <b>Séances d'entraînement</b> → <b>Créer</b> → <b>Course à pied</b>.</li>
+          <li>Ajoute les étapes ci-dessous, dans l'ordre. Pour l'allure : <b>Cible → Allure</b>, puis les deux valeurs.</li>
+          <li>Enregistre, puis <b>Envoyer vers l'appareil</b>. Sur la montre : Course → Entraînement → Mes séances.</li>
+        </ol>
+        <ul class="gsteps" id="gsteps"></ul>
+        <button class="btn line" id="fitBtn">Télécharger le fichier .FIT</button>
+        <p class="muted small">Depuis un ordinateur : connect.garmin.com → Entraînement et planification → Séances d'entraînement → Importer, et choisis le fichier. Ou branche ta montre en USB et copie-le dans le dossier GARMIN/NewFiles.</p>
+      </div>
     </div>
 
     <div class="card">
@@ -309,8 +335,17 @@ async function setLevel(lv) {
     try { localStorage.removeItem(LEVEL_KEY); } catch (e) {} // the server has it now
   } catch (e) { /* stays on this phone; the coach can update it */ }
 }
+let sessOffset = 0; // 0 = the next session; the arrows let runners look ahead to plan
+function shownSession() {
+  const n = nextSession(); if (!n) return null;
+  const list = SESSIONS.filter(x => x.kind !== "test" && x.date >= n.date);
+  sessOffset = Math.max(0, Math.min(sessOffset, list.length - 1));
+  $("sessPrev").disabled = sessOffset === 0; $("sessNext").disabled = sessOffset >= list.length - 1;
+  $("nextKicker").textContent = sessOffset === 0 ? "Ta prochaine séance" : "Séance à venir";
+  return list[sessOffset];
+}
 function renderNext() {
-  const x = nextSession(); $("nextCard").hidden = !x || !me; if (!x || !me) return;
+  const x = shownSession(); $("nextCard").hidden = !x || !me; if (!x || !me) return;
   const v = Number(me.vma), L = myLevel(), lv = L.id;
   $("levelSeg").hidden = false;
   $("levelKnown").hidden = false;
@@ -319,7 +354,7 @@ function renderNext() {
   if (lv.startsWith("beginner")) {
     $("nextTitle").textContent = "Ton programme " + LEVEL_NAMES[lv];
     $("nextSummary").textContent = "Le vendredi, tu suis la séance débutants avec le coach. Le fractionné du club, ce sera après Débuter C.";
-    $("nextBody").innerHTML = ""; $("nextVma").textContent = fr(v);
+    $("nextBody").innerHTML = ""; $("nextVma").textContent = fr(v); $("watchBtn").hidden = true; $("watch").hidden = true;
     $("nextWhen").textContent = new Date(x.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "2-digit" }).replace(".", "");
     return;
   }
@@ -330,6 +365,102 @@ function renderNext() {
   const warm = plain ? x.warmup : lvl.warmup || x.warmup, main = plain ? lvl : lvl.main, cool = plain ? x.cooldown : lvl.cooldown || x.cooldown;
   $("nextBody").innerHTML = [["Échauffement", warm, false], ["Séance", main, true], ["Retour au calme", cool, false]]
     .filter(([, l]) => l && l.length).map(([t, l, m]) => `<div class="block"><span class="lbl">${t}</span>${stepsHtml(l, v, m)}</div>`).join('<div style="height:10px"></div>');
+  $("watchBtn").hidden = false;
+  $("gsteps").innerHTML = garminHtml(garminSteps(warm, main, cool, v));
+}
+document.getElementById("sessPrev").onclick = () => { sessOffset--; renderNext(); };
+document.getElementById("sessNext").onclick = () => { sessOffset++; renderNext(); };
+document.getElementById("watchBtn").onclick = () => { const open = $("watch").hidden; $("watch").hidden = !open; $("watchBtn").setAttribute("aria-expanded", String(open)); };
+document.getElementById("fitBtn").onclick = () => {
+  const x = shownSession(); if (!x || !me) return; const lv = myLevel().id;
+  const lvl = x.levels[lv]; const plain = Array.isArray(lvl);
+  const steps = garminSteps(plain ? x.warmup : lvl.warmup || x.warmup, plain ? lvl : lvl.main, plain ? x.cooldown : lvl.cooldown || x.cooldown, Number(me.vma));
+  const name = `Essor ${x.title}`.replace(/[^\w\s\-'/àâçéèêëîïôûùüÿœ]/gi, "").slice(0, 30) + " " + LEVEL_NAMES[lv].replace("Level ", "L");
+  const blob = new Blob([fitWorkout(name, steps)], { type: "application/octet-stream" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `essor-${x.date}-${lv}.fit`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+};
+
+/* ── Garmin: the session as workout steps (shown on the page and written to a .FIT file) ──
+   step = { intensity: 0 active | 2 warm-up | 3 cool-down | 4 recovery, dur: { type: "time"|"distance"|"lap", value }, speed: [lo, hi] m/s | null, note }
+   repeat = { repeat: n, steps: [...] } — Garmin doesn't nest repeats, so an outer repeat around a repeat is written out in full. */
+function garminSteps(warm, main, cool, v) {
+  const band = (lo, hi) => [v * lo / 100 / 3.6, v * hi / 100 / 3.6];
+  const one = (st, phase) => {
+    const rec = st.walk || st.jog;
+    const intensity = phase === "warm" ? 2 : phase === "cool" ? 3 : rec ? 4 : 0;
+    let dur, speed = null, note = st.note || "";
+    if (st.run != null && typeof st.run === "number") dur = { type: "distance", value: st.run };
+    else if (st.run != null) dur = { type: "time", value: secs(st.run) };
+    else if (st.easy) dur = { type: "time", value: secs(st.easy) };
+    else if (st.jog) { dur = { type: "time", value: secs(st.jog) }; note = note || "Trot très facile"; }
+    else if (st.walk) { dur = { type: "time", value: secs(st.walk) }; note = note || "Marche"; }
+    else if (st.test) { dur = { type: "time", value: secs(st.test) }; note = note || "Le plus loin possible"; }
+    else if (st.drills) { dur = { type: "lap" }; note = "Gammes : " + st.drills; }
+    else dur = { type: "lap" };
+    if (st.run != null && st.vma) speed = band(st.vma - 2, st.vma + 2);
+    else if (st.easy) speed = band(63, 68);
+    return { intensity, dur, speed, note };
+  };
+  const walk = (list, phase) => list.flatMap(st => {
+    if (!st.repeat) return [one(st, phase)];
+    const inner = [...walk(st.steps, phase), ...(st.rest ? [one(st.rest, phase)] : [])];
+    if (inner.some(i => i.repeat)) { // written out in full, with the recovery between sets but not after the last
+      const body = walk(st.steps, phase), rest = st.rest ? [one(st.rest, phase)] : [], out = [];
+      for (let i = 0; i < st.repeat; i++) out.push(...body, ...(i < st.repeat - 1 ? rest : []));
+      return out;
+    }
+    return [{ repeat: st.repeat, steps: inner }];
+  });
+  return [...walk(warm || [], "warm"), ...walk(main || [], "main"), ...walk(cool || [], "cool")];
+}
+const G_TYPE = { 0: "Course", 2: "Échauffement", 3: "Retour au calme", 4: "Récupération" };
+const paceTxt = (ms) => clock(1000 / ms);
+function garminHtml(steps) {
+  return steps.map(g => {
+    if (g.repeat) return `<li class="rep"><b>Répéter ${g.repeat} fois</b><ul class="gsteps">${garminHtml(g.steps)}</ul></li>`;
+    const d = g.dur.type === "time" ? `Temps ${clock(g.dur.value)}` : g.dur.type === "distance" ? `Distance ${g.dur.value < 1000 ? g.dur.value + " m" : fr(g.dur.value / 1000) + " km"}` : "Bouton Lap";
+    const t = g.speed ? `Cible allure : ${paceTxt(g.speed[1])} – ${paceTxt(g.speed[0])} /km` : "Pas de cible";
+    return `<li><b>${G_TYPE[g.intensity]}</b><span class="d">${d}</span><span class="tg">${t}</span>${g.note ? `<span class="nt">${esc(g.note)}</span>` : ""}</li>`;
+  }).join("");
+}
+
+/* Minimal FIT workout writer: file_id + workout + workout_step messages. */
+function fitWorkout(name, steps) {
+  const flat = []; // [{ step } | { repeatFrom, count }]
+  steps.forEach(g => {
+    if (!g.repeat) { flat.push(g); return; }
+    const from = flat.length; g.steps.forEach(s => flat.push(s)); flat.push({ repeatFrom: from, count: g.repeat });
+  });
+  const bytes = []; const u8 = (n) => bytes.push(n & 255);
+  const u16 = (n) => { u8(n); u8(n >>> 8); }; const u32 = (n) => { u8(n); u8(n >>> 8); u8(n >>> 16); u8(n >>> 24); };
+  const str = (t, size) => { const b = new TextEncoder().encode(t).slice(0, size - 1); for (let i = 0; i < size; i++) u8(i < b.length ? b[i] : 0); };
+  const def = (local, mesg, fields) => { u8(0x40 | local); u8(0); u8(0); u16(mesg); u8(fields.length); fields.forEach(([n, sz, bt]) => { u8(n); u8(sz); u8(bt); }); };
+  const nameBytes = Math.min(new TextEncoder().encode(name).length + 1, 48);
+  // file_id
+  def(0, 0, [[0, 1, 0x00], [1, 2, 0x84], [2, 2, 0x84], [3, 4, 0x8C], [4, 4, 0x86]]);
+  u8(0); u8(5); u16(255); u16(0); u32(Math.floor(Math.random() * 1e9) + 1); u32(Math.floor(Date.now() / 1000) - 631065600);
+  // workout
+  def(1, 26, [[4, 1, 0x00], [6, 2, 0x84], [8, nameBytes, 0x07]]);
+  u8(1); u8(1); u16(flat.length); str(name, nameBytes);
+  // workout_step
+  def(2, 27, [[254, 2, 0x84], [1, 1, 0x00], [2, 4, 0x86], [3, 1, 0x00], [4, 4, 0x86], [5, 4, 0x86], [6, 4, 0x86], [7, 1, 0x00], [8, 48, 0x07]]);
+  flat.forEach((s, i) => {
+    u8(2); u16(i);
+    if (s.repeatFrom != null) { u8(6); u32(s.repeatFrom); u8(2); u32(s.count); u32(0); u32(0); u8(0); str("", 48); return; }
+    const dt = s.dur.type === "time" ? 0 : s.dur.type === "distance" ? 1 : 5;
+    u8(dt); u32(dt === 0 ? Math.round(s.dur.value * 1000) : dt === 1 ? Math.round(s.dur.value * 100) : 0);
+    if (s.speed) { u8(0); u32(0); u32(Math.round(s.speed[0] * 1000)); u32(Math.round(s.speed[1] * 1000)); }
+    else { u8(2); u32(0); u32(0); u32(0); }
+    u8(s.intensity); str(s.note || "", 48);
+  });
+  const crc = (arr) => { const T = [0x0000, 0xCC01, 0xD801, 0x1400, 0xF001, 0x3C00, 0x2800, 0xE401, 0xA001, 0x6C00, 0x7800, 0xB401, 0x5000, 0x9C01, 0x8801, 0x4400]; let c = 0;
+    for (const b of arr) { let t = T[c & 0xF]; c = (c >> 4) & 0x0FFF; c = c ^ t ^ T[b & 0xF]; t = T[c & 0xF]; c = (c >> 4) & 0x0FFF; c = c ^ t ^ T[(b >> 4) & 0xF]; } return c; };
+  const head = [14, 0x20, 2132 & 255, 2132 >> 8, bytes.length & 255, (bytes.length >> 8) & 255, (bytes.length >> 16) & 255, bytes.length >>> 24, 46, 70, 73, 84];
+  const hc = crc(head); head.push(hc & 255, hc >> 8);
+  const all = [...head, ...bytes]; const fc = crc(all); all.push(fc & 255, fc >> 8);
+  return new Uint8Array(all);
 }
 document.querySelectorAll("#levelSeg button").forEach(b => b.onclick = () => { setLevel(b.dataset.level); });
 
