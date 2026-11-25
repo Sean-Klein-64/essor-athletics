@@ -110,16 +110,16 @@ pre.summary { white-space: pre-wrap; font: 14px/1.5 var(--body); background: var
   <div class="progress" aria-hidden="true"><i id="bar"></i></div>
 
   <section class="step" id="intro">
-    <h1>Première séance vendredi 30 octobre. 16 places.</h1>
+    <h1>Le run club d'Essor. Tous les vendredis à 16h30.</h1>
     <div class="facts">
       <div class="fact"><b>16h30</b><span>Floride</span></div>
       <div class="fact"><b>6'</b><span>test VMA</span></div>
-      <div class="fact"><b>16</b><span>places</span></div>
+      <div class="fact"><b>0 €</b><span>adhérents</span></div>
     </div>
-    <p class="muted">Deux minutes de questions pour te placer dans le bon groupe avant d'arriver. Tu repars avec ton niveau de départ. Le test VMA du premier vendredi confirme.</p>
-    <p class="muted">On commence petit pour bien lancer : 16 places le 30 octobre. D'autres séances ouvrent juste après, tous les vendredis.</p>
+    <p class="muted">Deux minutes de questions pour te placer dans le bon groupe avant d'arriver. Tu repars avec ton niveau de départ. Un test VMA à ta première séance le confirme.</p>
+    <p class="muted">Rendez-vous aux vestiaires de la piste de la Floride. Gratuit pour les adhérents de CrossFit Essor. Pas encore adhérent·e ? Réponds quand même : tu découvres ton niveau et on te propose une séance d'essai à la salle.</p>
     <div class="places" id="places" hidden><b id="left">1</b><span id="leftLabel">place restante pour le 30/10</span></div>
-    <div class="actions"><button class="btn" id="start">Je viens le 30 octobre</button><button class="btn ghost" id="later">Je ne peux pas le 30 — prévenez-moi pour les prochaines</button></div>
+    <div class="actions"><button class="btn" id="start">Je suis intéressé·e</button><a class="btn ghost" href="espace.html" style="text-decoration:none">Déjà au run club ? Mon espace</a><button class="btn ghost" id="later" hidden>Je ne peux pas le 30 — prévenez-moi pour les prochaines</button></div>
   </section>
 
   <section class="step" id="full" hidden>
@@ -161,6 +161,11 @@ pre.summary { white-space: pre-wrap; font: 14px/1.5 var(--body); background: var
       <h3 id="teasertitle">Ton programme — Cycle 1</h3>
       <ul id="teaserlist"></ul>
       <p class="muted" style="font-size:13px">Débloqué après ta première séance.</p>
+    </div>
+    <div class="card" id="trial" hidden>
+      <h3>Pas encore adhérent·e ?</h3>
+      <p class="muted">Viens découvrir la salle : la séance d'essai est gratuite, et le run club est inclus dans l'abonnement.</p>
+      <a class="btn" href="https://calendly.com/crossfitessor-reservations" target="_blank" rel="noopener" style="text-decoration:none">Réserver ma séance d'essai</a>
     </div>
     <p class="ok" id="sent" hidden></p>
     <div class="card" id="send" hidden>
@@ -250,6 +255,7 @@ const CAP = 15;
 function show(step) { ["intro", "q", "done", "full", "laterdone"].forEach(s => $(s).hidden = s !== step); window.scrollTo(0, 0); }
 let placesLeft = null; // known only when Supabase is on
 async function loadCount() {
+  return; // launch is over: no place counter, sign-ups stay open every week
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
   try {
     const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/launch_count", { method: "POST", headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json" }, body: "{}" });
@@ -337,10 +343,11 @@ function finish() {
   $("bar").style.width = "100%";
   $("rl").textContent = L.name; $("rd").textContent = L.desc;
   const isMember = answers.member === "yes";
-  answers.launch = !isMember ? "interested" : (placesLeft === 0 ? "waitlist" : "yes");
+  answers.launch = !isMember ? "interested" : "member"; // "yes" was the 30/10 launch and is capped in the database
+  $("trial").hidden = isMember;
   $("rv").textContent = !isMember ? "Le run club est réservé aux adhérents d'Essor — on a noté ton intérêt, on te recontacte."
     : answers.launch === "waitlist" ? "Complet pour le 30 octobre — tu es sur la liste, on te prévient en priorité pour la séance suivante."
-    : "Rendez-vous vendredi 30 octobre, 16h30 · piste de la Floride";
+    : "Rendez-vous vendredi, 16h30 · vestiaires de la piste de la Floride";
   $("rnext").innerHTML = L.next.map(x => `<li>${x}</li>`).join("");
   const CYCLE = ["Ven 30/10 — Test VMA (6 minutes) · échauffement 15', test, retour au calme 10'", "Ven 06/11 — VO2 max, allure 10 km", "Ven 13/11 — VMA 30/30", "Ven 20/11 — VO2 max, allure 10 km", "Ven 27/11 — Pyramide", "Ven 04/12 — VMA 30/30", "Ven 11/12 — VO2 max, allure course", "Ven 18/12 — Séance légère avant la course"];
   const WEEK1 = { beginnerA: "1' course / 1' marche × 8", beginnerB: "3' course / 1' marche × 5", beginnerC: "10' course / 1' marche × 2" };
@@ -356,7 +363,7 @@ function finish() {
     `Course sans arrêt : ${label(QB("runContinuous"), answers.runContinuous)}`, `Par semaine : ${label(QB("runsPerWeek"), answers.runsPerWeek)}`, `5 km : ${label(QB("fiveK"), answers.fiveK)}`,
     bests ? `Records : ${bests}` : null, answers.races ? `Courses : ${answers.races}` : null,
     `Douleur : ${answers.injury === "yes" ? "oui — " + (answers.injuryDetail || "") : "non"}`,
-    `Objectif : ${label(QB("goal"), answers.goal)}`, `Adhérent : ${isMember ? "oui" : "non"}`, `Le 30/10 : ${answers.launch === "yes" ? "oui" : answers.launch === "waitlist" ? "liste d'attente" : "intéressé·e (pas encore adhérent·e)"}`,
+    `Objectif : ${label(QB("goal"), answers.goal)}`, `Adhérent : ${isMember ? "oui" : "non"}`, `Statut : ${isMember ? "adhérent·e — à ajouter au RUN CLUB" : "intéressé·e (pas encore adhérent·e)"}`,
   ].filter(Boolean);
   const text = lines.join("\n"); $("sum").textContent = text;
   if (WHATSAPP_NUMBER) { const a = $("wa"); a.href = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text); a.style.display = "flex"; }
@@ -385,7 +392,7 @@ async function submit(a, text) {
     if (!ok && a.launch === "yes") { a.launch = "waitlist"; $("rv").textContent = "Complet pour le 30 octobre — tu es sur la liste, on te prévient en priorité pour la séance suivante."; ok = await save(a, text.replace("Le 30/10 : oui", "Le 30/10 : liste d'attente")); }
     if (!ok) { $("send").hidden = false; return; }
     $("sent").hidden = false;
-    $("sent").textContent = a.launch === "yes" ? "Réponses enregistrées ✓ — ta place est prise. Sean t'ouvre la réservation dans Wodify." : a.launch === "waitlist" ? "Réponses enregistrées ✓ — tu es sur la liste d'attente." : "Réponses enregistrées ✓ — on te recontacte.";
+    $("sent").textContent = a.launch === "member" ? "Réponses enregistrées ✓ — Sean t'ouvre la réservation dans Wodify et t'envoie le lien du groupe WhatsApp." : a.launch === "yes" ? "Réponses enregistrées ✓ — ta place est prise. Sean t'ouvre la réservation dans Wodify." : a.launch === "waitlist" ? "Réponses enregistrées ✓ — tu es sur la liste d'attente." : "Réponses enregistrées ✓ — on te recontacte.";
   } catch (e) { $("send").hidden = false; }
 }
 $("copy").onclick = async () => {

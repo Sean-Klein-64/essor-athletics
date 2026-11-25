@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Essor Athletics — ton espace : ta VMA, tes allures et ta prochaine séance.">
+<meta property="og:title" content="Essor Athletics — mon espace">
+<meta property="og:description" content="Ta VMA, tes zones d'entraînement et ta prochaine séance du vendredi.">
+<title>Mon espace · Essor Athletics</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@1,900&family=DM+Sans:wght@400;500;600&display=swap">
+<style>
+/* Same look as the sign-up page (index.html) and the VMA page (vma.html). */
+:root {
+  --bg: #0A0A0A; --fg: #FAFAF8; --card: #161616; --line: #262626; --muted: #9AA7A1;
+  --accent: #1E4D3A; --accent-soft: rgba(124,196,162,0.12); --mint: #7CC4A2; --bad: #E07A5F;
+  --display: 'Archivo', 'Arial Black', Arial, sans-serif; --body: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body { font-family: var(--body); font-size: 17px; line-height: 1.45; }
+[hidden] { display: none !important }
+.hero { position: relative; overflow: hidden; background: linear-gradient(160deg, #12291f 0%, #0A0A0A 70%); }
+.hero .in { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 22px max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 8px; min-height: 190px; justify-content: flex-end; }
+.lanes { position: absolute; right: -14%; top: -30%; width: 64%; max-width: 360px; opacity: 0.45; }
+.brand { display: flex; align-items: baseline; gap: 8px; }
+.brand a { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 46px; letter-spacing: -1.4px; line-height: 0.95; color: #fff; text-decoration: none; }
+.brand span { font-size: 15px; color: var(--mint); letter-spacing: 3px; }
+.kicker { font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); margin: 0; }
+.hero .kicker { color: var(--mint); }
+.wrap { max-width: 520px; margin: 0 auto; padding: 18px max(16px, env(safe-area-inset-right, 0px)) 56px max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 18px; }
+.view { display: flex; flex-direction: column; gap: 16px; }
+h1 { font-family: var(--display); font-style: italic; font-weight: 900; font-size: 34px; line-height: 1.02; letter-spacing: -0.9px; margin: 0; text-wrap: balance; }
+h2 { font-size: 22px; font-weight: 600; line-height: 1.2; margin: 0; }
+h3 { margin: 0; font-size: 17px; font-weight: 600; }
+p { margin: 0 }
+.muted { color: var(--muted); font-size: 15px; }
+.small { font-size: 13px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 14px; color: var(--muted); }
+input { width: 100%; font: inherit; font-size: 18px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 13px 16px; }
+input:focus-visible { outline: 2px solid var(--mint); outline-offset: 1px; }
+input[aria-invalid="true"] { border-color: var(--bad); }
+.hint-bad { color: var(--bad); font-size: 14px; }
+.actions { display: flex; flex-direction: column; gap: 8px; }
+.btn { font: inherit; font-size: 18px; font-weight: 500; border: 0; border-radius: 26px; height: 52px; padding: 0 20px; background: var(--mint); color: #0A0A0A; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.btn:disabled { background: var(--line); color: var(--muted); cursor: default; }
+.btn.ghost { background: transparent; color: var(--muted); font-size: 15px; height: 40px; }
+.btn.line { background: transparent; color: var(--fg); border: 1px solid var(--line); font-size: 16px; height: 46px; }
+.btn:focus-visible, .seg button:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+.ok { color: var(--mint); font-size: 15px; }
+a.text { color: var(--mint); }
+.list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; display: flex; flex-direction: column; gap: 4px; }
+</style>
+</head>
+<body>
+<header class="hero">
+  <svg class="lanes" viewBox="0 0 400 620" aria-hidden="true">
+    <rect x="1" y="1" width="398" height="618" rx="199" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.6"/>
+    <rect x="15" y="15" width="370" height="590" rx="185" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.45"/>
+    <rect x="29" y="29" width="342" height="562" rx="171" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.3"/>
+    <rect x="43" y="43" width="314" height="534" rx="157" fill="none" stroke="#7CC4A2" stroke-width="1.2" opacity="0.18"/>
+  </svg>
+  <div class="in">
+    <p class="kicker">Run club · CrossFit Essor</p>
+    <div class="brand"><a href="./">essor</a><span>athletics</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- 1. Sign in: the phone number and first name given in the questionnaire -->
+  <section class="view" id="signin">
+    <div><p class="kicker">Run club</p><h1>Mon espace</h1></div>
+    <p class="muted">Ta VMA, tes allures, tes zones et ta prochaine séance du vendredi, au même endroit.</p>
+    <div class="card">
+      <div class="field"><label for="phone">Ton numéro</label><input id="phone" type="tel" autocomplete="tel" placeholder="06 …"></div>
+      <div class="field"><label for="first">Ton prénom</label><input id="first" type="text" autocomplete="given-name" placeholder="Prénom"></div>
+      <p class="muted small">Le numéro et le prénom donnés au questionnaire du run club.</p>
+      <p class="hint-bad" id="bad" hidden></p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="go">Ouvrir mon espace</button>
+      <a class="btn ghost" href="./">Pas encore inscrit·e ? Le questionnaire</a>
+    </div>
+  </section>
+
+  <!-- 2. In the questionnaire, but no VMA saved yet -->
+  <section class="view" id="novma" hidden>
+    <div><p class="kicker">Mon espace</p><h1 id="hello">On t'a retrouvé·e</h1></div>
+    <div class="card">
+      <p>Il ne manque que ta VMA pour calculer tes allures.</p>
+      <ul class="list">
+        <li>Tu as fait le test de 6 minutes : entre ta distance.</li>
+        <li>Pas encore : donne un temps de course, on estime ta VMA.</li>
+      </ul>
+    </div>
+    <div class="actions">
+      <a class="btn" href="./vma.html">Entrer ma VMA</a>
+      <button class="btn ghost" id="again">Ce n'est pas moi</button>
+    </div>
+  </section>
+
+  <!-- 3. Nothing under that phone number and first name -->
+  <section class="view" id="none" hidden>
+    <div><p class="kicker">Mon espace</p><h1>Rien trouvé</h1></div>
+    <div class="card">
+      <p>Aucune inscription avec ce numéro et ce prénom.</p>
+      <p class="muted">Vérifie-les (le prénom tel que tu l'as écrit au questionnaire). Sinon, réponds au questionnaire : deux minutes, et ton espace est créé.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="retry">Réessayer</button>
+      <a class="btn line" href="./">Répondre au questionnaire</a>
+    </div>
+  </section>
+
+  <p class="muted small">Le run club est gratuit pour les adhérents de CrossFit Essor. Vendredi 16h30, piste de la Floride.</p>
+</main>
+
+<script>
+/* ── Supabase (same project as index.html and vma.html). Read-only here: the vma_* functions in supabase/vma.sql. ── */
+const SUPABASE_URL = "https://rqomypmgbjigukvztjxz.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_LnDYfyrKMTOunfAH29ZFTQ_CY3GtJE5";
+const rpc = async (fn, args) => {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  if (!r.ok) throw new Error(fn + " " + r.status);
+  return r.json();
+};
+
+const $ = (id) => document.getElementById(id);
+const KEY = "essor-vma"; // the same key vma.html keeps the runner's token under
+const isUuid = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s || "");
+const show = (view) => { ["signin", "novma", "none"].forEach(v => $(v).hidden = v !== view); window.scrollTo(0, 0); };
+const open = (token) => location.replace("./vma.html?p=" + token);
+
+/* Already signed in on this phone: straight to the zones and the next session */
+try { const saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved && isUuid(saved.token) && !new URLSearchParams(location.search).has("autre")) open(saved.token); } catch (e) {}
+
+async function signIn() {
+  const phone = $("phone").value.trim(), first = $("first").value.trim();
+  $("bad").hidden = true;
+  if (phone.replace(/\D/g, "").length < 9 || !first) { $("bad").hidden = false; $("bad").textContent = "Il faut ton numéro complet et ton prénom."; return; }
+  $("go").disabled = true; $("go").textContent = "Recherche…";
+  try {
+    const token = await rpc("vma_find", { p_phone: phone, p_first: first });
+    if (isUuid(token)) { try { localStorage.setItem(KEY, JSON.stringify({ token, cache: null, pending: false })); } catch (e) {} return open(token); }
+    // No VMA saved yet: are they in the questionnaire?
+    let s = null;
+    try { const rows = await rpc("vma_signup", { p_id: null, p_phone: phone, p_first: first }); s = Array.isArray(rows) ? rows[0] : rows; } catch (e) { /* function not there yet: treat as not found */ }
+    if (s && s.name) { $("hello").textContent = "Salut " + String(s.name).trim().split(" ")[0]; show("novma"); }
+    else show("none");
+  } catch (e) {
+    $("bad").hidden = false; $("bad").textContent = "Connexion impossible pour le moment. Réessaie dans un instant.";
+  }
+  $("go").disabled = false; $("go").textContent = "Ouvrir mon espace";
+}
+
+$("go").onclick = signIn;
+["phone", "first"].forEach(id => $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") signIn(); }));
+$("again").onclick = () => show("signin");
+$("retry").onclick = () => show("signin");
+</script>
+</body>
+</html>
